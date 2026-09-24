@@ -1,0 +1,9 @@
+# Training + evaluation. The saved pipeline must be loaded with the same
+# scikit-learn version it was trained with (see backend/requirements.txt).
+scikit-learn==1.9.0
+pandas==2.3.3
+numpy==2.5.2
+joblib==1.6.0
+shap==0.52.0
+openpyxl==3.1.5
+pytest==9.1.1

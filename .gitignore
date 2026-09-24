@@ -1,0 +1,31 @@
+# ---- Patient data: never commit ----
+*.xlsx
+*.xls
+*.csv
+!ml/artifacts/model_comparison_results.csv
+
+# ---- Secrets / local env ----
+.env
+.env.*
+!.env.example
+
+# ---- Frontend ----
+node_modules/
+dist/
+*.local
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.ipynb_checkpoints/
+
+# ---- OS / editors ----
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

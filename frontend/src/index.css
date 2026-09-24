@@ -1,0 +1,9 @@
+/* App-wide reset. Everything else is styled per page (pages/*). */
+html,
+body {
+  margin: 0; /* no browser-default 8px frame around the app */
+}
+
+body {
+  background: #fff;
+}

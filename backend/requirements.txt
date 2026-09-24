@@ -1,0 +1,8 @@
+# Runtime for the prediction services (Django + DRF get added with the API).
+# scikit-learn must match the version the model was trained with (ml/requirements.txt).
+scikit-learn==1.9.0
+pandas==2.3.3
+numpy==2.5.2
+joblib==1.6.0
+shap==0.52.0
+pytest==9.1.1
