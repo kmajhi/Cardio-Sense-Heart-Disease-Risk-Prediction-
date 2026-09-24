@@ -58,6 +58,20 @@ A script port of the research notebook, with the same method and seed:
 | Decision Tree | 0.957 | 0.964 | 0.884 | 0.897 | 0.897 |
 
 Held-out confusion matrix (Random Forest): TN 87, FP 3, FN 6, TP 111.
+Test precision 0.974; CV recall 0.970, CV F1 0.979.
+
+### Selected model
+
+- **Estimator:** `RandomForestClassifier` with `n_estimators=200`, `max_depth=None`,
+  `max_features="log2"`, `min_samples_leaf=1`, `class_weight="balanced"`, `random_state=42`.
+- **Preprocessing:** part of the saved pipeline, so it is fitted on training data only.
+  Numeric features get `SimpleImputer(strategy="median", add_indicator=True)`; `Sex` gets
+  most-frequent imputation plus one-hot encoding. There's no scaling, since trees don't need it.
+- **Inputs:** 26 raw features, the 21 measurements entered on the Prediction page plus BMI, MaxHR
+  and three Troponin censoring flags. They are listed in `artifacts/model_metadata.json`.
+- **Decision threshold:** 0.5. The low/moderate/high bands in the UI are a presentation choice.
+- **Explainability:** SHAP `TreeExplainer` explains `predict_proba` directly, so each factor's
+  contribution is in probability points and they add up to `probability − baseline`.
 
 ## ⚠ Data-quality findings. Read before trusting these numbers.
 
