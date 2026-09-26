@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import NavBar from '../Dashboard/components/NavBar';
-import ScanCard from './components/ScanCard';
-import GaugeCard from './components/GaugeCard';
-import TrendCard from './components/TrendCard';
+import RiskSummaryCard from './components/RiskSummaryCard';
+import RiskBarsCard from './components/RiskBarsCard';
+import TestsDonutCard from './components/TestsDonutCard';
+import FactorsCard from './components/FactorsCard';
+import HeartInsights from './components/HeartInsights';
 import LabTable from './components/LabTable';
 import RecordList from './components/RecordList';
 import { historyMock } from './historyMock';
@@ -10,7 +12,7 @@ import '../Dashboard/Dashboard.css'; // shared tokens, nav, load sequence, page 
 import './History.css';
 
 /**
- * Cardio Sense — History page: overview, test results, assessment records.
+ * Cardio Sense — History page: overview board, test results, assessment records.
  *
  * Props
  * - records:       assessments, oldest first: [{ id, created_at, inputs, result }].
@@ -48,16 +50,21 @@ export default function History({
             </span>
           </h1>
           <p className="pc-h-sub pc-enter" style={{ '--d': '200ms' }}>
-            Past risk estimates and the test results behind them. Hover a card to replay it.
+            Past risk estimates and the test results behind them.
           </p>
         </header>
 
         {latest ? (
           <>
-            <section className="pc-h-overview pc-enter" style={{ '--d': '260ms' }} aria-label="Overview">
-              <ScanCard record={latest} />
-              <GaugeCard record={latest} />
-              <TrendCard records={records} />
+            {/* No transform/filter/opacity/z-index on the board: the heart video blends through it. */}
+            <section className="pc-h-board" aria-label="Overview">
+              <div className="pc-h-tiles">
+                <RiskSummaryCard records={records} ready={ready} />
+                <RiskBarsCard records={records} />
+                <TestsDonutCard record={latest} ready={ready} />
+                <FactorsCard record={latest} LinkComponent={LinkComponent} />
+              </div>
+              <HeartInsights records={records} />
             </section>
 
             <p className="pc-h-disclaimer pc-enter" style={{ '--d': '320ms' }}>

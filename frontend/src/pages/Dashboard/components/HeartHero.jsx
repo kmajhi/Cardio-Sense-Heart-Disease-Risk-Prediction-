@@ -15,7 +15,7 @@ import heartPoster from '../assets/heart-poster.jpg';
  * context (transform, filter, opacity < 1, backdrop-filter, isolation, or
  * position + z-index). Otherwise the black box around the video shows.
  */
-export default function HeartHero({ LinkComponent = 'a' }) {
+export default function HeartHero({ LinkComponent = 'a', showCta = true }) {
   const L = LinkComponent;
   const videoRef = useRef(null);
   const reducedMotion = usePrefersReducedMotion();
@@ -62,10 +62,12 @@ export default function HeartHero({ LinkComponent = 'a' }) {
         <source src={heartMp4} type="video/mp4" />
       </video>
 
-      <L {...linkProps(L, '/prediction')} className="pc-hero-cta pc-enter" style={{ '--d': '640ms', '--pc-rise': '20px' }}>
-        Try a prediction
-        <span className="pc-hero-cta-arrow" aria-hidden="true">→</span>
-      </L>
+      {showCta && (
+        <L {...linkProps(L, '/prediction')} className="pc-hero-cta pc-enter" style={{ '--d': '640ms', '--pc-rise': '20px' }}>
+          Try a prediction
+          <span className="pc-hero-cta-arrow" aria-hidden="true">→</span>
+        </L>
+      )}
     </div>
   );
 }

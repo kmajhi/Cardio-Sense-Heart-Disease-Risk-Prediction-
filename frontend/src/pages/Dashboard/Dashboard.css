@@ -277,6 +277,21 @@
   color: #fff;
   font-size: 15px;
   font-weight: 700;
+  overflow: hidden;
+  text-decoration: none;
+  transition: box-shadow 0.2s;
+}
+
+.pc-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.pc-avatar:hover,
+.pc-avatar[aria-current='page'] {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
 }
 
 /* ---------- Stage & panel ---------- */

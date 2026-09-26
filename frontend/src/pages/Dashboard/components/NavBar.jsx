@@ -64,9 +64,15 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
           </svg>
           {hasNotifications && <span className="pc-dot" />}
         </button>
-        <span className="pc-avatar" role="img" aria-label={user?.name}>
-          {initials(user?.name)}
-        </span>
+        <L
+          {...linkProps(L, '/profile')}
+          className="pc-avatar"
+          aria-label={`Profile: ${user?.name ?? 'you'}`}
+          aria-current={activePath === '/profile' ? 'page' : undefined}
+        >
+          {/* Only a data:image URL made by the Profile page is shown as a photo. */}
+          {user?.photo?.startsWith?.('data:image/jpeg;base64,') ? <img src={user.photo} alt="" /> : initials(user?.name)}
+        </L>
       </div>
     </header>
   );
