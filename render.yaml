@@ -1,8 +1,8 @@
 # Render Blueprint: https://render.com/docs/blueprint-spec
 #
-# The frontend deploys as a free static site. The backend isn't a web service
-# yet (the Django /api/predict/ endpoint is still to be built), so the site uses
-# the in-browser mock prediction (VITE_USE_MOCK_API=true).
+# The frontend deploys as a free static site. The Django API isn't deployed yet:
+# it has no user accounts, so it must not be public. Until then the site uses
+# the in-browser mock (VITE_USE_MOCK_API=true).
 services:
   - type: web
     runtime: static

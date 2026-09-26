@@ -62,6 +62,28 @@ FIELD_MAP = {
 BINARY_FIELDS = {"family_history", "hypertension", "diabetes", "chest_pain_history"}
 REQUIRED_FIELDS = {"age", "sex"}
 
+# Physiologically possible values, in payload units. Anything outside is a typo
+# or a unit mix-up, so it's rejected rather than scored. The frontend's
+# fields.js has the same limits; its sliders show the narrower training range.
+LIMITS = {
+    "age": (18, 120),
+    "height_cm": (100, 230),
+    "weight_kg": (25, 300),
+    "bp_mmhg": (50, 300),
+    "rbs_mmol_l": (1, 50),
+    "total_cholesterol": (50, 600),
+    "hdl": (5, 150),
+    "ldl": (10, 500),
+    "triglycerides": (20, 3000),
+    "hemoglobin": (2, 25),
+    "creatinine": (0.1, 20),
+    "platelets": (5_000, 1_500_000),
+    "sodium": (100, 180),
+    "potassium": (1.5, 10),
+    "chloride": (60, 150),
+}
+MAX_TROPONIN_NG_ML = 500.0  # = 500,000 ng/L on the high-sensitivity assay
+
 
 class PredictionInputError(ValueError):
     """The request can't be turned into a valid model input."""
@@ -92,6 +114,8 @@ def _number(payload, key):
         raise PredictionInputError(f"{key} must be a number") from None
     if not math.isfinite(number):
         raise PredictionInputError(f"{key} must be a finite number")
+    if number < 0:
+        raise PredictionInputError(f"{key} can't be negative")
     return number
 
 
@@ -113,6 +137,10 @@ def build_features(payload: dict) -> pd.DataFrame:
     age = row["Age"]
     if age < 18:
         raise PredictionInputError("The model was trained on adults only (age 18 or over).")
+    for key, (low, high) in LIMITS.items():
+        value = row[FIELD_MAP[key]]
+        if not math.isnan(value) and not low <= value <= high:
+            raise PredictionInputError(f"{key} must be between {low:g} and {high:g}")
 
     for key in BINARY_FIELDS:
         value = row[FIELD_MAP[key]]
@@ -141,10 +169,11 @@ def _troponin(payload):
         return {"Troponin_I": math.nan, **flags}
 
     assay = payload.get("troponin_assay")
-    if assay not in ASSAYS:
+    if not isinstance(assay, str) or assay not in ASSAYS:
         raise PredictionInputError("troponin_assay must be 'quantitative' or 'high-sensitivity'")
-    if value < 0:
-        raise PredictionInputError("troponin_i can't be negative")
+    if value * ASSAYS[assay] > MAX_TROPONIN_NG_ML:
+        unit_max = MAX_TROPONIN_NG_ML / ASSAYS[assay]
+        raise PredictionInputError(f"troponin_i must be {unit_max:g} or under for this assay")
 
     qualifier = payload.get("troponin_qualifier")
     if qualifier not in (None, "", ">", "<"):

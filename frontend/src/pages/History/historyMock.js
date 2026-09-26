@@ -1,5 +1,5 @@
-// Sample assessment history until the Django History API exists
-// (predictor/models.py will store each /api/predict/ call).
+// Sample assessment history for mock mode (api/historyApi.js). With the mock
+// off, GET /api/history/ returns every stored /api/predict/ call instead.
 //
 // Each record = the request the Prediction page sent (`inputs`, same keys as
 // toPayload()) + the response it got back (`result`, the API contract).

@@ -23,6 +23,11 @@ venv/
 *.egg-info/
 .ipynb_checkpoints/
 
+# ---- Django ----
+# The database holds profiles and assessments (health data): never commit it.
+*.sqlite3
+backend/staticfiles/
+
 # ---- OS / editors ----
 .DS_Store
 Thumbs.db

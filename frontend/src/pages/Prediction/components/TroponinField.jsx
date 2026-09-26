@@ -6,8 +6,9 @@ import { TROPONIN_ASSAYS } from '../fields';
  * High-sensitivity reports ng/L, so the same number means very different
  * things. Switching assay clears the value instead of reinterpreting it.
  */
-export default function TroponinField({ assay, value, onAssayChange, onValueChange, showError }) {
+export default function TroponinField({ assay, value, onAssayChange, onValueChange, error }) {
   const current = TROPONIN_ASSAYS[assay];
+  const showError = Boolean(error);
 
   return (
     <div className="pc-pr-fields">
@@ -29,6 +30,7 @@ export default function TroponinField({ assay, value, onAssayChange, onValueChan
             type="number"
             inputMode="decimal"
             min="0"
+            max={current.max}
             step={current.step}
             placeholder={current.placeholder}
             value={value}
@@ -41,7 +43,7 @@ export default function TroponinField({ assay, value, onAssayChange, onValueChan
         </div>
         <p id="pr-trop-note" className={`pc-pr-hint${showError ? ' is-error' : ''}`}>
           {showError
-            ? 'Enter the Troponin-I result to run a prediction.'
+            ? error
             : `Enter the value as reported, in ${current.unit}. The two assays use different units and aren't interchangeable.`}
         </p>
       </div>

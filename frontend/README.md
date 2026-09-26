@@ -12,11 +12,12 @@ npm run build    # production build in dist/
 
 ## API
 
-`src/api/predictionApi.js` uses the in-browser mock by default. To call Django's
-`POST /api/predict/`, copy `.env.example` to `.env.local` and set `VITE_USE_MOCK_API=false`.
-History still uses sample data (`pages/History/historyMock.js`) until the backend has a history endpoint.
-`src/api/profileApi.js` keeps the profile in `localStorage` in mock mode; with the mock off it calls
-`GET / PUT / DELETE /api/profile/`, which the backend doesn't have yet.
+The files in `src/api/` use in-browser mocks by default. To use the Django API (see
+`backend/README.md`), copy `.env.example` to `.env.local` and set `VITE_USE_MOCK_API=false`:
+
+- `predictionApi.js`: `POST /api/predict/` (mock: `pages/Prediction/predictionMock.js`)
+- `historyApi.js`: `GET /api/history/` (mock: `pages/History/historyMock.js`)
+- `profileApi.js`: `GET / PUT / DELETE /api/profile/` (mock: this browser's `localStorage`)
 
 ## Layout
 
@@ -26,7 +27,7 @@ public/               favicons (made from the logo)
 src/
   main.jsx            React root + BrowserRouter
   App.jsx             routes; links use view transitions (circle wipe between pages)
-  api/                client.js (fetch wrapper), predictionApi.js and profileApi.js (mock ↔ real switch)
+  api/                client.js (fetch wrapper); prediction, history and profile APIs (mock ↔ real switch)
   pages/
     Dashboard/        heart health overview; also holds the shared theme (Dashboard.css),
                       NavBar, HeartHero, logo and assets used by every page

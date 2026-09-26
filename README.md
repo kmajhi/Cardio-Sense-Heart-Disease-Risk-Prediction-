@@ -12,7 +12,7 @@ comes out.
 
 ```
 frontend/   React (Vite) web app: Dashboard, Prediction, History, About
-backend/    Python prediction services (Django REST API to come); loads the model from ml/artifacts
+backend/    Django REST API + admin; stores profiles and assessments; loads the model from ml/artifacts
 ml/         Model training and evaluation, the research notebook, and the saved model artifacts
 ```
 
@@ -20,8 +20,8 @@ The three parts are separate on purpose:
 
 - `ml/` produces `ml/artifacts/` (the trained pipeline and its metadata).
 - `backend/` only reads those artifacts, via `CARDIO_MODEL_DIR` (default `ml/artifacts`).
-- `frontend/` only talks to the backend over HTTP (`POST /api/predict/`), and uses a mock until
-  the API is live.
+- `frontend/` only talks to the backend over HTTP (`/api/predict/`, `/api/history/`,
+  `/api/profile/`), or to an in-browser mock when `VITE_USE_MOCK_API` isn't `false`.
 
 ## Model
 
@@ -57,8 +57,11 @@ research notebook's method: it compares four models and keeps the best one.
 # Frontend
 cd frontend && npm install && npm run dev        # http://localhost:5173
 
-# Backend services + tests
-cd backend && pip install -r requirements.txt && pytest
+# Backend API (admin at http://localhost:8000/admin/) + tests
+cd backend && pip install -r requirements.txt && python manage.py migrate
+python manage.py createsuperuser && python manage.py runserver
+pytest
+# then set VITE_USE_MOCK_API=false in frontend/.env.local to use it
 
 # Retrain the model (dataset not in the repo; put the .xlsx in ml/data/)
 cd ml && pip install -r requirements.txt
@@ -79,6 +82,9 @@ model, its metadata, the model comparison table, and SHAP centroids.
 - [x] ML model trained, validated, saved as a pipeline (`ml/`)
 - [x] Prediction and explainability services with tests (`backend/predictor/services/`)
 - [x] Frontend: Dashboard, Prediction, History and About pages (mock API)
-- [ ] Django project + `predictor` app, serializers and the `/api/predict/` view
-- [ ] History model/endpoint (store each prediction's request, response and time)
-- [ ] Switch the frontend to the real API (`VITE_USE_MOCK_API=false`)
+- [x] Django project + `predictor` app: `/api/predict/`, `/api/history/`, `/api/profile/`
+- [x] Profile and Assessment models (each prediction's request, response, model and time) with
+      a Django admin
+- [x] Frontend reads the real API when `VITE_USE_MOCK_API=false` (local development)
+- [ ] User accounts (the API is open and has a single profile until then)
+- [ ] Deploy the API and switch the hosted site off the mock

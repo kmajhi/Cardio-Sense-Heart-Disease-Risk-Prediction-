@@ -178,6 +178,13 @@
   background: #fff;
 }
 
+.pc-pr-num.is-invalid,
+.pc-pr-num.is-invalid:focus {
+  border-color: #d6457a;
+  background: #fff5f8;
+  color: #ad1f52;
+}
+
 .pc-pr-unit {
   color: var(--pc-ink-faint);
   font-size: 12px;
@@ -231,6 +238,10 @@
   color: #7a4f00;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.pc-dash .pc-pr-warn.is-error {
+  color: #ad1f52;
 }
 
 /* ---------- Segmented toggle ---------- */
@@ -421,6 +432,7 @@
   flex: 1 1 auto;
   min-height: 60px;
   overflow-y: auto;
+  overflow-x: hidden; /* the factor list glides in from the right */
   margin-right: -8px;
   padding-right: 8px;
   scrollbar-width: thin;

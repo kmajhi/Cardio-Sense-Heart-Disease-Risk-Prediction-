@@ -77,13 +77,19 @@ def test_features_match_the_trained_schema(trained, patient):
 
 @pytest.mark.parametrize("change, message", [
     ({"age": 16}, "adults only"),
+    ({"age": 1e9}, "age must be between 18 and 120"),
+    ({"height_cm": 0}, "height_cm must be between"),
+    ({"platelets": 270}, "platelets must be between"),  # sent in ×10³/µL instead of /µL
+    ({"troponin_i": 900}, "500 or under"),
     ({"age": None}, "Missing required"),
     ({"sex": "male"}, "sex must be"),
     ({"diabetes": 2}, "diabetes must be 0 or 1"),
     ({"hdl": "forty"}, "hdl must be a number"),
     ({"hdl": True}, "hdl must be a number"),
     ({"ldl": float("inf")}, "finite"),
+    ({"ldl": -5}, "ldl can't be negative"),
     ({"troponin_assay": "ng/mL"}, "troponin_assay"),
+    ({"troponin_assay": ["quantitative"]}, "troponin_assay"),
     ({"troponin_i": -1}, "negative"),
     ({"troponin_qualifier": ">"}, "high-sensitivity"),  # patient uses the quantitative assay
 ])

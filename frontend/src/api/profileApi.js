@@ -1,12 +1,18 @@
 import { request } from './client';
+import { demoProfile } from '../pages/Profile/demoProfile';
 
-// Mocked until Django has accounts. Same switch as predictionApi.js: set
+// Mock by default. Same switch as predictionApi.js: set
 // VITE_USE_MOCK_API=false in .env.local to call the real endpoints:
 //   GET /api/profile/ → profile | 404     PUT /api/profile/ → profile
 //   DELETE /api/profile/ → 204
-// The mock keeps the profile in this browser's localStorage only.
+// The mock keeps the profile in this browser's localStorage only, and starts
+// from the demo profile once (the backend seeds the same one on migrate).
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_API !== 'false';
+
+/** Where saved profiles live, for the page's privacy note. */
+export const PROFILE_STORAGE = USE_MOCK ? 'browser' : 'server';
 const KEY = 'cardio-sense:profile';
+const SEEDED_KEY = 'cardio-sense:demo-seeded'; // so a deleted profile stays deleted
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -37,11 +43,27 @@ export async function getProfile() {
     try {
       return await request('/profile/');
     } catch (err) {
-      if (/status 404/.test(err.message)) return null;
+      if (err.status === 404) return null; // "No profile yet."
       throw err;
     }
   }
-  return readLocal();
+  return readLocal() ?? seedOnce();
+}
+
+async function seedOnce() {
+  try {
+    if (localStorage.getItem(SEEDED_KEY)) return null;
+    localStorage.setItem(SEEDED_KEY, '1');
+  } catch {
+    return null; // storage blocked: nowhere to keep it anyway
+  }
+  const demo = await demoProfile();
+  try {
+    writeLocal(demo);
+  } catch {
+    /* shown for this visit even if it can't be kept */
+  }
+  return demo;
 }
 
 /** Creates or replaces the profile; returns what was stored. */
