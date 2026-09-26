@@ -1,6 +1,8 @@
 // Inputs for the Northern Bangladesh model (see ml/notebooks and ml/training/data.py).
-// Slider ranges follow the training data, so they don't invite values the
-// model has never seen. Typed values outside a range are still accepted.
+// Slider ranges (min/max) follow the training data, so they don't invite values
+// the model has never seen. Typed values may go past them, up to `limit`: the
+// physiologically possible range. Anything beyond that is a typo or a unit
+// mix-up and is refused (the backend's LIMITS in prediction_service.py match).
 
 export const bmiFrom = (heightCm, weightKg) => weightKg / (heightCm / 100) ** 2;
 
@@ -16,39 +18,39 @@ export const SECTIONS = [
     title: 'Patient profile',
     fields: [
       // Under-18 records were excluded from the modeling population.
-      { key: 'age', label: 'Age', unit: 'yrs', min: 18, max: 97, step: 1 },
-      { key: 'height', label: 'Height', unit: 'cm', min: 140, max: 190, step: 1 },
-      { key: 'weight', label: 'Weight', unit: 'kg', min: 35, max: 110, step: 0.5 },
+      { key: 'age', label: 'Age', unit: 'yrs', min: 18, max: 97, step: 1, limit: [18, 120] },
+      { key: 'height', label: 'Height', unit: 'cm', min: 140, max: 190, step: 1, limit: [100, 230] },
+      { key: 'weight', label: 'Weight', unit: 'kg', min: 35, max: 110, step: 0.5, limit: [25, 300] },
     ],
   },
   {
     id: 'vitals',
     title: 'Blood pressure & glucose',
     fields: [
-      { key: 'bp', label: 'Blood pressure', unit: 'mmHg', min: 70, max: 220, step: 1 },
-      { key: 'rbs', label: 'Random blood sugar', unit: 'mmol/L', min: 3, max: 32, step: 0.1 },
+      { key: 'bp', label: 'Systolic blood pressure', unit: 'mmHg', min: 70, max: 220, step: 1, limit: [50, 300] },
+      { key: 'rbs', label: 'Random blood sugar', unit: 'mmol/L', min: 3, max: 32, step: 0.1, limit: [1, 50] },
     ],
   },
   {
     id: 'lipids',
     title: 'Lipid profile',
     fields: [
-      { key: 'totalCholesterol', label: 'Total cholesterol', unit: 'mg/dL', min: 100, max: 320, step: 1 },
-      { key: 'hdl', label: 'HDL', unit: 'mg/dL', min: 15, max: 90, step: 1 },
-      { key: 'ldl', label: 'LDL', unit: 'mg/dL', min: 40, max: 240, step: 1 },
-      { key: 'triglycerides', label: 'Triglycerides', unit: 'mg/dL', min: 40, max: 450, step: 1 },
+      { key: 'totalCholesterol', label: 'Total cholesterol', unit: 'mg/dL', min: 100, max: 320, step: 1, limit: [50, 600] },
+      { key: 'hdl', label: 'HDL', unit: 'mg/dL', min: 15, max: 90, step: 1, limit: [5, 150] },
+      { key: 'ldl', label: 'LDL', unit: 'mg/dL', min: 40, max: 240, step: 1, limit: [10, 500] },
+      { key: 'triglycerides', label: 'Triglycerides', unit: 'mg/dL', min: 40, max: 450, step: 1, limit: [20, 3000] },
     ],
   },
   {
     id: 'blood',
     title: 'Blood panel',
     fields: [
-      { key: 'hemoglobin', label: 'Hemoglobin', unit: 'g/dL', min: 3, max: 18, step: 0.1 },
-      { key: 'creatinine', label: 'Creatinine', unit: 'mg/dL', min: 0.3, max: 10, step: 0.1 },
-      { key: 'platelets', label: 'Platelets', unit: '×10³/µL', min: 100, max: 600, step: 1 },
-      { key: 'sodium', label: 'Sodium', unit: 'mmol/L', min: 110, max: 150, step: 0.1 },
-      { key: 'potassium', label: 'Potassium', unit: 'mmol/L', min: 2, max: 7, step: 0.1 },
-      { key: 'chloride', label: 'Chloride', unit: 'mmol/L', min: 75, max: 135, step: 0.1 },
+      { key: 'hemoglobin', label: 'Hemoglobin', unit: 'g/dL', min: 3, max: 18, step: 0.1, limit: [2, 25] },
+      { key: 'creatinine', label: 'Creatinine', unit: 'mg/dL', min: 0.3, max: 10, step: 0.1, limit: [0.1, 20] },
+      { key: 'platelets', label: 'Platelets', unit: '×10³/µL', min: 100, max: 600, step: 1, limit: [5, 1500] },
+      { key: 'sodium', label: 'Sodium', unit: 'mmol/L', min: 110, max: 150, step: 0.1, limit: [100, 180] },
+      { key: 'potassium', label: 'Potassium', unit: 'mmol/L', min: 2, max: 7, step: 0.1, limit: [1.5, 10] },
+      { key: 'chloride', label: 'Chloride', unit: 'mmol/L', min: 75, max: 135, step: 0.1, limit: [60, 150] },
     ],
   },
 ];
@@ -62,8 +64,9 @@ export const HISTORY = [
 
 // The two platforms report in different units and are NOT interchangeable.
 export const TROPONIN_ASSAYS = {
-  quantitative: { label: 'Quantitative', unit: 'ng/mL', step: 0.01, placeholder: 'e.g. 0.02' },
-  'high-sensitivity': { label: 'High-sensitivity', unit: 'ng/L', step: 1, placeholder: 'e.g. 14' },
+  // max is the same 500 ng/mL in both units (the backend's MAX_TROPONIN_NG_ML).
+  quantitative: { label: 'Quantitative', unit: 'ng/mL', step: 0.01, placeholder: 'e.g. 0.02', max: 500 },
+  'high-sensitivity': { label: 'High-sensitivity', unit: 'ng/L', step: 1, placeholder: 'e.g. 14', max: 500000 },
 };
 
 const base = {
@@ -128,7 +131,15 @@ export const PRESETS = [
   },
 ];
 
-export const troponinMissing = (v) => v.troponin === '' || !(Number(v.troponin) >= 0);
+/** Why the Troponin-I entry can't be used, or '' when it's fine. */
+export function troponinError(v) {
+  const { unit, max } = TROPONIN_ASSAYS[v.troponinAssay];
+  const n = Number(v.troponin);
+  if (String(v.troponin).trim() === '') return 'Enter the Troponin-I result to run a prediction.';
+  if (!Number.isFinite(n) || n < 0) return 'Enter the result as a number of 0 or more.';
+  if (n > max) return `That's above ${max.toLocaleString()} ${unit}. Check the value and the assay type.`;
+  return '';
+}
 
 const round1 = (n) => Math.round(n * 10) / 10;
 

@@ -4,7 +4,7 @@
 // Labs set their own ranges, so the UI always says "typical".
 
 export const TESTS = [
-  { key: 'bp_mmhg', label: 'Blood pressure', unit: 'mmHg', group: 'Vitals', high: 139 },
+  { key: 'bp_mmhg', label: 'Systolic BP', unit: 'mmHg', group: 'Vitals', high: 139 },
   { key: 'rbs_mmol_l', label: 'Random blood sugar', unit: 'mmol/L', group: 'Vitals', high: 7.7, digits: 1 },
   { key: 'total_cholesterol', label: 'Total cholesterol', unit: 'mg/dL', group: 'Lipids', high: 199 },
   { key: 'ldl', label: 'LDL', unit: 'mg/dL', group: 'Lipids', high: 129 },

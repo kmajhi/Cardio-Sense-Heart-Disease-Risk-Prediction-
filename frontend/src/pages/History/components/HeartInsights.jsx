@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import HeartHero from '../../Dashboard/components/HeartHero';
-import { LEVELS, panel, pct } from '../board';
+import { LEVELS, panel, pctText } from '../board';
 import { fmt } from '../tests';
 
 const TABS = ['Overview', 'Lipids', 'Vitals'];
@@ -21,7 +21,7 @@ function spotsFor(tab, records) {
   }
   const flagged = rows.filter((r) => r.st === 'high' || r.st === 'low').length;
   return [
-    { label: 'Risk estimate', value: `${pct(latest)}%`, unit: LEVELS[latest.result.risk_level]?.label ?? '', st: 'info' },
+    { label: 'Risk estimate', value: `${pctText(latest)}%`, unit: LEVELS[latest.result.risk_level]?.label ?? '', st: 'info' },
     { label: 'Outside range', value: String(flagged), unit: flagged === 1 ? 'test' : 'tests', st: flagged ? 'high' : 'ok' },
     { label: 'Assessments', value: String(records.length), unit: 'on record', st: 'info' },
   ];
