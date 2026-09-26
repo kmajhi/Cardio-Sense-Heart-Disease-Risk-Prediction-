@@ -13,6 +13,16 @@ export const EMPTY_PROFILE = {
   height_cm: '',
   weight_kg: '',
   blood_group: '',
+  // Location (see src/location/LocationFields.jsx): country from a list, city
+  // from a place search. The time zone and coordinates drive the nav's date
+  // and weather.
+  city: '',
+  state: '',
+  country: '',
+  country_code: '',
+  timezone: '',
+  latitude: '',
+  longitude: '',
   hypertension: null, // 0 | 1 | null (not answered)
   diabetes: null,
   family_history: null,
@@ -95,7 +105,7 @@ export const initials = (name = '') =>
 
 // What counts towards "profile complete".
 const COMPLETENESS = [
-  'full_name', 'email', 'phone', 'date_of_birth', 'sex', 'height_cm', 'weight_kg', 'blood_group',
+  'full_name', 'email', 'phone', 'date_of_birth', 'sex', 'city', 'height_cm', 'weight_kg', 'blood_group',
   'hypertension', 'diabetes', 'family_history', 'chest_pain_history', 'smoker', 'activity',
   'emergency_name', 'emergency_phone',
 ];
@@ -123,6 +133,10 @@ export function validate(p, today = new Date()) {
     if (age === null || new Date(`${p.date_of_birth}T00:00:00`) > today) errors.date_of_birth = 'Pick a date in the past.';
     else if (age > 120) errors.date_of_birth = 'Check the year.';
   }
+  if ((p.city.trim() || p.country) && !p.country_code) errors.country = 'Pick your country from the list.';
+  else if (p.country_code && !p.timezone) {
+    errors.country = 'Couldn’t look up this country’s time zone yet. Check your connection and try again.';
+  }
   if (p.height_cm !== '' && !(Number(p.height_cm) >= 50 && Number(p.height_cm) <= 250)) {
     errors.height_cm = 'Between 50 and 250 cm.';
   }
@@ -142,6 +156,8 @@ export function clean(p) {
     phone: p.phone.trim(),
     emergency_name: p.emergency_name.trim(),
     emergency_phone: p.emergency_phone.trim(),
+    city: p.city.trim(),
+    state: p.state.trim(),
     height_cm: num(p.height_cm),
     weight_kg: num(p.weight_kg),
   };

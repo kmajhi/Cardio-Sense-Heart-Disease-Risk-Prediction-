@@ -19,6 +19,17 @@
   animation: none;
 }
 
+/* The nav is its own layer during a page change and simply stays where it is:
+   no wipe, no fade, no movement. Only its active pill updates. */
+::view-transition-group(pc-nav),
+::view-transition-new(pc-nav) {
+  animation: none;
+}
+
+::view-transition-old(pc-nav) {
+  display: none;
+}
+
 ::view-transition-new(root) {
   animation: pc-circle-wipe 0.9s cubic-bezier(0.65, 0, 0.35, 1) both;
 }
@@ -167,6 +178,11 @@
 /* ---------- Nav (sits on the dusk band) ---------- */
 
 .pc-nav {
+  /* Its own layer above all page content, so the notifications panel (and
+     anything else that opens from the nav) is never covered by a card.
+     Profile dialogs use the browser's top layer and still sit above it. */
+  position: relative;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -174,6 +190,25 @@
   max-width: 1312px;
   margin: 0 auto;
   color: #fff;
+  view-transition-name: pc-nav;
+}
+
+/* Wide screens: logo | links | actions on one row, the links dead centre
+   whatever the two sides hold. The sides never shrink below their content,
+   so when space is tight the links give way instead of overlapping. */
+@media (min-width: 961px) {
+  .pc-nav {
+    display: grid;
+    grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+  }
+
+  .pc-nav > .pc-logo {
+    justify-self: start;
+  }
+
+  .pc-nav-actions {
+    justify-self: end;
+  }
 }
 
 .pc-logo {
@@ -218,6 +253,20 @@
   text-decoration: none;
   white-space: nowrap;
   transition: background-color 0.2s, color 0.2s;
+}
+
+/* Each label reserves the width of its bold (active) version, so the pills
+   don't change size, and the nav doesn't shift, when the active page changes. */
+.pc-nav-link::after {
+  content: attr(data-label);
+  content: attr(data-label) / ''; /* not read out: it's a sizing ghost */
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
 }
 
 .pc-nav-link:hover {
@@ -1329,7 +1378,8 @@
   }
 }
 
-@media (max-width: 760px) {
+/* Below 960px one row can't hold everything: the links take a second row. */
+@media (max-width: 960px) {
   .pc-nav {
     flex-wrap: wrap;
   }
@@ -1344,6 +1394,9 @@
   .pc-nav-links {
     width: max-content;
   }
+}
+
+@media (max-width: 760px) {
 
   .pc-stage {
     margin-top: 28px;

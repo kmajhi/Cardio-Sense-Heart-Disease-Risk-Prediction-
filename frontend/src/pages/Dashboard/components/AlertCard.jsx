@@ -9,7 +9,7 @@ export default function AlertCard({ alert, LinkComponent }) {
       <div>
         <p className="pc-alert-title">{alert.title}</p>
         <L {...linkProps(L, alert.href ?? '/history')} className="pc-alert-link">
-          See details
+          {alert.linkLabel ?? 'See details'}
         </L>
       </div>
     </aside>

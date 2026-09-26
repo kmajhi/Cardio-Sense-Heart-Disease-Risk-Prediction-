@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import NavBar from '../Dashboard/components/NavBar';
+import SiteFooter from '../../components/SiteFooter';
 import SliderField from './components/SliderField';
 import Segmented from './components/Segmented';
 import TroponinField from './components/TroponinField';
@@ -16,8 +17,17 @@ import {
   troponinError,
 } from './fields';
 import { mockPredict } from './predictionMock';
+import { buildNotification } from '../../clinical/notifications';
+import { useNotifications } from '../../notifications/NotificationsContext';
 import '../Dashboard/Dashboard.css'; // shared tokens, nav, load sequence
 import './Prediction.css';
+
+const TITLE = [
+  ['Heart', 'thin'],
+  ['disease', 'thin'],
+  ['risk', 'bold'],
+  ['prediction', 'bold'],
+];
 
 const YES_NO = [
   [0, 'No'],
@@ -45,6 +55,7 @@ export default function Prediction({
   const [status, setStatus] = useState('idle'); // idle | loading | error
   const [error, setError] = useState('');
   const [triedRun, setTriedRun] = useState(false);
+  const notifications = useNotifications();
 
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -56,7 +67,14 @@ export default function Prediction({
 
   const payload = useMemo(() => toPayload(values), [values]);
   const stale = result !== null && JSON.stringify(result.payload) !== JSON.stringify(payload);
+  // Model risk + values outside healthy ranges, for the inputs the estimate was made from.
+  const notification = useMemo(
+    () => (result ? buildNotification({ inputs: result.payload, result: result.data }) : null),
+    [result],
+  );
   const bmi = bmiFrom(values.height, values.weight);
+  // The sample the form still matches exactly; editing any value deselects it.
+  const activePreset = PRESETS.find((p) => Object.keys(p.values).every((k) => p.values[k] === values[k]))?.id;
   const maxHR = maxHRFrom(values.age, values.sex);
 
   const loadPreset = (preset) => {
@@ -77,6 +95,8 @@ export default function Prediction({
     try {
       const data = await predict(payload);
       setResult({ data, payload });
+      // The nav bell and the Guidance page follow the newest assessment.
+      notifications?.setLatest({ inputs: payload, result: data, created_at: new Date().toISOString() });
       setStatus('idle');
     } catch (err) {
       setError(err?.message ?? '');
@@ -102,13 +122,16 @@ export default function Prediction({
       <main className="pc-pr-main">
         <header className="pc-pr-head">
           <div>
+            {/* Word by word: each rises out of a soft blur, then a light sweeps the bold phrase (Prediction.css). */}
             <h1 className="pc-pr-title">
-              <span className="pc-wipe pc-thin" style={{ '--d': '120ms' }}>
-                Heart disease
-              </span>{' '}
-              <span className="pc-wipe pc-bold" style={{ '--d': '320ms' }}>
-                risk prediction
-              </span>
+              {TITLE.map(([word, weight], i) => (
+                <span key={word}>
+                  {i > 0 && ' '}
+                  <span className={`pc-pr-word pc-${weight}`} style={{ '--i': i }}>
+                    {word}
+                  </span>
+                </span>
+              ))}
             </h1>
             <p className="pc-pr-sub pc-enter" style={{ '--d': '200ms' }}>
               Enter the patient's clinical values. The model estimates the probability of heart disease
@@ -121,7 +144,13 @@ export default function Prediction({
               Sample inputs
             </span>
             {PRESETS.map((p) => (
-              <button key={p.id} type="button" className="pc-filter" onClick={() => loadPreset(p)}>
+              <button
+                key={p.id}
+                type="button"
+                className="pc-filter"
+                aria-pressed={activePreset === p.id}
+                onClick={() => loadPreset(p)}
+              >
                 {p.label}
               </button>
             ))}
@@ -221,9 +250,17 @@ export default function Prediction({
             ))}
           </div>
 
-          <ResultCard status={status} data={result?.data} stale={stale} error={error} />
+          <ResultCard
+            status={status}
+            data={result?.data}
+            stale={stale}
+            error={error}
+            notification={notification}
+            LinkComponent={LinkComponent}
+          />
         </form>
       </main>
+      <SiteFooter LinkComponent={LinkComponent} activePath={activePath} />
     </div>
   );
 }
