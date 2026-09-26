@@ -18,28 +18,38 @@
   padding-bottom: 0;
 }
 
+/* Section links (#a-model, from the footer) land below the sticky nav. */
+.pc-about [id^='a-'] {
+  scroll-margin-top: 96px;
+}
+
 /* ---------- Sticky nav ---------- */
 
 .pc-about .pc-nav {
   position: sticky;
   top: 10px;
-  z-index: 30;
-  padding: 0;
-  border-radius: 999px;
-  transition:
-    padding 0.35s var(--pc-ease),
-    background-color 0.35s,
-    box-shadow 0.35s,
-    opacity 0.9s var(--pc-ease),
-    transform 0.9s var(--pc-ease);
 }
 
-.pc-about.is-scrolled .pc-nav {
-  padding: 8px 10px 8px 18px;
+/* The floating bar is a layer behind the nav that fades in on scroll. It
+   extends outwards, so the logo and links never move (same spot as on every
+   other page). */
+.pc-about .pc-nav::before {
+  content: '';
+  position: absolute;
+  inset: -8px -10px -8px -18px;
+  z-index: -1;
+  border-radius: 999px;
   background: rgba(40, 34, 82, 0.82);
   box-shadow: 0 18px 40px -18px rgba(28, 22, 51, 0.6);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  opacity: 0;
+  transition: opacity 0.35s var(--pc-ease);
+  pointer-events: none;
+}
+
+.pc-about.is-scrolled .pc-nav::before {
+  opacity: 1;
 }
 
 .pc-a-main {
@@ -962,82 +972,6 @@
   margin-top: 10px;
 }
 
-/* ---------- Footer ---------- */
-
-.pc-a-footer {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 32px;
-  max-width: 1312px;
-  margin: 0 auto;
-  padding: 36px 0 30px;
-  border-top: 1px solid var(--pc-line);
-}
-
-.pc-a-footer-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--pc-ink);
-  font-size: 18px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.pc-a-footer-logo svg {
-  width: 26px;
-  height: 30px;
-  color: var(--pc-brand);
-}
-
-.pc-dash .pc-a-footer-brand p {
-  max-width: 380px;
-  margin-top: 10px;
-  color: var(--pc-ink-soft);
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-.pc-a-footer-nav {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-}
-
-.pc-a-footer-nav div {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.pc-dash .pc-a-footer-nav h3 {
-  margin: 0 0 4px;
-  color: var(--pc-ink-faint);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.pc-a-footer-nav a {
-  width: fit-content;
-  color: var(--pc-ink);
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.pc-a-footer-nav a:hover {
-  color: var(--pc-violet);
-}
-
-.pc-dash .pc-a-footer-legal {
-  grid-column: 1 / -1;
-  padding-top: 18px;
-  border-top: 1px solid var(--pc-line);
-  color: var(--pc-ink-faint);
-  font-size: 12.5px;
-}
-
 /* ---------- Scroll-linked extras (Chrome/Edge 115+, others skip) ----------
    These use `transform`, while the reveals above use `translate` and
    `opacity`, so the two never fight over the same property. */
@@ -1186,12 +1120,7 @@
     padding: 44px 20px;
   }
 
-  .pc-a-footer,
-  .pc-a-footer-nav {
-    grid-template-columns: 1fr;
-  }
-
-  .pc-about.is-scrolled .pc-nav {
+  .pc-about .pc-nav::before {
     border-radius: 24px;
   }
 }

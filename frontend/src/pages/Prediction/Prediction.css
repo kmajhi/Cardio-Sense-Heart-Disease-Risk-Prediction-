@@ -33,6 +33,65 @@
   letter-spacing: -0.03em;
 }
 
+/* Title entrance: each word rises out of a soft blur, one after another,
+   then a violet light sweeps once across the bold words and settles to ink. */
+.pc-pr-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.42em) scale(0.98);
+  filter: blur(12px);
+  transition:
+    opacity 0.8s var(--pc-ease),
+    transform 1s var(--pc-ease),
+    filter 0.9s var(--pc-ease);
+  transition-delay: calc(120ms + var(--i, 0) * 95ms);
+  will-change: transform, filter, opacity;
+}
+
+.is-ready .pc-pr-word {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+.pc-pr-word.pc-bold {
+  /* Only the middle of this gradient is violet; either end is plain ink. */
+  background: linear-gradient(100deg, var(--pc-ink) 0 38%, #8b5cf6 46%, #c084fc 50%, #8b5cf6 54%, var(--pc-ink) 62% 100%);
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* The bottom padding keeps descenders ("p") inside the painted area. */
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.is-ready .pc-pr-word.pc-bold {
+  animation: pc-pr-title-shine 1.5s var(--pc-ease) both;
+  animation-delay: calc(650ms + var(--i, 0) * 110ms);
+}
+
+@keyframes pc-pr-title-shine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-pr-word,
+  .is-ready .pc-pr-word {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+    animation: none;
+  }
+}
+
 .pc-dash .pc-pr-sub {
   max-width: 560px;
   margin-top: 12px;
@@ -59,6 +118,40 @@
 .pc-pr-presets .pc-filter {
   padding: 7px 14px;
   font-size: 12px;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.pc-pr-presets .pc-filter:hover {
+  border-color: var(--pc-violet-soft);
+  background: var(--pc-lilac);
+  color: var(--pc-ink);
+}
+
+.pc-pr-presets .pc-filter:active {
+  transform: scale(0.97);
+}
+
+.pc-pr-presets .pc-filter:focus-visible {
+  outline: 2px solid var(--pc-violet);
+  outline-offset: 2px;
+}
+
+/* The loaded sample: filled violet with a check, like the Segmented toggles. */
+.pc-pr-presets .pc-filter[aria-pressed='true'] {
+  border-color: var(--pc-violet);
+  background: var(--pc-violet);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px rgba(104, 51, 228, 0.55);
+}
+
+.pc-pr-presets .pc-filter[aria-pressed='true']::before {
+  content: '✓';
+  margin-right: 6px;
+  font-weight: 700;
+}
+
+.pc-pr-presets .pc-filter[aria-pressed='true']:hover {
+  filter: brightness(1.08);
 }
 
 /* ---------- Layout ---------- */
@@ -529,6 +622,16 @@
   color: #6b4700;
   font-size: 13px;
   line-height: 1.4;
+}
+
+.pc-pr-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pc-pr-alerts .pc-n-cta {
+  align-self: stretch;
 }
 
 .pc-pr-factors {

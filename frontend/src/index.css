@@ -7,3 +7,9 @@ body {
 body {
   background: #fff;
 }
+
+/* Always reserve the scrollbar's space, so pages that don't scroll (the
+   Dashboard) are exactly as wide as those that do and the nav never shifts. */
+html {
+  scrollbar-gutter: stable;
+}

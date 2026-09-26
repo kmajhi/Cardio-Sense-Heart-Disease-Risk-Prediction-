@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import NavBar from '../Dashboard/components/NavBar';
+import SiteFooter from '../../components/SiteFooter';
 import { historyMock } from '../History/historyMock';
 import { PROFILE_STORAGE, deleteProfile, getProfile, saveProfile } from '../../api/profileApi';
 import { clearConnectResult, readConnectResult } from '../../api/connectApi';
@@ -9,6 +10,7 @@ import ProfileForm from './components/ProfileForm';
 import ReportCard from './components/ReportCard';
 import ConnectionsCard, { SERVICES } from './components/ConnectionsCard';
 import ShareDialog from './components/ShareDialog';
+import LocationSettings from './components/LocationSettings';
 import Modal from './components/Modal';
 import Toast from './components/Toast';
 import PhotoCropper from './components/PhotoCropper';
@@ -311,6 +313,18 @@ export default function Profile({
         )}
 
         {status === 'ready' && profile && !editing && (
+          <LocationSettings
+            profile={profile}
+            onSave={(location) =>
+              commit({ ...profile, ...location }, 'Location saved.').catch((err) => {
+                notify(err.message || "Couldn't save the location.", 'error');
+                throw err;
+              })
+            }
+          />
+        )}
+
+        {status === 'ready' && profile && !editing && (
           <div className="pc-p-row">
             <ReportCard
               profile={profile}
@@ -338,6 +352,7 @@ export default function Profile({
           Risk figures are model estimates, not diagnoses.
         </p>
       </main>
+      <SiteFooter LinkComponent={LinkComponent} activePath={activePath} />
 
       {profile && (
         <ShareDialog

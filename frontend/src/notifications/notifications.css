@@ -1,0 +1,344 @@
+/* Notifications: model-risk notice, grouped clinical alerts, the nav bell
+   panel and the guidance button. Uses the .pc-dash tokens (Dashboard.css).
+   Level colours: elevated = sun, high = rose, urgent = deep red. */
+
+.pc-n-risk {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pc-n-risk svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.pc-n-risk p {
+  margin: 0;
+}
+
+.pc-n-risk .pc-n-risk-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+  font-weight: 700;
+}
+
+.pc-n-risk-name span {
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+/* "5 sec ago" beside each alert */
+.pc-n-time {
+  flex: none;
+  color: var(--pc-ink-faint);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pc-n-risk .pc-n-time {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.pc-n-risk.is-high {
+  border-color: rgba(224, 69, 123, 0.35);
+  background: rgba(224, 69, 123, 0.1);
+  color: #8e1742;
+}
+
+.pc-n-risk.is-moderate {
+  border-color: rgba(252, 183, 29, 0.45);
+  background: rgba(252, 183, 29, 0.14);
+  color: #6b4700;
+}
+
+.pc-n-risk.is-low {
+  border-color: rgba(26, 158, 112, 0.3);
+  background: rgba(26, 158, 112, 0.08);
+  color: #0b5e42;
+}
+
+.pc-n-note {
+  margin-top: 6px !important;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* ---------- Grouped alerts ---------- */
+
+.pc-n-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pc-n-groups > ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-dash .pc-n-heading {
+  margin: 0;
+  color: var(--pc-ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pc-dash .pc-n-sub {
+  margin: -4px 0 0;
+  color: var(--pc-ink-faint);
+  font-size: 12px;
+}
+
+.pc-dash .pc-n-urgent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #b3122e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  animation: pc-n-pulse 2.4s ease-in-out 2;
+}
+
+.pc-n-urgent svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+@keyframes pc-n-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgba(179, 18, 46, 0.18);
+  }
+}
+
+.pc-n-group {
+  position: relative;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid var(--pc-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  animation: pc-n-rise 0.5s var(--pc-ease) both;
+}
+
+.pc-n-group:nth-child(2) { animation-delay: 60ms; }
+.pc-n-group:nth-child(3) { animation-delay: 120ms; }
+.pc-n-group:nth-child(n + 4) { animation-delay: 180ms; }
+
+@keyframes pc-n-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.pc-n-group::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--pc-n-tone);
+}
+
+.pc-n-group.is-elevated { --pc-n-tone: var(--pc-sun); }
+.pc-n-group.is-high { --pc-n-tone: var(--pc-rose); }
+.pc-n-group.is-urgent { --pc-n-tone: #b3122e; }
+
+.pc-n-group-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.pc-n-level {
+  margin-left: auto;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pc-n-level.is-elevated {
+  background: rgba(252, 183, 29, 0.22);
+  color: #7a4f00;
+}
+
+.pc-n-level.is-high {
+  background: rgba(224, 69, 123, 0.14);
+  color: #ad1f52;
+}
+
+.pc-n-level.is-urgent {
+  background: #b3122e;
+  color: #fff;
+}
+
+.pc-dash .pc-n-findings {
+  margin: 6px 0 0;
+  padding: 0 0 0 16px;
+  color: var(--pc-ink-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.pc-n-why {
+  margin-top: 6px;
+  font-size: 12.5px;
+}
+
+.pc-n-why summary {
+  width: fit-content;
+  color: var(--pc-violet);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pc-dash .pc-n-why p {
+  margin: 4px 0 0;
+  color: var(--pc-ink-soft);
+  line-height: 1.5;
+}
+
+.pc-dash .pc-n-more,
+.pc-dash .pc-n-allclear {
+  margin: 0;
+  color: var(--pc-ink-soft);
+  font-size: 12.5px;
+}
+
+/* ---------- Call to action ---------- */
+
+.pc-n-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 999px;
+  background: var(--pc-violet);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 10px 22px -12px rgba(104, 51, 228, 0.8);
+  transition: background-color 0.2s, transform 0.2s var(--pc-ease), box-shadow 0.2s;
+}
+
+.pc-n-cta:hover {
+  background: var(--pc-violet-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px -12px rgba(104, 51, 228, 0.9);
+}
+
+.pc-n-cta span {
+  transition: transform 0.2s var(--pc-ease);
+}
+
+.pc-n-cta:hover span {
+  transform: translateX(3px);
+}
+
+/* ---------- Nav bell panel ---------- */
+
+.pc-n-bell {
+  position: relative;
+}
+
+.pc-dot.is-urgent {
+  background: #ff4d6a;
+}
+
+.pc-n-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 50;
+  width: min(380px, calc(100vw - 32px));
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+  border: 1px solid var(--pc-card-edge);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.97);
+  color: var(--pc-ink);
+  box-shadow: 0 30px 60px -24px rgba(28, 22, 51, 0.45);
+  transform-origin: top right;
+  animation: pc-n-open 0.28s var(--pc-ease);
+}
+
+@keyframes pc-n-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+.pc-n-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 18px 10px;
+  border-bottom: 1px solid var(--pc-line);
+}
+
+.pc-n-panel-head span {
+  color: var(--pc-ink-faint);
+  font-size: 12px;
+}
+
+.pc-n-panel-body,
+.pc-n-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px 18px;
+}
+
+.pc-dash .pc-n-empty p {
+  margin: 0;
+  color: var(--pc-ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.pc-dash .pc-n-disclaimer {
+  margin: 0;
+  color: var(--pc-ink-faint);
+  font-size: 11.5px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-n-group,
+  .pc-n-panel,
+  .pc-dash .pc-n-urgent {
+    animation: none;
+  }
+}

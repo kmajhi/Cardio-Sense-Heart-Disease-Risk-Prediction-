@@ -47,6 +47,7 @@ class ProfileAdmin(admin.ModelAdmin):
     fieldsets = [
         (None, {"fields": ["user", "full_name", "photo_preview", "photo", "email", "phone"]}),
         ("Body", {"fields": ["date_of_birth", "sex", "height_cm", "weight_kg", "blood_group"]}),
+        ("Location", {"fields": ["city", "state", "country", "country_code", "timezone", "latitude", "longitude"]}),
         ("History and lifestyle", {"fields": [
             "hypertension", "diabetes", "family_history", "chest_pain_history", "smoker", "activity",
             "medications", "allergies"]}),
