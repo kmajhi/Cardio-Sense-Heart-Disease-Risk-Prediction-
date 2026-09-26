@@ -17,7 +17,8 @@ import './History.css';
  * Props
  * - records:       assessments, oldest first: [{ id, created_at, inputs, result }].
  *                  `inputs` is the /api/predict/ request body and `result` its
- *                  response. Defaults to historyMock.js until the API exists.
+ *                  response. App.jsx passes getHistory() (api/historyApi.js).
+ * - loadError:     message when the history couldn't be fetched (shown instead of "no assessments").
  * - user, hasNotifications, LinkComponent, activePath: same as <Dashboard />.
  */
 export default function History({
@@ -26,6 +27,7 @@ export default function History({
   hasNotifications = false,
   LinkComponent = 'a',
   activePath = '/history',
+  loadError = '',
 }) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -80,8 +82,10 @@ export default function History({
             <RecordList records={records} />
           </>
         ) : (
-          <p className="pc-h-empty pc-enter">
-            No assessments yet. Run a prediction and it will appear here with its test results.
+          <p className="pc-h-empty pc-enter" role={loadError ? 'alert' : undefined}>
+            {loadError
+              ? `Couldn't load the assessment history. Check that the API server is running, then reload. (${loadError})`
+              : 'No assessments yet. Run a prediction and it will appear here with its test results.'}
           </p>
         )}
       </main>

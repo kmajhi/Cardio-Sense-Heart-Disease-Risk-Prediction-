@@ -13,7 +13,7 @@ import {
   maxHRFrom,
   maxHRFormula,
   toPayload,
-  troponinMissing,
+  troponinError,
 } from './fields';
 import { mockPredict } from './predictionMock';
 import '../Dashboard/Dashboard.css'; // shared tokens, nav, load sequence
@@ -69,7 +69,7 @@ export default function Prediction({
   const run = async (e) => {
     e.preventDefault();
     setTriedRun(true);
-    if (troponinMissing(values)) {
+    if (troponinError(values)) {
       document.getElementById('pr-troponin')?.focus();
       return;
     }
@@ -201,7 +201,8 @@ export default function Prediction({
                   setTriedRun(false); // don't flag the field the user just cleared on purpose
                 }}
                 onValueChange={set('troponin')}
-                showError={triedRun && troponinMissing(values)}
+                // A bad value is flagged as it's typed; an empty field only once Run is pressed.
+                error={triedRun || values.troponin !== '' ? troponinError(values) : ''}
               />
             </section>
 

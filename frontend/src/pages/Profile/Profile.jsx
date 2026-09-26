@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import NavBar from '../Dashboard/components/NavBar';
 import { historyMock } from '../History/historyMock';
-import { deleteProfile, getProfile, saveProfile } from '../../api/profileApi';
+import { PROFILE_STORAGE, deleteProfile, getProfile, saveProfile } from '../../api/profileApi';
+import { clearConnectResult, readConnectResult } from '../../api/connectApi';
 import IdentityCard from './components/IdentityCard';
 import HealthTiles from './components/HealthTiles';
 import ProfileForm from './components/ProfileForm';
@@ -59,6 +60,9 @@ export default function Profile({
   const notify = useCallback((text, tone, action) => setToast({ id: Date.now(), text, tone, action }), []);
   const dismissToast = useCallback(() => setToast(null), []);
 
+  // Back from a provider's sign-in page (see api/connectApi.js): say how it went, once.
+  const [connectResult] = useState(() => readConnectResult((id) => SERVICES.find((s) => s.id === id)?.name ?? ''));
+
   useEffect(() => {
     let alive = true;
     getProfile()
@@ -66,12 +70,16 @@ export default function Profile({
         if (!alive) return;
         setProfile(p ? { ...EMPTY_PROFILE, ...p } : null);
         setStatus('ready');
+        if (connectResult) {
+          notify(connectResult.message, connectResult.ok ? 'ok' : 'error');
+          clearConnectResult();
+        }
       })
       .catch(() => alive && setStatus('error'));
     return () => {
       alive = false;
     };
-  }, []);
+  }, [notify, connectResult]);
 
   // Re-check while typing once a save has been tried, so errors clear as they're fixed.
   useEffect(() => {
@@ -158,7 +166,7 @@ export default function Profile({
   const onCropError = useCallback((message) => {
     setCropSource(null);
     notify(message, 'error');
-  }, [notify]);
+  }, [notify, connectResult]);
 
   const applyPhoto = async (photo) => {
     setCropSource(null);
@@ -323,8 +331,11 @@ export default function Profile({
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
             <path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Z" strokeLinejoin="round" />
           </svg>
-          Research prototype. Your profile is stored only in this browser until accounts are available. Risk figures are
-          model estimates, not diagnoses.
+          Research prototype.{' '}
+          {PROFILE_STORAGE === 'browser'
+            ? 'Your profile is stored only in this browser until accounts are available.'
+            : 'Your profile is saved on this Cardio Sense server, which has no user accounts yet.'}{' '}
+          Risk figures are model estimates, not diagnoses.
         </p>
       </main>
 

@@ -17,7 +17,9 @@ export async function request(path, { method = 'GET', body } = {}) {
     } catch {
       /* non-JSON error body */
     }
-    throw new Error(detail || `Request to ${path} failed with status ${res.status}`);
+    const err = new Error(detail || `Request to ${path} failed with status ${res.status}`);
+    err.status = res.status; // callers branch on this, never on the message text
+    throw err;
   }
   return res.status === 204 ? null : res.json();
 }

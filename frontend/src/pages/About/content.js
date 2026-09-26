@@ -28,7 +28,7 @@ export const STEPS = [
   {
     title: 'Enter routine values',
     text:
-      'Age, sex, height and weight; four yes/no history questions; blood pressure and blood sugar; a lipid ' +
+      'Age, sex, height and weight; four yes/no history questions; systolic blood pressure and blood sugar; a lipid ' +
       'panel; a basic blood panel; and Troponin-I with its assay type. BMI and max heart rate are calculated for you.',
   },
   {
@@ -59,7 +59,7 @@ export const INPUTS = [
   { name: 'Hypertension', unit: 'yes / no', group: 'History', kind: 'yesno' },
   { name: 'Diabetes', unit: 'yes / no', group: 'History', kind: 'yesno' },
   { name: 'Chest pain history', unit: 'yes / no', group: 'History', kind: 'yesno' },
-  { name: 'Blood pressure', unit: 'mmHg', group: 'Vitals' },
+  { name: 'Systolic blood pressure', unit: 'mmHg', group: 'Vitals' },
   { name: 'Random blood sugar', unit: 'mmol/L', group: 'Vitals' },
   { name: 'Total cholesterol', unit: 'mg/dL', group: 'Lipids' },
   { name: 'HDL', unit: 'mg/dL', group: 'Lipids' },
@@ -94,7 +94,7 @@ export const FEATURES = [
   {
     icon: 'puzzle',
     title: 'Works with missing labs',
-    text: 'A test that wasn’t done can be left blank. The model fills it the same way it was trained to.',
+    text: 'Sent without a lab result, the API fills the gap the same way the model was trained to, instead of refusing the estimate.',
   },
   {
     icon: 'shield',

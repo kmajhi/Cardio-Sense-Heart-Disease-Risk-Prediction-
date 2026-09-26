@@ -1,5 +1,5 @@
 import CountUp from '../../About/components/CountUp';
-import { LEVELS, pct } from '../board';
+import { LEVELS, approx, pct, pctText } from '../board';
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
 
@@ -27,7 +27,7 @@ export default function RiskSummaryCard({ records, ready }) {
         <div className="pc-h-compare-col is-latest">
           <span className="pc-h-compare-label">Latest</span>
           <span className="pc-h-compare-value">
-            <CountUp value={now} start={ready} suffix="%" />
+            <CountUp value={now} start={ready} prefix={approx(latest)} suffix="%" />
             {records.length > 1 && delta !== 0 && (
               <span className={`pc-h-trend-chip ${delta < 0 ? 'is-down' : 'is-up'}`}>
                 <span aria-hidden="true">{delta < 0 ? '↘' : '↗'}</span>
@@ -40,7 +40,7 @@ export default function RiskSummaryCard({ records, ready }) {
         <div className="pc-h-compare-col">
           <span className="pc-h-compare-label">First</span>
           <span className="pc-h-compare-value is-muted">
-            <CountUp value={then} start={ready} suffix="%" />
+            <CountUp value={then} start={ready} prefix={approx(first)} suffix="%" />
           </span>
           <span className="pc-h-compare-note">{dateFmt.format(new Date(first.created_at))}</span>
         </div>
@@ -55,7 +55,7 @@ export default function RiskSummaryCard({ records, ready }) {
         aria-valuenow={now}
       >
         <span className={`pc-h-pill-fill ${level?.className ?? ''}`} style={{ '--value': `${now}%` }}>
-          <span aria-hidden="true">{now}%</span>
+          <span aria-hidden="true">{pctText(latest)}%</span>
         </span>
         <span className="pc-h-pill-label">{level?.label ?? latest.result.risk_level}</span>
       </div>

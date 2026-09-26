@@ -4,7 +4,7 @@ import usePrefersReducedMotion from '../../Dashboard/hooks/usePrefersReducedMoti
 const easeOut = (t) => 1 - (1 - t) ** 3;
 
 /** Counts from 0 to `value` once `start` is true. The real number is always in the accessible text. */
-export default function CountUp({ value, start, digits = 0, suffix = '', duration = 1400, separator = true }) {
+export default function CountUp({ value, start, digits = 0, prefix = '', suffix = '', duration = 1400, separator = true }) {
   const reduced = usePrefersReducedMotion();
   const [shown, setShown] = useState(reduced ? value : 0);
 
@@ -30,10 +30,13 @@ export default function CountUp({ value, start, digits = 0, suffix = '', duratio
   return (
     <>
       <span aria-hidden="true">
+        {/* A ">" or "<" belongs to the final number only, not the ones counted through. */}
+        {shown === value && prefix}
         {format(shown)}
         {suffix}
       </span>
       <span className="pc-visually-hidden">
+        {prefix}
         {format(value)}
         {suffix}
       </span>

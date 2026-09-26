@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { TESTS, fmt, reading, status } from '../tests';
+import { pctText } from '../board';
 
 const LEVELS = {
   low: { label: 'Low risk', className: 'is-low' },
@@ -113,7 +114,7 @@ export default function RecordList({ records }) {
                   </span>
                 </span>
                 <span className="pc-h-record-pct">
-                  {Math.round(rec.result.probability * 100)}
+                  {pctText(rec)}
                   <span>%</span>
                 </span>
                 <span className={`pc-badge ${level?.className ?? ''}`}>{level?.label ?? rec.result.risk_level}</span>
