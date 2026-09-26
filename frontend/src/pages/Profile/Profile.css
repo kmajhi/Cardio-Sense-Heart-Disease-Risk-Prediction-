@@ -958,6 +958,14 @@
   animation: pc-p-rise 0.6s var(--pc-ease) calc(0.1s + var(--i) * 0.07s) both;
 }
 
+/* Each section's entrance animation gives it its own layer, so a later
+   section would paint over a dropdown opened in an earlier one. The section
+   holding an open list is lifted above its siblings. */
+.pc-p-section:has(.pc-p-city-list) {
+  position: relative;
+  z-index: 2;
+}
+
 @keyframes pc-p-rise {
   from {
     opacity: 0;
@@ -1028,6 +1036,94 @@
   border-color: var(--pc-violet);
   outline: none;
   box-shadow: 0 0 0 4px rgba(104, 51, 228, 0.14);
+}
+
+/* ---------- City search (combobox) ---------- */
+
+.pc-p-city-box {
+  position: relative;
+}
+
+.pc-p-city-box .pc-p-input {
+  padding-right: 42px;
+}
+
+.pc-p-city-clear {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(28, 22, 51, 0.07);
+  color: var(--pc-ink-soft);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.pc-p-city-clear:hover {
+  background: rgba(28, 22, 51, 0.14);
+}
+
+.pc-p-city-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  max-height: 300px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  border: 1px solid var(--pc-line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 48px -20px rgba(28, 22, 51, 0.35);
+  list-style: none;
+}
+
+.pc-p-city-list [role='option'] {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.pc-p-city-list [role='option'].is-active {
+  background: var(--pc-lilac);
+}
+
+.pc-p-city-list b {
+  font-size: 14px;
+}
+
+.pc-p-city-list span {
+  overflow: hidden;
+  color: var(--pc-ink-soft);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pc-p-city-list small {
+  grid-column: 1 / -1;
+  color: var(--pc-ink-faint);
+  font-size: 11.5px;
+}
+
+.pc-p-city-note {
+  padding: 10px 12px;
+  color: var(--pc-ink-soft);
+  font-size: 13px;
 }
 
 select.pc-p-input {
@@ -1437,6 +1533,90 @@ select.pc-p-input {
 
 .pc-p-form-foot .pc-p-hint {
   margin-right: auto;
+}
+
+/* ---------- Settings: location & time zone ---------- */
+
+.pc-p-settings {
+  margin-top: 24px;
+}
+
+.pc-dash .pc-p-settings-eyebrow {
+  margin: 0 0 2px;
+  color: var(--pc-ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pc-p-settings-edit {
+  margin-left: auto;
+}
+
+.pc-p-settings-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.pc-p-settings-list div {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(28, 22, 51, 0.04);
+}
+
+.pc-dash .pc-p-settings-list dt {
+  color: var(--pc-ink-faint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pc-dash .pc-p-settings-list dd {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pc-p-settings-flag {
+  margin-right: 6px;
+}
+
+.pc-p-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Country, state, city side by side (stacked on narrow screens). */
+.pc-p-location {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pc-p-city-list [role='option'].has-lead {
+  grid-template-columns: auto auto 1fr;
+}
+
+.pc-p-combo-lead {
+  font-size: 16px;
+}
+
+/* The settings card is lifted while a list is open, like the form sections. */
+.pc-p-settings:has(.pc-p-city-list) {
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .pc-p-location,
+  .pc-p-settings-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ---------- Report + connections row ---------- */

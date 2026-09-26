@@ -84,6 +84,42 @@ def test_demo_profile_is_seeded_and_valid(client):
     assert client.put(reverse("profile"), demo, format="json").status_code == 200
 
 
+def test_demo_profile_has_a_location(client):
+    demo = client.get(reverse("profile")).json()
+    assert (demo["city"], demo["country"], demo["timezone"]) == ("Dhaka", "Bangladesh", "Asia/Dhaka")
+
+
+DHAKA = {"city": "Dhaka", "country": "Bangladesh", "country_code": "bd", "timezone": "Asia/Dhaka",
+         "latitude": 23.71, "longitude": 90.41}
+
+
+def test_profile_location_round_trip_and_clear(client, profile_body):
+    saved = client.put(reverse("profile"), {**profile_body, **DHAKA}, format="json").json()
+    assert saved["timezone"] == "Asia/Dhaka" and saved["country_code"] == "BD" and saved["latitude"] == 23.71
+
+    cleared = {**profile_body, **{k: "" for k in DHAKA}}
+    saved = client.put(reverse("profile"), cleared, format="json").json()
+    assert saved["city"] == "" and saved["latitude"] == ""  # blanks come back as the frontend sends them
+
+
+def test_profile_country_without_city_is_valid(client, profile_body):
+    country_only = {"city": "", "country": "Bangladesh", "country_code": "BD", "timezone": "Asia/Dhaka",
+                    "latitude": 24, "longitude": 90, "state": "Sylhet Division"}
+    saved = client.put(reverse("profile"), {**profile_body, **country_only}, format="json").json()
+    assert saved["city"] == "" and saved["state"] == "Sylhet Division" and saved["timezone"] == "Asia/Dhaka"
+
+
+@pytest.mark.parametrize("change", [
+    {**DHAKA, "timezone": "Mars/Olympus"},
+    {**DHAKA, "latitude": 123},
+    {"city": "Dhaka"},  # typed, not picked: no time zone or coordinates
+    {**DHAKA, "country_code": "BGD"},
+])
+def test_profile_location_validation(client, profile_body, change):
+    res = client.put(reverse("profile"), {**profile_body, **change}, format="json")
+    assert res.status_code == 400 and res.json()["detail"]
+
+
 def test_profile_is_404_once_deleted(client):
     client.delete(reverse("profile"))
     res = client.get(reverse("profile"))

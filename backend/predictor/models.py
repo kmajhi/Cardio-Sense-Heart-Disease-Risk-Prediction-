@@ -34,6 +34,16 @@ class Profile(models.Model):
     weight_kg = models.FloatField(null=True, blank=True)
     blood_group = models.CharField(max_length=3, choices=BLOOD_GROUPS, blank=True)
 
+    # Where the user lives: picked from a place search on the Profile page, so
+    # the time zone and coordinates are exact (the nav's date and weather use them).
+    city = models.CharField(max_length=80, blank=True)
+    state = models.CharField(max_length=80, blank=True, verbose_name="state / province")
+    country = models.CharField(max_length=80, blank=True)
+    country_code = models.CharField(max_length=2, blank=True, help_text="ISO 3166-1 alpha-2, e.g. BD.")
+    timezone = models.CharField(max_length=64, blank=True, help_text="IANA time zone, e.g. Asia/Dhaka.")
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
     # 0 | 1, or empty when not answered (same coding as the /api/predict/ payload).
     hypertension = models.PositiveSmallIntegerField(choices=YES_NO, null=True, blank=True)
     diabetes = models.PositiveSmallIntegerField(choices=YES_NO, null=True, blank=True)

@@ -5,6 +5,9 @@ import Prediction from './pages/Prediction/Prediction';
 import History from './pages/History/History';
 import About from './pages/About/About';
 import Profile from './pages/Profile/Profile';
+import Guidance from './pages/Guidance/Guidance';
+import { NotificationsProvider } from './notifications/NotificationsContext';
+import NavBar from './pages/Dashboard/components/NavBar';
 import { predict } from './api/predictionApi';
 import { getProfile } from './api/profileApi';
 import { getHistory } from './api/historyApi';
@@ -17,11 +20,24 @@ const TransitionLink = forwardRef(function TransitionLink(props, ref) {
   return <Link ref={ref} viewTransition {...props} />;
 });
 
-// Each page starts at the top, like a normal page load (hash links excepted).
+// Each page starts at the top, like a normal page load; a link with a #section
+// (e.g. the footer's "/about#a-model") scrolls to that section once it renders.
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
-    if (!hash) window.scrollTo(0, 0);
+    if (!hash) {
+      window.scrollTo(0, 0);
+      return undefined;
+    }
+    let tries = 0;
+    let frame;
+    const seek = () => {
+      const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+      if (target) target.scrollIntoView({ block: 'start' });
+      else if (tries++ < 30) frame = requestAnimationFrame(seek); // the page may still be mounting
+    };
+    seek();
+    return () => cancelAnimationFrame(frame);
   }, [pathname, hash]);
   return null;
 }
@@ -41,9 +57,18 @@ function useHistory() {
   return records;
 }
 
+// While a page's data loads, keep the nav on screen so it never blinks out.
+function LoadingShell({ user, LinkComponent, activePath }) {
+  return (
+    <div className="pc-dash" aria-busy="true">
+      <NavBar user={user} activePath={activePath} LinkComponent={LinkComponent} />
+    </div>
+  );
+}
+
 function HistoryRoute(props) {
   const records = useHistory();
-  if (!records) return null;
+  if (!records) return <LoadingShell {...props} />;
   if (records.error) return <History {...props} records={[]} loadError={records.error} />;
   return <History {...props} records={records} />;
 }
@@ -51,7 +76,7 @@ function HistoryRoute(props) {
 // The overview shows the latest saved assessment; the rest of the board is sample data.
 function DashboardRoute(props) {
   const records = useHistory();
-  if (!records) return null; // no flash of sample figures before the real ones
+  if (!records) return <LoadingShell {...props} />; // no flash of sample figures before the real ones
   const data = { ...dashboardMock, ...(Array.isArray(records) ? fromHistory(records) : {}) };
   if (Array.isArray(records)) data.hasNotifications = Boolean(data.alert);
   return <Dashboard {...props} data={data} />;
@@ -68,7 +93,7 @@ export default function App() {
   const shared = { LinkComponent: TransitionLink, activePath: pathname, user };
 
   return (
-    <>
+    <NotificationsProvider profile={profile}>
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<DashboardRoute {...shared} />} />
@@ -76,8 +101,9 @@ export default function App() {
         <Route path="/history" element={<HistoryRoute {...shared} />} />
         <Route path="/about" element={<About {...shared} />} />
         <Route path="/profile" element={<Profile {...shared} onProfileChange={setProfile} />} />
+        <Route path="/guidance" element={<Guidance {...shared} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </NotificationsProvider>
   );
 }

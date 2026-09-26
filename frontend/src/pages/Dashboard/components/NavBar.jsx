@@ -1,4 +1,6 @@
 import { linkProps } from '../link';
+import NotificationsMenu from '../../../notifications/NotificationsMenu';
+import NavWeather from '../../../components/NavWeather';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', to: '/' },
@@ -34,7 +36,8 @@ export function HeartMark(props) {
 export default function NavBar({ user, hasNotifications, activePath, LinkComponent }) {
   const L = LinkComponent;
   return (
-    <header className="pc-nav pc-enter" style={{ '--d': '0ms', '--pc-rise': '-24px' }}>
+    // No entrance animation: the nav is the one thing that stays put between pages.
+    <header className="pc-nav">
       <L {...linkProps(L, '/')} className="pc-logo">
         <HeartMark />
         Cardio Sense
@@ -48,6 +51,7 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
                 {...linkProps(L, item.to)}
                 className="pc-nav-link"
                 aria-current={activePath === item.to ? 'page' : undefined}
+                data-label={item.label}
               >
                 {item.label}
               </L>
@@ -57,13 +61,8 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
       </nav>
 
       <div className="pc-nav-actions">
-        <button type="button" className="pc-icon-btn" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-            <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z" strokeLinejoin="round" />
-            <path d="M10 20.5a2 2 0 0 0 4 0" strokeLinecap="round" />
-          </svg>
-          {hasNotifications && <span className="pc-dot" />}
-        </button>
+        <NavWeather />
+        <NotificationsMenu LinkComponent={LinkComponent} fallbackDot={hasNotifications} />
         <L
           {...linkProps(L, '/profile')}
           className="pc-avatar"

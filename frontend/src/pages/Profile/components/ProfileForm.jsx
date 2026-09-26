@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import PhotoPicker from './PhotoPicker';
+import LocationFields from '../../../location/LocationFields';
 import { ACTIVITY, BLOOD_GROUPS, HISTORY, SEX, SMOKER, bmiBand, bmiFrom } from '../profileFields';
 
 const YES_NO = [
@@ -143,6 +144,15 @@ export default function ProfileForm({ draft, setDraft, errors, saving, isNew, on
           </Field>
           <Choice id="pf-sex" label="Sex" options={SEX} value={draft.sex} onChange={set('sex')} />
         </div>
+      </fieldset>
+
+      <fieldset className="pc-p-section" style={{ '--i': 1 }}>
+        <legend>Location</legend>
+        <LocationFields
+          value={draft}
+          update={(patch) => setDraft((d) => ({ ...d, ...(typeof patch === 'function' ? patch(d) : patch) }))}
+          errors={errors}
+        />
       </fieldset>
 
       <fieldset className="pc-p-section" style={{ '--i': 1 }}>

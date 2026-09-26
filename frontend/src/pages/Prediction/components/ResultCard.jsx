@@ -1,3 +1,5 @@
+import { AlertGroups, GuidanceLink, RiskNotice } from '../../../notifications/Alerts';
+
 const LEVELS = {
   low: { label: 'Low risk', className: 'is-low', stroke: 'var(--pc-mint)' },
   moderate: { label: 'Moderate risk', className: 'is-moderate', stroke: 'var(--pc-sun)' },
@@ -71,7 +73,7 @@ function FactorList({ factors }) {
  * Right-hand result panel. Holds the form's submit button, so running the
  * model always happens next to the number it produces.
  */
-export default function ResultCard({ status, data, stale, error }) {
+export default function ResultCard({ status, data, stale, error, notification, LinkComponent }) {
   const level = data ? LEVELS[data.risk_level] : null;
   const loading = status === 'loading';
 
@@ -99,10 +101,18 @@ export default function ResultCard({ status, data, stale, error }) {
       </div>
 
       {/* Only this middle part scrolls, so the button never leaves the card on short screens. */}
-      {(stale || data?.top_factors?.length > 0) && (
+      {(stale || data) && (
         <div className="pc-pr-result-scroll">
           {stale && !loading && (
             <p className="pc-pr-stale">Inputs changed since this estimate. Run it again to update.</p>
+          )}
+          {/* Keyed per result so a new estimate re-announces and re-animates. */}
+          {notification && (
+            <div key={data?.probability} className="pc-pr-alerts">
+              <RiskNotice risk={notification.risk} live />
+              <AlertGroups groups={notification.groups} limit={4} />
+              {notification.needsAttention && <GuidanceLink LinkComponent={LinkComponent} />}
+            </div>
           )}
           {/* Keyed per result so each new estimate glides in. */}
           {data?.top_factors?.length > 0 && <FactorList key={data.probability} factors={data.top_factors} />}

@@ -1,0 +1,93 @@
+/* Site footer (every page except the Dashboard). Uses the .pc-dash tokens. */
+
+/* The footer ends the page, so the page's usual bottom padding goes. */
+.pc-dash:has(> .pc-footer) {
+  padding-bottom: 0;
+}
+
+.pc-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 32px;
+  max-width: 1312px;
+  margin: 72px auto 0;
+  padding: 36px 0 30px;
+  border-top: 1px solid var(--pc-line);
+}
+
+.pc-footer-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pc-ink);
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.pc-footer-logo svg {
+  width: 26px;
+  height: 30px;
+  color: var(--pc-brand);
+}
+
+.pc-dash .pc-footer-brand p {
+  max-width: 380px;
+  margin-top: 10px;
+  color: var(--pc-ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pc-footer-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.pc-footer-nav div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pc-dash .pc-footer-nav h2 {
+  margin: 0 0 4px;
+  color: var(--pc-ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pc-footer-nav a {
+  width: fit-content;
+  color: var(--pc-ink);
+  font-size: 14px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pc-footer-nav a:hover,
+.pc-footer-nav a[aria-current='page'] {
+  color: var(--pc-violet);
+}
+
+.pc-footer-nav a[aria-current='page'] {
+  font-weight: 600;
+}
+
+.pc-dash .pc-footer-legal {
+  grid-column: 1 / -1;
+  padding-top: 18px;
+  border-top: 1px solid var(--pc-line);
+  color: var(--pc-ink-faint);
+  font-size: 12.5px;
+}
+
+@media (max-width: 640px) {
+  .pc-footer {
+    grid-template-columns: 1fr;
+    margin-top: 48px;
+  }
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import NavBar from '../Dashboard/components/NavBar';
+import SiteFooter from '../../components/SiteFooter';
 import RiskSummaryCard from './components/RiskSummaryCard';
 import RiskBarsCard from './components/RiskBarsCard';
 import TestsDonutCard from './components/TestsDonutCard';
@@ -89,6 +90,7 @@ export default function History({
           </p>
         )}
       </main>
+      <SiteFooter LinkComponent={LinkComponent} activePath={activePath} />
     </div>
   );
 }
