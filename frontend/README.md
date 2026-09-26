@@ -1,6 +1,6 @@
 # Cardio Sense frontend
 
-React (Vite) app with five pages: Dashboard, Prediction, History, About and Profile.
+React (Vite) app with six pages: Dashboard, Prediction, History, Guidance, About and Profile.
 
 ## Commands (from `frontend/`)
 
@@ -8,6 +8,7 @@ React (Vite) app with five pages: Dashboard, Prediction, History, About and Prof
 npm install
 npm run dev      # http://localhost:5173 ; /api/* is proxied to Django on :8000
 npm run build    # production build in dist/
+npm test         # Vitest: the clinical logic in src/clinical/
 ```
 
 ## API
@@ -27,13 +28,16 @@ public/               favicons (made from the logo)
 src/
   main.jsx            React root + BrowserRouter
   App.jsx             routes; links use view transitions (circle wipe between pages)
-  api/                client.js (fetch wrapper); prediction, history and profile APIs (mock ↔ real switch)
+  api/                client.js (fetch wrapper); prediction, history, profile and connect APIs (mock ↔ real switch)
+  clinical/           reference ranges, feature analysis, notifications, recommendations (see its README)
+  notifications/      notification context, grouped alerts, nav bell menu
   pages/
     Dashboard/        heart health overview; also holds the shared theme (Dashboard.css),
                       NavBar, HeartHero, logo and assets used by every page
     Prediction/       risk prediction form + result
     History/          test results and assessment records
     About/            project story, model inputs, method and limitations
+    Guidance/         personalised diet, activity and habit suggestions from the latest assessment
     Profile/          health profile (create/edit/delete), report download, sharing, linked accounts
 ```
 

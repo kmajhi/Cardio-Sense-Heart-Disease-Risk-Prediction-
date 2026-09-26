@@ -1,0 +1,410 @@
+/* ============================================================
+   Cardio Sense — Guidance page
+   Builds on Dashboard.css (tokens, nav, .pc-enter, .pc-wipe,
+   .pc-badge) and notifications.css (.pc-n-*). Page classes are
+   prefixed `pc-g-`.
+   ============================================================ */
+
+.pc-dash.pc-guide {
+  overflow-x: clip;
+}
+
+.pc-g-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1312px;
+  margin: 36px auto 0;
+}
+
+.pc-g-title {
+  font-size: clamp(32px, 3.4vw, 48px);
+  font-weight: 200;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.pc-dash .pc-g-sub {
+  max-width: 720px;
+  margin-top: 10px;
+  color: var(--pc-ink-soft);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ---------- Cards ---------- */
+
+.pc-g-card {
+  padding: 22px 24px;
+  border: 1px solid var(--pc-card-edge);
+  border-radius: 28px;
+  background: var(--pc-card);
+  box-shadow: var(--pc-shadow);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+}
+
+.pc-g-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.pc-dash .pc-g-eyebrow {
+  color: var(--pc-ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pc-dash .pc-g-big {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 8px 0 10px;
+  font-size: 44px;
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-g-big b {
+  font-weight: 200;
+}
+
+.pc-g-big small {
+  margin-left: 2px;
+  font-size: 0.5em;
+  color: var(--pc-ink-soft);
+}
+
+.pc-g-big > span:not(.pc-badge) {
+  color: var(--pc-ink-soft);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.pc-g-big .pc-badge {
+  align-self: center;
+  letter-spacing: 0;
+}
+
+.pc-dash .pc-g-text {
+  color: var(--pc-ink);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pc-dash .pc-g-muted {
+  margin-top: 6px;
+  color: var(--pc-ink-soft);
+}
+
+.pc-dash .pc-g-foot {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pc-line);
+  color: var(--pc-ink-faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pc-g-foot a {
+  color: var(--pc-violet);
+  font-weight: 600;
+}
+
+.pc-g-areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-g-areas li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--pc-lilac);
+  font-size: 12.5px;
+}
+
+.pc-g-areas b {
+  font-size: 11px;
+}
+
+.pc-g-areas .is-elevated b { color: #7a4f00; }
+.pc-g-areas .is-high b { color: #ad1f52; }
+.pc-g-areas .is-urgent {
+  background: #b3122e;
+  color: #fff;
+}
+
+/* ---------- Suggestions ---------- */
+
+.pc-g-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.pc-g-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pc-g-card-head h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.pc-g-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--pc-lilac);
+  color: var(--pc-violet);
+}
+
+.pc-g-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pc-g-section.is-doctor .pc-g-icon {
+  background: rgba(224, 69, 123, 0.12);
+  color: #ad1f52;
+}
+
+.pc-g-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-g-items > li {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--pc-line);
+  transition: border-color 0.2s, transform 0.2s var(--pc-ease);
+}
+
+.pc-g-items > li:hover {
+  border-color: var(--pc-violet-soft);
+  transform: translateY(-1px);
+}
+
+.pc-dash .pc-g-items p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pc-dash .pc-g-because {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: 8px;
+}
+
+.pc-g-because > span:first-child {
+  color: var(--pc-ink-faint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pc-g-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--pc-lilac);
+  color: var(--pc-violet-deep);
+  font-size: 11.5px;
+}
+
+.pc-dash .pc-g-source {
+  margin-top: 6px;
+  color: var(--pc-ink-faint);
+  font-size: 11.5px;
+}
+
+/* ---------- How values were checked ---------- */
+
+.pc-g-checks summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pc-g-checks summary::-webkit-details-marker {
+  display: none;
+}
+
+.pc-g-checks summary::after {
+  content: '＋';
+  margin-left: auto;
+  color: var(--pc-violet);
+  font-weight: 700;
+}
+
+.pc-g-checks[open] summary::after {
+  content: '−';
+}
+
+.pc-g-checks summary h2 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.pc-g-checks summary span {
+  color: var(--pc-ink-soft);
+  font-size: 13px;
+}
+
+.pc-g-table-wrap {
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
+.pc-g-checks table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.pc-g-checks th,
+.pc-g-checks td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--pc-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.pc-g-checks thead th {
+  color: var(--pc-ink-faint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pc-g-checks tbody th {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pc-g-ref {
+  max-width: 360px;
+  color: var(--pc-ink-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pc-g-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(28, 22, 51, 0.06);
+  color: var(--pc-ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pc-g-status.is-normal { background: rgba(26, 158, 112, 0.12); color: #0d7552; }
+.pc-g-status.is-elevated { background: rgba(252, 183, 29, 0.22); color: #7a4f00; }
+.pc-g-status.is-high { background: rgba(224, 69, 123, 0.14); color: #ad1f52; }
+.pc-g-status.is-urgent { background: #b3122e; color: #fff; }
+
+.pc-dash .pc-g-table-note {
+  margin-top: 10px;
+  color: var(--pc-ink-faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ---------- Empty state and disclaimer ---------- */
+
+.pc-g-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pc-g-empty h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.pc-dash .pc-g-empty p {
+  color: var(--pc-ink-soft);
+}
+
+.pc-dash .pc-g-disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border: 1px solid rgba(252, 183, 29, 0.5);
+  border-radius: 14px;
+  background: rgba(252, 183, 29, 0.12);
+  color: #5c3d00;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pc-g-disclaimer svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1100px) {
+  .pc-g-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .pc-g-main {
+    margin-top: 20px;
+    gap: 16px;
+  }
+
+  .pc-g-summary,
+  .pc-g-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .pc-g-card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+}

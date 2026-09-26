@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import NavBar, { HeartMark } from '../Dashboard/components/NavBar';
+import NavBar from '../Dashboard/components/NavBar';
+import SiteFooter from '../../components/SiteFooter';
 import HeartHero from '../Dashboard/components/HeartHero';
 import { linkProps } from '../Dashboard/link';
 import CountUp from './components/CountUp';
@@ -266,32 +267,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
         </section>
       </main>
 
-      {/* ---------- Footer ---------- */}
-      <footer className="pc-a-footer">
-        <div className="pc-a-footer-brand">
-          <L {...linkProps(L, '/')} className="pc-a-footer-logo">
-            <HeartMark /> Cardio Sense
-          </L>
-          <p>AI-assisted heart disease risk estimation for resource-limited clinics. A final-year CSE capstone project.</p>
-        </div>
-        <nav aria-label="Footer" className="pc-a-footer-nav">
-          <div>
-            <h3>Product</h3>
-            <L {...linkProps(L, '/')}>Dashboard</L>
-            <L {...linkProps(L, '/prediction')}>Prediction</L>
-            <L {...linkProps(L, '/history')}>History</L>
-          </div>
-          <div>
-            <h3>Project</h3>
-            <L {...linkProps(L, '/about')}>About</L>
-            <a href="#a-model">How it was built</a>
-            <a href="#a-inputs">Model inputs</a>
-          </div>
-        </nav>
-        <p className="pc-a-footer-legal">
-          © 2026 Cardio Sense · {DISCLAIMER}
-        </p>
-      </footer>
+      <SiteFooter LinkComponent={LinkComponent} activePath={activePath} />
     </div>
   );
 }

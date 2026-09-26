@@ -114,6 +114,8 @@ export function buildReportHtml(profile, records = [], today = new Date()) {
         ['Blood group', or(profile.blood_group)],
         ['Email', or(profile.email)],
         ['Phone', or(profile.phone)],
+        ['Location', or([profile.city, profile.state, profile.country].filter(Boolean).join(', '))],
+        ['Time zone', or(profile.timezone)],
       ])}</table>
     </section>
     <section>

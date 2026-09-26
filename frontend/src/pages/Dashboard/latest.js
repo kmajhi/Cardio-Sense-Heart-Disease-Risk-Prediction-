@@ -1,29 +1,18 @@
 // Turns the saved assessments (GET /api/history/) into the Dashboard's `risk`
 // and `alert`, so the overview shows the latest real estimate, not sample data.
-import { TESTS, reading, status } from '../History/tests';
+import { buildNotification } from '../../clinical/notifications';
+import { timeAgo } from '../../notifications/time';
 
-/** "just now", "5 min ago", "3 h ago", "2 days ago", or a date. */
-export function timeAgo(iso, now = Date.now()) {
-  const minutes = Math.round((now - new Date(iso).getTime()) / 60000);
-  if (!Number.isFinite(minutes)) return '';
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} h ago`;
-  const days = Math.round(hours / 24);
-  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
-  return `on ${new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
-}
-
-/** The first test of the latest record outside its typical range, as an alert. */
+/** The latest record's grouped alert (see src/clinical/notifications.js), as the Dashboard card. */
 function alertFor(record) {
-  for (const test of TESTS) {
-    const st = status(reading(test, record.inputs));
-    if (st === 'high' || st === 'low') {
-      return { title: `${test.label} is ${st === 'high' ? 'above' : 'below'} the typical range`, href: '/history' };
-    }
-  }
-  return null;
+  const n = buildNotification(record);
+  if (!n?.groups.length) return null;
+  const [first, ...rest] = n.groups;
+  const lead = first.findings[0];
+  const title = rest.length
+    ? `${n.groups.length} areas need attention: ${n.groups.map((g) => g.title.toLowerCase()).join(', ')}`
+    : `${first.title}: ${(lead.kind === 'history' ? lead.label : lead.band).toLowerCase()}`;
+  return { title, level: n.groups[0].level, href: '/guidance', linkLabel: 'See guidance' };
 }
 
 /** { risk, alert } for the Dashboard, or { risk: null } when nothing has been assessed yet. */

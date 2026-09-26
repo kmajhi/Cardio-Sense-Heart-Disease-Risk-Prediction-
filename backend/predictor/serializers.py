@@ -1,3 +1,5 @@
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
 from rest_framework import serializers
 
 from .models import Profile
@@ -7,7 +9,8 @@ MAX_PHOTO_CHARS = 300_000  # the frontend stores ~20-40 KB; this leaves plenty o
 MAX_LIST_ITEMS = 50
 
 # The frontend sends '' for an empty date or number and expects '' back.
-BLANK_AS_NULL = ("date_of_birth", "height_cm", "weight_kg")
+BLANK_AS_NULL = ("date_of_birth", "height_cm", "weight_kg", "latitude", "longitude")
+LOCATION = ("city", "state", "country", "country_code", "timezone", "latitude", "longitude")
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -18,6 +21,8 @@ class ProfileSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "height_cm": {"min_value": 50, "max_value": 250},
             "weight_kg": {"min_value": 2, "max_value": 400},
+            "latitude": {"min_value": -90, "max_value": 90},
+            "longitude": {"min_value": -180, "max_value": 180},
         }
 
     def to_internal_value(self, data):
@@ -37,6 +42,28 @@ class ProfileSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Enter your name.")
         return value
+
+    def validate_timezone(self, value):
+        if value:
+            try:
+                ZoneInfo(value)
+            except (ZoneInfoNotFoundError, ValueError):
+                raise serializers.ValidationError("Not a known time zone.") from None
+        return value
+
+    def validate_country_code(self, value):
+        if value and not (len(value) == 2 and value.isalpha()):
+            raise serializers.ValidationError("Use a two-letter country code.")
+        return value.upper()
+
+    def validate(self, attrs):
+        # A location needs at least a country with its time zone and coordinates
+        # (a city is optional): otherwise it couldn't drive the date or the weather.
+        given = [k for k in LOCATION if attrs.get(k) not in ("", None)]
+        needed = {"country", "country_code", "timezone", "latitude", "longitude"}
+        if given and not needed <= set(given):
+            raise serializers.ValidationError({"country": "Pick your country from the list."})
+        return attrs
 
     def validate_photo(self, value):
         if value and (not value.startswith(PHOTO_PREFIX) or len(value) > MAX_PHOTO_CHARS):

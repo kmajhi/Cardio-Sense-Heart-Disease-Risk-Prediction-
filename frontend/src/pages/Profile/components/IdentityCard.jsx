@@ -59,6 +59,9 @@ export default function IdentityCard({ profile, ready, editing, onEdit, onDelete
       </h2>
       <p className="pc-p-id-meta">{meta.length ? meta.join(' · ') : 'Add your details to fill this card'}</p>
       {profile.email && <p className="pc-p-id-mail">{profile.email}</p>}
+      {(profile.city || profile.country) && (
+        <p className="pc-p-id-mail">{[profile.city, profile.state, profile.country].filter(Boolean).join(', ')}</p>
+      )}
 
       <dl className="pc-p-id-stats">
         <div>
