@@ -19,11 +19,13 @@ import './Dashboard.css';
  * - LinkComponent: pass react-router's <Link> to get client-side navigation.
  *                  Defaults to a plain <a>.
  * - activePath:    which nav item is highlighted.
+ * - user:          { name } for the nav avatar. Defaults to data.user.
  */
 export default function Dashboard({
   data = dashboardMock,
   LinkComponent = 'a',
   activePath = '/',
+  user = data.user,
 }) {
   // Adding `is-ready` on the next frame triggers the one-time load sequence
   // (same choreography as the Figma "01 · Intro → 02 · Overview" transition).
@@ -36,7 +38,7 @@ export default function Dashboard({
   return (
     <div className={`pc-dash pc-overview${ready ? ' is-ready' : ''}`}>
       <NavBar
-        user={data.user}
+        user={user}
         hasNotifications={data.hasNotifications}
         activePath={activePath}
         LinkComponent={LinkComponent}
