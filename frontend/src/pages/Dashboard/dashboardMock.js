@@ -26,13 +26,13 @@ export const dashboardMock = {
     bars: [0.45, 0.65, 0.55, 0.85, 0.75, 1],
   },
 
-  // Output of the prediction endpoint.
+  // Output of the prediction endpoint (App.jsx replaces risk and alert with the
+  // latest saved assessment, see latest.js). null shows the "no assessment" state.
   // probability: model output 0–1, level: 'low' | 'moderate' | 'high',
   // factors: top contributors (e.g. from the SHAP explanation).
   risk: {
     probability: 0.18,
     level: 'low',
-    confidence: 0.94,
     updatedLabel: '2 min ago',
     factors: ['Cholesterol', 'Blood pressure'],
   },

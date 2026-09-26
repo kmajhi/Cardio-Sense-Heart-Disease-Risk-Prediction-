@@ -20,7 +20,13 @@ export const STATUS = {
   missing: 'Not measured',
 };
 
-export const pct = (record) => Math.round(record.result.probability * 100);
+// Never a flat 0% or 100%: a model estimate is never certain (same as the
+// Prediction page's gauge). pct is kept inside 1–99 for charts; pctText adds
+// the "<" or ">" for anything that was clamped.
+const rawPct = (record) => Math.round(record.result.probability * 100);
+export const pct = (record) => Math.min(99, Math.max(1, rawPct(record)));
+export const approx = (record) => (rawPct(record) > 99 ? '>' : rawPct(record) < 1 ? '<' : '');
+export const pctText = (record) => `${approx(record)}${pct(record)}`;
 
 /** Every test in one record with its reading and status. */
 export const panel = (record) =>

@@ -1,6 +1,19 @@
-import { BANDS, LEVELS, pct } from '../board';
+import { BANDS, LEVELS, pct, pctText } from '../board';
 
 const monthFmt = new Intl.DateTimeFormat(undefined, { month: 'short' });
+const dayMonthFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
+const timeFmt = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
+
+/**
+ * Axis labels: the month when every bar is in a different month, otherwise the
+ * day, otherwise (several on one day) the time. Repeated labels tell you nothing.
+ */
+function axisFormat(records) {
+  const distinct = (fmt) => new Set(records.map((r) => fmt.format(new Date(r.created_at)))).size === records.length;
+  if (distinct(monthFmt)) return monthFmt;
+  if (distinct(dayMonthFmt)) return dayMonthFmt;
+  return timeFmt;
+}
 const dayFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
 /**
@@ -9,6 +22,7 @@ const dayFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'shor
  */
 export default function RiskBarsCard({ records }) {
   const latest = records.at(-1);
+  const axis = axisFormat(records);
 
   return (
     <article className="pc-h-tile pc-enter" style={{ '--d': '280ms' }} aria-labelledby="h-bars-title">
@@ -19,12 +33,14 @@ export default function RiskBarsCard({ records }) {
           </svg>
         </span>
         <h2 id="h-bars-title" className="pc-h-tile-title">Risk over time</h2>
-        <span className="pc-h-tile-meta">{records.length} tests</span>
+        <span className="pc-h-tile-meta">
+          {records.length} {records.length === 1 ? 'assessment' : 'assessments'}
+        </span>
       </header>
 
       <div className="pc-h-bars-top">
         <span>Estimate per assessment</span>
-        <span>Latest {pct(latest)}%</span>
+        <span>Latest {pctText(latest)}%</span>
       </div>
 
       <div className="pc-h-bars-plot">
@@ -44,17 +60,17 @@ export default function RiskBarsCard({ records }) {
                 className={`pc-h-bar${i === records.length - 1 ? ' is-latest' : ''}`}
                 style={{ '--h': value / 100, '--i': i }}
                 tabIndex={0}
-                aria-label={`${dayFmt.format(date)}: ${value}%, ${level?.label ?? rec.result.risk_level}`}
+                aria-label={`${dayFmt.format(date)}: ${pctText(rec)}%, ${level?.label ?? rec.result.risk_level}`}
               >
                 <span className="pc-h-bar-track" aria-hidden="true">
                   <span className="pc-h-bar-fill" />
                 </span>
                 <span className="pc-h-bar-tip" aria-hidden="true">
-                  <strong>{value}%</strong>
+                  <strong>{pctText(rec)}%</strong>
                   {dayFmt.format(date)}
                 </span>
                 <span className="pc-h-bar-month" aria-hidden="true">
-                  {monthFmt.format(date)}
+                  {axis.format(date)}
                 </span>
               </li>
             );

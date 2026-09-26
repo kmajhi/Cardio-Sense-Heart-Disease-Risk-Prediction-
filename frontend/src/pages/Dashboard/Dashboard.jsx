@@ -66,7 +66,7 @@ export default function Dashboard({
               </span>
             </h1>
             <p className="pc-subtitle pc-enter" style={{ '--d': '160ms' }}>
-              AI risk assessment, updated {data.risk.updatedLabel}
+              {data.risk ? `AI risk assessment, updated ${data.risk.updatedLabel}` : 'No risk assessment yet'}
             </p>
           </header>
 
