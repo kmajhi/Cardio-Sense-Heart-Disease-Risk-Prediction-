@@ -6,7 +6,7 @@ the glowing heart from the Dashboard, with tab pills and callouts pinned to the 
 
 ## Usage
 
-Routed at `/history` in `src/App.jsx`. It reuses `../Dashboard/components/NavBar` and
+Routed at `/history` in `src/App.jsx`. It reuses `src/components/NavBar` and
 `../Dashboard/Dashboard.css`. Without a `records` prop it uses `historyMock.js`.
 
 ## Data shape

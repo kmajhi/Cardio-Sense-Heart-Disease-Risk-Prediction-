@@ -26,11 +26,14 @@ return data ? <Dashboard data={data} LinkComponent={Link} /> : null;
 
 - `Dashboard.jsx`: the page and the one-time load sequence (`is-ready` class).
 - `Dashboard.css`: all styles, prefixed `pc-`, responsive down to phones, reduced motion respected.
-- `components/HeartHero.jsx`: the heart video (3.6 s seamless loop, WebM + MP4 + poster).
+- `components/DashboardHeart.jsx`: the heart clip (`src/assets/hero-heart.mp4`), big, with feathered edges.
+- `components/AssessmentsCard.jsx`: the user's latest assessments, or an empty state for a new account.
 - `components/HeartRateChart.jsx`: smooth SVG line, hover/tap or arrow keys to inspect values.
 - `components/CheckupsCard.jsx`: next appointment with Today / Tomorrow / Week / Month filters.
 - `components/BreathingPlayer.jsx`: a working 4-7-8 breathing timer.
-- `components/RiskCard.jsx`, `AlertCard.jsx`, `RecoveryChip.jsx`, `NavBar.jsx`.
+- `components/RiskCard.jsx`, `AlertCard.jsx`, `RecoveryChip.jsx`.
+- `latest.js`: turns the user's saved assessments into the page's data (`dashboardFrom`).
+- Shared with other pages, in `src/components/`: `NavBar.jsx`, `HeartHero.jsx`, `link.js`.
 
 ## Theme and motion
 
@@ -39,8 +42,8 @@ The "misty horizon" theme follows the reference video:
   and one sun-yellow detail (`--pc-sun` #fcb71d) on CTA arrows.
 - Plus Jakarta Sans, with headlines split into a hairline word (`.pc-thin`) and a heavy one (`.pc-bold`).
 - Tokens live on `.pc-dash` at the top of `Dashboard.css`.
-- The logo is `HeartMark` in `components/NavBar.jsx`: a vector traced from the brand artwork,
-  drawn in `--pc-brand` (#ed3a4f). The same artwork is in `assets/cardio-sense-logo.svg`.
+- The logo is `HeartMark` in `src/components/NavBar.jsx`: a vector traced from the brand artwork,
+  drawn in `--pc-brand` (#ed3a4f). The same artwork is in `src/assets/cardio-sense-logo.svg`.
 - Favicons are in `frontend/public/`: `favicon.svg` (sharp at any size),
   `favicon.ico` (16/32/48 px), 16 and 32 px PNGs, and `apple-touch-icon.png` (180 px, white tile).
   The PNG and ICO versions are made from the logo image itself. They are linked from `frontend/index.html`.

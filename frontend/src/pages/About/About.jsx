@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import NavBar from '../Dashboard/components/NavBar';
+import NavBar from '../../components/NavBar';
 import SiteFooter from '../../components/SiteFooter';
-import HeartHero from '../Dashboard/components/HeartHero';
-import { linkProps } from '../Dashboard/link';
+import HeartHero from '../../components/HeartHero';
+import { linkProps } from '../../components/link';
 import CountUp from './components/CountUp';
 import PhoneMocks from './components/PhoneMocks';
 import useInView from './components/useInView';

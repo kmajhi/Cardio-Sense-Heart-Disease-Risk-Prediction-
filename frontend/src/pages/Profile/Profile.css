@@ -674,17 +674,17 @@
 
 .pc-p-chip.is-ok {
   background: rgba(26, 158, 112, 0.12);
-  color: #0d7552;
+  color: var(--pc-success-ink);
 }
 
 .pc-p-chip.is-low {
   background: rgba(252, 183, 29, 0.22);
-  color: #6b4700;
+  color: var(--pc-warn-ink);
 }
 
 .pc-p-chip.is-high {
   background: rgba(224, 69, 123, 0.13);
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 /* Medical history */
@@ -729,12 +729,12 @@
 
 .pc-p-flags .is-yes b {
   background: rgba(224, 69, 123, 0.13);
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-p-flags .is-no b {
   background: rgba(26, 158, 112, 0.12);
-  color: #0d7552;
+  color: var(--pc-success-ink);
 }
 
 .pc-p-flags .is-unknown b {
@@ -932,7 +932,7 @@
   height: 24px;
   border-radius: 50%;
   background: rgba(26, 158, 112, 0.14);
-  color: #0d7552;
+  color: var(--pc-success-ink);
   font-size: 12px;
   font-weight: 700;
 }
@@ -1151,7 +1151,7 @@ select.pc-p-input {
 }
 
 .pc-dash .pc-p-hint.is-error {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
   font-weight: 600;
 }
 
@@ -1299,7 +1299,7 @@ select.pc-p-input {
 
 .pc-p-btn--remove:hover:not(:disabled) {
   background: rgba(224, 69, 123, 0.1);
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 /* Photo cropper (inside the modal) */
@@ -1455,7 +1455,7 @@ select.pc-p-input {
 }
 
 .pc-p-crop-caption {
-  color: rgba(28, 22, 51, 0.6);
+  color: var(--pc-ink-faint);
   font-size: 11px;
   text-align: center;
 }
@@ -1507,7 +1507,7 @@ select.pc-p-input {
 
 .pc-p-crop-pct {
   width: 44px;
-  color: rgba(28, 22, 51, 0.6);
+  color: var(--pc-ink-faint);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -1995,7 +1995,7 @@ select.pc-p-input {
 }
 
 .pc-p-modal.is-danger .pc-p-modal-head h2 {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-p-modal-foot {
@@ -2009,19 +2009,19 @@ select.pc-p-input {
 /* The modal lives outside .pc-dash, so it restates what it needs. */
 .pc-p-modal .pc-p-hint {
   margin: 0;
-  color: rgba(28, 22, 51, 0.6);
+  color: var(--pc-ink-faint);
   font-size: 12px;
   line-height: 1.4;
 }
 
 .pc-p-modal .pc-p-muted {
-  color: rgba(28, 22, 51, 0.6);
+  color: var(--pc-ink-faint);
   font-weight: 400;
 }
 
 .pc-p-modal .pc-p-eyebrow {
   margin-bottom: 8px;
-  color: rgba(28, 22, 51, 0.6);
+  color: var(--pc-ink-faint);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -2238,7 +2238,7 @@ select.pc-p-input {
   border: 1px solid rgba(252, 183, 29, 0.5);
   border-radius: 14px;
   background: rgba(252, 183, 29, 0.12);
-  color: #5c3d00;
+  color: var(--pc-warn-ink);
   font-size: 13px;
   line-height: 1.4;
 }

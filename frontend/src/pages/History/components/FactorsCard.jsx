@@ -1,4 +1,4 @@
-import { linkProps } from '../../Dashboard/link';
+import { linkProps } from '../../../components/link';
 
 /** "What moved it": the top factors of the latest estimate, and a way to run a new one. */
 export default function FactorsCard({ record, LinkComponent }) {

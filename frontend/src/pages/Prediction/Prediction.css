@@ -275,7 +275,7 @@
 .pc-pr-num.is-invalid:focus {
   border-color: #d6457a;
   background: #fff5f8;
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-pr-unit {
@@ -328,13 +328,13 @@
 
 .pc-dash .pc-pr-warn {
   margin-top: 6px;
-  color: #7a4f00;
+  color: var(--pc-warn-ink);
   font-size: 12px;
   line-height: 1.4;
 }
 
 .pc-dash .pc-pr-warn.is-error {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 /* ---------- Segmented toggle ---------- */
@@ -492,7 +492,7 @@
 }
 
 .pc-dash .pc-pr-hint.is-error {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 /* ---------- Result card ---------- */
@@ -619,8 +619,19 @@
   padding: 10px 12px;
   border-radius: 12px;
   background: rgba(252, 183, 29, 0.18);
-  color: #6b4700;
+  color: var(--pc-warn-ink);
   font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Confirms the estimate went into History. */
+.pc-dash .pc-pr-save {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(26, 158, 112, 0.12);
+  color: var(--pc-success-ink);
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.4;
 }
 
@@ -656,14 +667,14 @@
 }
 
 .pc-pr-factor-top .is-up {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
   font-weight: 600;
   font-size: 12px;
   white-space: nowrap;
 }
 
 .pc-pr-factor-top .is-down {
-  color: #0d7552;
+  color: var(--pc-success-ink);
   font-weight: 600;
   font-size: 12px;
   white-space: nowrap;
@@ -699,7 +710,7 @@
   border: 1px solid rgba(252, 183, 29, 0.5);
   border-radius: 14px;
   background: rgba(252, 183, 29, 0.12);
-  color: #5c3d00;
+  color: var(--pc-warn-ink);
   font-size: 12.5px;
   line-height: 1.45;
 }
@@ -712,7 +723,7 @@
 }
 
 .pc-dash .pc-pr-error {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
   font-size: 13px;
 }
 

@@ -1,5 +1,5 @@
-import { HeartMark } from '../pages/Dashboard/components/NavBar';
-import { linkProps } from '../pages/Dashboard/link';
+import { HeartMark } from './NavBar';
+import { linkProps } from './link';
 import { DISCLAIMER } from '../pages/About/content';
 import './SiteFooter.css';
 
@@ -7,7 +7,7 @@ const COLUMNS = [
   {
     title: 'Product',
     links: [
-      ['Dashboard', '/'],
+      ['Dashboard', '/dashboard'],
       ['Prediction', '/prediction'],
       ['History', '/history'],
       ['Guidance', '/guidance'],
