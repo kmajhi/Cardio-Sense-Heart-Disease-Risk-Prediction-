@@ -20,8 +20,9 @@ The three parts are separate on purpose:
 
 - `ml/` produces `ml/artifacts/` (the trained pipeline and its metadata).
 - `backend/` only reads those artifacts, via `CARDIO_MODEL_DIR` (default `ml/artifacts`).
-- `frontend/` only talks to the backend over HTTP (`/api/predict/`, `/api/history/`,
-  `/api/profile/`), or to an in-browser mock when `VITE_USE_MOCK_API` isn't `false`.
+- `frontend/` only talks to the backend over HTTP (`/api/auth/`, `/api/predict/`,
+  `/api/history/`, `/api/profile/`), or to an in-browser mock when `VITE_USE_MOCK_API` isn't
+  `false`.
 
 ## Model
 
@@ -86,5 +87,6 @@ model, its metadata, the model comparison table, and SHAP centroids.
 - [x] Profile and Assessment models (each prediction's request, response, model and time) with
       a Django admin
 - [x] Frontend reads the real API when `VITE_USE_MOCK_API=false` (local development)
-- [ ] User accounts (the API is open and has a single profile until then)
+- [x] User accounts: register, log in and log out (Django sessions); each user sees only their
+      own profile and assessments
 - [ ] Deploy the API and switch the hosted site off the mock

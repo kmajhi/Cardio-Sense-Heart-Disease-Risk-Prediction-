@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import HeartHero from '../../Dashboard/components/HeartHero';
+import HeartHero from '../../../components/HeartHero';
 import { LEVELS, panel, pctText } from '../board';
 import { fmt } from '../tests';
 

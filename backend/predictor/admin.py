@@ -39,7 +39,7 @@ class AssessmentInline(admin.TabularInline):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ["full_name", "email", "phone", "sex", "date_of_birth", "assessment_count", "updated_at"]
+    list_display = ["full_name", "user", "email", "phone", "sex", "date_of_birth", "assessment_count", "updated_at"]
     list_filter = ["sex", "blood_group", "hypertension", "diabetes", "smoker"]
     search_fields = ["full_name", "email", "phone"]
     readonly_fields = ["photo_preview", "created_at", "updated_at"]
@@ -69,9 +69,9 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Assessment)
 class AssessmentAdmin(admin.ModelAdmin):
-    list_display = ["reference", "created_at", "profile", "age", "sex", "probability_pct", "risk_level", "model_name"]
+    list_display = ["reference", "created_at", "user", "profile", "age", "sex", "probability_pct", "risk_level", "model_name"]
     list_filter = ["risk_level", "sex", "model_name", "created_at"]
-    search_fields = ["id", "profile__full_name", "notes"]
+    search_fields = ["id", "user__email", "profile__full_name", "notes"]
     date_hierarchy = "created_at"
     list_select_related = ["profile"]
     actions = ["export_csv"]

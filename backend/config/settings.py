@@ -110,6 +110,11 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
 # Where the React app lives: the OAuth flow ends with a redirect back to its
 # /profile page. In development that's the Vite server, which proxies /api here.
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+# The app's own pages send data-changing API calls (login, predict, profile
+# saves) with this Origin, so Django's CSRF check must accept it. In
+# development that's the Vite server, which forwards /api here.
+if FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
 # The public origin the browser uses for /api. Callback URLs registered with each
 # provider are OAUTH_REDIRECT_BASE + /api/connect/<provider>/callback/.
 OAUTH_REDIRECT_BASE = os.environ.get("OAUTH_REDIRECT_BASE", FRONTEND_URL).rstrip("/")
@@ -155,10 +160,11 @@ LOGGING = {
 }
 
 REST_FRAMEWORK = {
-    # No user accounts yet: the API is open and session auth is off, so an admin
-    # session cookie on localhost doesn't trigger CSRF checks on API calls.
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
+    # Signed in with a Django session (predictor/accounts.py). Every endpoint
+    # needs a user unless it says otherwise, and sees only that user's data.
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
-    "UNAUTHENTICATED_USER": None,
+    # Register and login: slows down password guessing from one address.
+    "DEFAULT_THROTTLE_RATES": {"auth": os.environ.get("AUTH_THROTTLE_RATE", "10/minute")},
 }

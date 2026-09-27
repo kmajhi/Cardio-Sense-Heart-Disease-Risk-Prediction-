@@ -1,4 +1,4 @@
-import { linkProps } from '../link';
+import { linkProps } from '../../../components/link';
 
 const LEVELS = {
   low: { label: 'Low risk', className: 'is-low' },

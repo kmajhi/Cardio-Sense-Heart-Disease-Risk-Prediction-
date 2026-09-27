@@ -37,7 +37,7 @@
    tiles on the left, the glowing heart with tab pills and pinned callouts on
    the right. The board and the heart column must stay free of transform,
    filter, opacity, backdrop-filter and z-index, or the heart video's screen
-   blend shows a black box (see Dashboard/components/HeartHero.jsx). */
+   blend shows a black box (see src/components/HeartHero.jsx). */
 
 .pc-h-board {
   position: relative; /* no z-index: keeps the video blend working */
@@ -167,11 +167,11 @@
 }
 
 .pc-h-trend-chip.is-down {
-  color: #0d7552;
+  color: var(--pc-success-ink);
 }
 
 .pc-h-trend-chip.is-up {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-h-pill {
@@ -271,7 +271,10 @@
 
 .pc-h-bar {
   position: relative;
-  flex: 1;
+  /* Always the width a bar has when there are 10 (so 1 or 2 don't stretch
+     across the chart); past 10 they share the space and get narrower. */
+  flex: 0 1 calc((100% - 9 * 8px) / 10);
+  min-width: 0;
   display: flex;
   flex-direction: column;
   border-radius: 999px;
@@ -586,12 +589,12 @@
 }
 
 .pc-h-group-state {
-  color: #0d7552;
+  color: var(--pc-success-ink);
   font-size: 11px;
 }
 
 .pc-h-groups .is-flagged .pc-h-group-state {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
   font-weight: 600;
 }
 
@@ -659,11 +662,11 @@
 }
 
 .pc-h-factor-icon.is-up {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-h-factor-icon.is-down {
-  color: #0d7552;
+  color: var(--pc-success-ink);
 }
 
 .pc-h-factor-text {
@@ -943,7 +946,7 @@
   border: 1px solid rgba(252, 183, 29, 0.5);
   border-radius: 14px;
   background: rgba(252, 183, 29, 0.12);
-  color: #5c3d00;
+  color: var(--pc-warn-ink);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -1125,17 +1128,17 @@
 
 .pc-h-status.is-ok {
   background: rgba(26, 158, 112, 0.12);
-  color: #0d7552;
+  color: var(--pc-success-ink);
 }
 
 .pc-h-status.is-high {
   background: rgba(224, 69, 123, 0.13);
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-h-status.is-low {
   background: rgba(252, 183, 29, 0.22);
-  color: #6b4700;
+  color: var(--pc-warn-ink);
 }
 
 .pc-h-status.is-missing {
@@ -1324,7 +1327,7 @@
 
 .pc-h-group .is-high dd,
 .pc-h-group .is-low dd {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-h-group .is-high dt::before,
@@ -1384,11 +1387,11 @@
 }
 
 .pc-h-factor-val.is-up {
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-h-factor-val.is-down {
-  color: #0d7552;
+  color: var(--pc-success-ink);
 }
 
 .pc-dash .pc-h-empty {

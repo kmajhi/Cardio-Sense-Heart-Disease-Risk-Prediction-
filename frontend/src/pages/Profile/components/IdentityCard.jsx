@@ -1,5 +1,5 @@
 import CountUp from '../../About/components/CountUp';
-import { HeartMark } from '../../Dashboard/components/NavBar';
+import { HeartMark } from '../../../components/NavBar';
 import { PHOTO_ACCEPT, isPhoto } from '../photo';
 import { ageFrom, bmiFrom, completeness, initials, sexLabel } from '../profileFields';
 

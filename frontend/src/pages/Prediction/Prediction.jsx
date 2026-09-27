@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import NavBar from '../Dashboard/components/NavBar';
+import NavBar from '../../components/NavBar';
 import SiteFooter from '../../components/SiteFooter';
 import SliderField from './components/SliderField';
 import Segmented from './components/Segmented';
@@ -29,6 +29,27 @@ const TITLE = [
   ['prediction', 'bold'],
 ];
 
+// A signed-out visitor's values, waiting to be run once they log in.
+const PENDING_KEY = 'cardio-sense:pending-prediction';
+
+function takePending() {
+  try {
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    sessionStorage.removeItem(PENDING_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function keepPending(pending) {
+  try {
+    sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+  } catch {
+    /* storage blocked: they'll just fill it in again after logging in */
+  }
+}
+
 const YES_NO = [
   [0, 'No'],
   [1, 'Yes'],
@@ -41,10 +62,15 @@ const YES_NO = [
  * - predict:       async (payload) => { probability, risk_level, top_factors }.
  *                  Defaults to a mock; pass `predict` from api/predictionApi.js
  *                  once POST /api/predict/ exists.
+ * - signedIn:      running the model needs an account (results go to History).
+ *                  Signed out, Run keeps the values and calls onRequireLogin;
+ *                  back here signed in, the prediction runs with them.
  * - user, hasNotifications, LinkComponent, activePath: same as <Dashboard />.
  */
 export default function Prediction({
   predict = mockPredict,
+  signedIn = true,
+  onRequireLogin,
   user = { name: 'Demo User' },
   hasNotifications = false,
   LinkComponent = 'a',
@@ -55,7 +81,30 @@ export default function Prediction({
   const [status, setStatus] = useState('idle'); // idle | loading | error
   const [error, setError] = useState('');
   const [triedRun, setTriedRun] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const notifications = useNotifications();
+
+  // Back from logging in to run a prediction: restore the values and run it now.
+  useEffect(() => {
+    if (!signedIn) return;
+    const pending = takePending(); // read-and-clear, so it runs once
+    if (!pending) return;
+    setValues(pending.values);
+    setTriedRun(true);
+    setStatus('loading');
+    predict(pending.payload)
+      .then((data) => {
+        setResult({ data, payload: pending.payload });
+        notifications?.setLatest({ inputs: pending.payload, result: data, created_at: new Date().toISOString() });
+        setJustSaved(true);
+        setStatus('idle');
+      })
+      .catch((err) => {
+        setError(err?.message ?? '');
+        setStatus('error');
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signedIn]);
 
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -91,10 +140,17 @@ export default function Prediction({
       document.getElementById('pr-troponin')?.focus();
       return;
     }
+    if (!signedIn) {
+      keepPending({ values, payload });
+      onRequireLogin?.();
+      return;
+    }
     setStatus('loading');
+    setJustSaved(false);
     try {
       const data = await predict(payload);
       setResult({ data, payload });
+      setJustSaved(true);
       // The nav bell and the Guidance page follow the newest assessment.
       notifications?.setLatest({ inputs: payload, result: data, created_at: new Date().toISOString() });
       setStatus('idle');
@@ -103,6 +159,11 @@ export default function Prediction({
       setStatus('error');
     }
   };
+
+  const saveNote =
+    result && justSaved && !stale && status !== 'loading' ? (
+      <p className="pc-pr-save">Saved to your History.</p>
+    ) : null;
 
   const section = (id) => SECTIONS.find((s) => s.id === id);
   const sliders = (id) =>
@@ -257,6 +318,8 @@ export default function Prediction({
             error={error}
             notification={notification}
             LinkComponent={LinkComponent}
+            saveNote={saveNote}
+            signedIn={signedIn}
           />
         </form>
       </main>

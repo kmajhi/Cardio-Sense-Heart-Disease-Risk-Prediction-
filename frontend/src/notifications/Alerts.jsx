@@ -1,6 +1,6 @@
 import { describe } from '../clinical/analyze';
 import { LEVEL_LABEL } from '../clinical/ranges';
-import { linkProps } from '../pages/Dashboard/link';
+import { linkProps } from '../components/link';
 import RelativeTime from './RelativeTime';
 import './notifications.css';
 

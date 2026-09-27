@@ -20,9 +20,9 @@ PAYLOAD_KEYS = (
 )
 
 
-def current_profile():
-    """The single profile until accounts exist (see models.py)."""
-    return Profile.objects.filter(user__isnull=True).first()
+def current_profile(user):
+    """The signed-in user's profile, or None if they haven't made one."""
+    return Profile.objects.filter(user=user).first()
 
 
 def first_error(errors):
@@ -50,7 +50,8 @@ class PredictView(APIView):
         _, metadata = prediction_service.load_model()
         age = payload.get("age")
         Assessment.objects.create(
-            profile=current_profile(),
+            user=request.user,
+            profile=current_profile(request.user),
             inputs=payload,
             age=int(float(age)) if age not in (None, "") else None,
             sex=payload.get("sex", ""),
@@ -64,18 +65,18 @@ class PredictView(APIView):
 
 
 class HistoryView(APIView):
-    """GET /api/history/ → [{ id, created_at, inputs, result }], oldest first."""
+    """GET /api/history/ → the signed-in user's [{ id, created_at, inputs, result }], oldest first."""
 
     def get(self, request):
-        return Response([a.as_record() for a in Assessment.objects.all()])
+        return Response([a.as_record() for a in Assessment.objects.filter(user=request.user)])
 
 
 class HistoryRecordView(APIView):
-    """DELETE /api/history/<A-0012 or 12>/"""
+    """DELETE /api/history/<A-0012 or 12>/ (only the signed-in user's own)."""
 
     def delete(self, request, ref):
         pk = ref.upper().removeprefix("A-")
-        deleted, _ = Assessment.objects.filter(pk=int(pk)).delete() if pk.isascii() and pk.isdigit() else (0, None)
+        deleted, _ = Assessment.objects.filter(pk=int(pk), user=request.user).delete() if pk.isascii() and pk.isdigit() else (0, None)
         if not deleted:
             return Response({"detail": "No such assessment."}, status=404)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -85,13 +86,13 @@ class ProfileView(APIView):
     """GET → profile | 404, PUT → create or replace, DELETE → 204."""
 
     def get(self, request):
-        profile = current_profile()
+        profile = current_profile(request.user)
         if profile is None:
             return Response({"detail": "No profile yet."}, status=404)
         return Response(ProfileSerializer(profile).data)
 
     def put(self, request):
-        profile = current_profile()
+        profile = current_profile(request.user)
         serializer = ProfileSerializer(profile, data=request.data)
         if not serializer.is_valid():
             return Response({"detail": first_error(serializer.errors)}, status=400)
@@ -102,14 +103,14 @@ class ProfileView(APIView):
         before = (profile.connections or {}) if profile else {}
         sent = serializer.validated_data["connections"] if "connections" in request.data else before
         kept = {provider: before[provider] for provider in sent if provider in before}
-        saved = serializer.save(connections=kept)
+        saved = serializer.save(user=request.user, connections=kept)
 
         for provider in before.keys() - kept.keys():
             record(provider, "disconnected", profile=saved, handle=before[provider].get("handle", ""))
         return Response(serializer.data)
 
     def delete(self, request):
-        profile = current_profile()
+        profile = current_profile(request.user)
         if profile is not None:
             for provider, link in (profile.connections or {}).items():
                 record(provider, "disconnected", profile=profile, handle=link.get("handle", ""),

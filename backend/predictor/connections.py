@@ -149,8 +149,11 @@ def identify(provider, token):
     return str(handle)[:HANDLE_MAX]
 
 
-def current_profile():
-    return Profile.objects.filter(user__isnull=True).first()
+def current_profile(request):
+    """The signed-in user's profile; None when signed out or they haven't made one."""
+    if not request.user.is_authenticated:
+        return None
+    return Profile.objects.filter(user=request.user).first()
 
 
 def record(provider, action, *, profile=None, handle="", detail=""):
@@ -182,7 +185,7 @@ def start(request, provider):
         raise Http404
     if client(provider) is None:
         return fail(provider, "not_configured", detail="Client ID or secret missing on the server")
-    profile = current_profile()
+    profile = current_profile(request)
     if profile is None:
         return fail(provider, "no_profile")
 
@@ -211,7 +214,7 @@ def callback(request, provider):
         raise Http404
     pending = request.session.pop("oauth", None)  # one-time: a replayed callback finds nothing
 
-    profile = current_profile()
+    profile = current_profile(request)
 
     fresh = pending and time.time() - pending["at"] < STATE_TTL_SECONDS
     state = request.GET.get("state", "")

@@ -1,18 +1,19 @@
-import { forwardRef, useEffect, useState } from 'react';
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { forwardRef, useEffect, useRef, useState } from 'react';
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Prediction from './pages/Prediction/Prediction';
 import History from './pages/History/History';
 import About from './pages/About/About';
 import Profile from './pages/Profile/Profile';
 import Guidance from './pages/Guidance/Guidance';
+import Home from './pages/Home/Home';
+import { AuthProvider, RequireAuth, useAuth } from './auth/AuthContext';
 import { NotificationsProvider } from './notifications/NotificationsContext';
-import NavBar from './pages/Dashboard/components/NavBar';
+import NavBar from './components/NavBar';
 import { predict } from './api/predictionApi';
 import { getProfile } from './api/profileApi';
 import { getHistory } from './api/historyApi';
-import { dashboardMock } from './pages/Dashboard/dashboardMock';
-import { fromHistory } from './pages/Dashboard/latest';
+import { dashboardFrom } from './pages/Dashboard/latest';
 
 // Router links with the View Transitions API, so client-side navigation gets
 // the same circle wipe as full page loads (see Dashboard.css).
@@ -73,37 +74,86 @@ function HistoryRoute(props) {
   return <History {...props} records={records} />;
 }
 
-// The overview shows the latest saved assessment; the rest of the board is sample data.
+// Everything on the overview comes from the user's own assessments; a new
+// account sees empty states until its first prediction.
 function DashboardRoute(props) {
   const records = useHistory();
-  if (!records) return <LoadingShell {...props} />; // no flash of sample figures before the real ones
-  const data = { ...dashboardMock, ...(Array.isArray(records) ? fromHistory(records) : {}) };
-  if (Array.isArray(records)) data.hasNotifications = Boolean(data.alert);
-  return <Dashboard {...props} data={data} />;
+  if (!records) return <LoadingShell {...props} />; // no flash of empty cards before the real ones
+  return <Dashboard {...props} data={dashboardFrom(Array.isArray(records) ? records : [])} />;
 }
 
-export default function App() {
+// The health report on the Profile page lists the user's own assessments.
+function ProfileRoute(props) {
+  const records = useHistory();
+  return <Profile {...props} records={Array.isArray(records) ? records : []} />;
+}
+
+// "/" is the homepage, the way into the app. Anyone already signed in when
+// they arrive goes to the Dashboard; someone signing in here stays until the
+// page's loader sends them on.
+function LandingRoute(props) {
+  const { user } = useAuth();
+  const arrivedSignedIn = useRef(undefined);
+  if (arrivedSignedIn.current === undefined && user !== undefined) arrivedSignedIn.current = Boolean(user);
+  if (user === undefined) return null; // still checking the session
+  if (arrivedSignedIn.current && user) return <Navigate to="/dashboard" replace />;
+  return <Home {...props} />;
+}
+
+const guard = (element) => <RequireAuth>{element}</RequireAuth>;
+
+function AppRoutes() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user: account } = useAuth();
   // The saved profile's name shows in the nav avatar on every page.
   const [profile, setProfile] = useState(null);
+  const signedIn = Boolean(account);
   useEffect(() => {
+    if (!signedIn) {
+      setProfile(null);
+      return;
+    }
     getProfile().then(setProfile).catch(() => {});
-  }, []);
-  const user = { name: profile?.full_name || 'Demo User', photo: profile?.photo };
+  }, [signedIn]);
+  const user = { name: profile?.full_name || account?.name || 'Demo User', photo: profile?.photo };
   const shared = { LinkComponent: TransitionLink, activePath: pathname, user };
 
   return (
-    <NotificationsProvider profile={profile}>
+    // Keyed on the account, so a different user never sees the last one's notifications.
+    <NotificationsProvider key={account?.email ?? 'signed-out'} profile={profile}>
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<DashboardRoute {...shared} />} />
-        <Route path="/prediction" element={<Prediction {...shared} predict={predict} />} />
-        <Route path="/history" element={<HistoryRoute {...shared} />} />
+        <Route path="/" element={<LandingRoute {...shared} />} />
+        <Route path="/dashboard" element={guard(<DashboardRoute {...shared} />)} />
+        {/* Anyone can look; running a prediction needs an account. */}
+        <Route
+          path="/prediction"
+          element={
+            <Prediction
+              {...shared}
+              predict={predict}
+              signedIn={signedIn}
+              onRequireLogin={() =>
+                navigate('/', { state: { auth: 'login', reason: 'run', from: { pathname: '/prediction' } } })
+              }
+            />
+          }
+        />
+        <Route path="/history" element={guard(<HistoryRoute {...shared} />)} />
         <Route path="/about" element={<About {...shared} />} />
-        <Route path="/profile" element={<Profile {...shared} onProfileChange={setProfile} />} />
-        <Route path="/guidance" element={<Guidance {...shared} />} />
+        <Route path="/profile" element={guard(<ProfileRoute {...shared} account={account} onProfileChange={setProfile} />)} />
+        <Route path="/guidance" element={guard(<Guidance {...shared} />)} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </NotificationsProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }

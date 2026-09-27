@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import usePrefersReducedMotion from '../../Dashboard/hooks/usePrefersReducedMotion';
+import usePrefersReducedMotion from '../../../hooks/usePrefersReducedMotion';
 
 const easeOut = (t) => 1 - (1 - t) ** 3;
 

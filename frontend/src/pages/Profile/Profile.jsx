@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import NavBar from '../Dashboard/components/NavBar';
+import NavBar from '../../components/NavBar';
 import SiteFooter from '../../components/SiteFooter';
 import { historyMock } from '../History/historyMock';
 import { PROFILE_STORAGE, deleteProfile, getProfile, saveProfile } from '../../api/profileApi';
@@ -30,12 +30,14 @@ const updatedFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: '
  *                    Defaults to historyMock.js until the API exists.
  * - onProfileChange: called with the saved profile (or null) so the app can
  *                    update the name in the nav.
+ * - account:         the signed-in { name, email }; prefills a new profile.
  * - user, hasNotifications, LinkComponent, activePath: same as <Dashboard />.
  */
 export default function Profile({
   records = historyMock,
   onProfileChange = () => {},
   user = { name: 'Demo User' },
+  account = null,
   hasNotifications = false,
   LinkComponent = 'a',
   activePath = '/profile',
@@ -98,7 +100,7 @@ export default function Profile({
   };
 
   const startEdit = () => {
-    setDraft(profile ?? EMPTY_PROFILE);
+    setDraft(profile ?? { ...EMPTY_PROFILE, full_name: account?.name ?? '', email: account?.email ?? '' });
     setErrors({});
     setTriedSave(false);
     setMode('edit');
@@ -347,8 +349,8 @@ export default function Profile({
           </svg>
           Research prototype.{' '}
           {PROFILE_STORAGE === 'browser'
-            ? 'Your profile is stored only in this browser until accounts are available.'
-            : 'Your profile is saved on this Cardio Sense server, which has no user accounts yet.'}{' '}
+            ? 'Your profile is stored only in this browser (demo mode).'
+            : 'Your profile is saved to your account on this Cardio Sense server, visible only to you.'}{' '}
           Risk figures are model estimates, not diagnoses.
         </p>
       </main>

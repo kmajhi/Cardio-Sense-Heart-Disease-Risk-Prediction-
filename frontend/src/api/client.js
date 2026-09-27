@@ -1,11 +1,23 @@
 // Thin fetch wrapper for the Django API. In development the Vite proxy sends
-// /api/* to http://localhost:8000 (see vite.config.js).
+// /api/* to http://localhost:8000 (see vite.config.js), so it's same-origin.
 const BASE_URL = '/api';
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+// Django sets this cookie (GET /api/auth/me/) and expects it back as a header
+// on anything that changes data. It isn't secret from this page, only from others.
+function csrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
 
 export async function request(path, { method = 'GET', body } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (!SAFE_METHODS.has(method)) headers['X-CSRFToken'] = csrfToken();
+
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers,
+    credentials: 'same-origin', // the session cookie that says who is signed in
     body: body ? JSON.stringify(body) : undefined,
   });
 

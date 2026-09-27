@@ -23,10 +23,12 @@ const dayFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'shor
 export default function RiskBarsCard({ records }) {
   const latest = records.at(-1);
   const axis = axisFormat(records);
-  // Up to 8 bars each get a label; beyond that, labels would overlap, so only
-  // the first, middle and last are labelled (hover still shows every bar's date).
+  // Bars are narrow (a tenth of the chart each), narrower than a date label,
+  // so every third one is labelled, counting back from the latest so it
+  // always is; with many bars, fewer still. Hover shows every bar's date.
   const last = records.length - 1;
-  const labelled = records.length <= 8 ? () => true : (i) => i === 0 || i === Math.floor(last / 2) || i === last;
+  const step = Math.max(3, Math.ceil(records.length / 3));
+  const labelled = (i) => (last - i) % step === 0;
 
   return (
     <article className="pc-h-tile pc-enter" style={{ '--d': '280ms' }} aria-labelledby="h-bars-title">
