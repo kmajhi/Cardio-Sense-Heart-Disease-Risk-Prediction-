@@ -61,7 +61,7 @@
 .pc-n-risk.is-moderate {
   border-color: rgba(252, 183, 29, 0.45);
   background: rgba(252, 183, 29, 0.14);
-  color: #6b4700;
+  color: var(--pc-warn-ink);
 }
 
 .pc-n-risk.is-low {
@@ -187,12 +187,12 @@
 
 .pc-n-level.is-elevated {
   background: rgba(252, 183, 29, 0.22);
-  color: #7a4f00;
+  color: var(--pc-warn-ink);
 }
 
 .pc-n-level.is-high {
   background: rgba(224, 69, 123, 0.14);
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-n-level.is-urgent {

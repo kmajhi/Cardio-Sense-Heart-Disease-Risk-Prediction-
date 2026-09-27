@@ -73,7 +73,7 @@ function FactorList({ factors }) {
  * Right-hand result panel. Holds the form's submit button, so running the
  * model always happens next to the number it produces.
  */
-export default function ResultCard({ status, data, stale, error, notification, LinkComponent }) {
+export default function ResultCard({ status, data, stale, error, notification, LinkComponent, saveNote, signedIn = true }) {
   const level = data ? LEVELS[data.risk_level] : null;
   const loading = status === 'loading';
 
@@ -119,6 +119,8 @@ export default function ResultCard({ status, data, stale, error, notification, L
         </div>
       )}
 
+      {saveNote}
+
       <p className="pc-pr-disclaimer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
           <path d="M12 3 3 19h18L12 3Z" strokeLinejoin="round" />
@@ -137,7 +139,7 @@ export default function ResultCard({ status, data, stale, error, notification, L
       )}
 
       <button type="submit" className="pc-pr-run" disabled={loading}>
-        {loading ? 'Running model…' : data ? 'Run again' : 'Run prediction'}
+        {loading ? 'Running model…' : !signedIn ? 'Log in to run prediction' : data ? 'Run again' : 'Run prediction'}
         <span className="pc-hero-cta-arrow" aria-hidden="true">
           →
         </span>

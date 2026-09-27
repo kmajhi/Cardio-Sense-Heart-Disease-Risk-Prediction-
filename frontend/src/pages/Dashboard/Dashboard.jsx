@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import NavBar from './components/NavBar';
+import NavBar from '../../components/NavBar';
 import RecoveryChip from './components/RecoveryChip';
 import RiskCard from './components/RiskCard';
-import HeartHero from './components/HeartHero';
+import DashboardHeart from './components/DashboardHeart';
 import CheckupsCard from './components/CheckupsCard';
+import AssessmentsCard from './components/AssessmentsCard';
 import HeartRateChart from './components/HeartRateChart';
 import AlertCard from './components/AlertCard';
 import BreathingPlayer from './components/BreathingPlayer';
@@ -24,7 +25,7 @@ import './Dashboard.css';
 export default function Dashboard({
   data = dashboardMock,
   LinkComponent = 'a',
-  activePath = '/',
+  activePath = '/dashboard',
   user = data.user,
 }) {
   // Adding `is-ready` on the next frame triggers the one-time load sequence
@@ -72,11 +73,13 @@ export default function Dashboard({
 
           <RiskCard risk={data.risk} LinkComponent={LinkComponent} />
 
-          <HeartHero LinkComponent={LinkComponent} />
+          <DashboardHeart LinkComponent={LinkComponent} />
 
           <div className="pc-side">
-            <CheckupsCard appointments={data.appointments} />
-            <HeartRateChart points={data.heartRate.points} />
+            {/* A signed-in user's own records (`recent`); the sample board otherwise. */}
+            {data.recent && <AssessmentsCard records={data.recent} LinkComponent={LinkComponent} />}
+            {data.appointments && <CheckupsCard appointments={data.appointments} />}
+            {data.heartRate?.points?.length > 1 && <HeartRateChart points={data.heartRate.points} />}
             <AlertCard alert={data.alert} LinkComponent={LinkComponent} />
           </div>
         </section>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import NavBar from '../Dashboard/components/NavBar';
+import NavBar from '../../components/NavBar';
 import SiteFooter from '../../components/SiteFooter';
 import RiskSummaryCard from './components/RiskSummaryCard';
 import RiskBarsCard from './components/RiskBarsCard';

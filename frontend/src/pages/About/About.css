@@ -166,7 +166,7 @@
 }
 
 .pc-a-h1 {
-  font-size: clamp(44px, 6.2vw, 92px);
+  font-size: clamp(44px, 5vw, 72px); /* the Dashboard's hero size */
   font-weight: 200;
   line-height: 0.98;
   letter-spacing: -0.045em;
@@ -473,7 +473,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba(26, 158, 112, 0.12);
-  color: #0d7552;
+  color: var(--pc-success-ink);
   font-size: 10px;
   font-weight: 600;
 }
@@ -505,7 +505,7 @@
   padding: 6px 8px;
   border-radius: 8px;
   background: rgba(252, 183, 29, 0.14);
-  color: #5c3d00;
+  color: var(--pc-warn-ink);
   font-size: 8.5px;
 }
 
@@ -740,7 +740,7 @@
 
 .pc-a-card:nth-child(3) .pc-a-card-icon {
   background: rgba(26, 158, 112, 0.12);
-  color: #0d7552;
+  color: var(--pc-success-ink);
 }
 
 .pc-a-card:nth-child(4) .pc-a-card-icon {
@@ -902,7 +902,7 @@
   border: 1px solid rgba(252, 183, 29, 0.5);
   border-radius: 14px;
   background: rgba(252, 183, 29, 0.12);
-  color: #5c3d00;
+  color: var(--pc-warn-ink);
   font-size: 13px;
 }
 

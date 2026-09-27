@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import NavBar from '../Dashboard/components/NavBar';
+import NavBar from '../../components/NavBar';
 import SiteFooter from '../../components/SiteFooter';
-import { linkProps } from '../Dashboard/link';
+import { linkProps } from '../../components/link';
 import { timeAgo } from '../../notifications/time';
 import { useNotifications } from '../../notifications/NotificationsContext';
 import { AlertGroups } from '../../notifications/Alerts';

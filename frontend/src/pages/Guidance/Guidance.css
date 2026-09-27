@@ -188,7 +188,7 @@
 
 .pc-g-section.is-doctor .pc-g-icon {
   background: rgba(224, 69, 123, 0.12);
-  color: #ad1f52;
+  color: var(--pc-danger-ink);
 }
 
 .pc-g-items {
@@ -372,7 +372,7 @@
   border: 1px solid rgba(252, 183, 29, 0.5);
   border-radius: 14px;
   background: rgba(252, 183, 29, 0.12);
-  color: #5c3d00;
+  color: var(--pc-warn-ink);
   font-size: 13px;
   line-height: 1.45;
 }

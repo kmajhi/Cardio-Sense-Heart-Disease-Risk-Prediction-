@@ -1,8 +1,9 @@
-"""What the API stores: the user's health profile and every risk assessment.
+"""What the API stores: each user's health profile and risk assessments.
 
-There are no user accounts yet, so the site has one profile (user = None) and
-assessments aren't tied to a login. `Profile.user` is there for when accounts
-arrive; everything is editable from the Django admin in the meantime.
+Every profile and assessment belongs to a user account (predictor/accounts.py),
+and the API only ever returns the signed-in user's own. Rows with no user are
+from before accounts existed (and the seeded demo profile): the admin shows
+them, the API never does.
 """
 
 from django.conf import settings
@@ -21,7 +22,7 @@ class Profile(models.Model):
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE,
-        help_text="Empty until user accounts exist; the site then has a single profile.",
+        help_text="The account this profile belongs to. Empty only for rows from before accounts.",
     )
     full_name = models.CharField(max_length=80)
     # Small square JPEG as a data URL (the frontend crops and scales it to 320 px).
@@ -76,6 +77,10 @@ class Assessment(models.Model):
 
     RISK_LEVELS = [("low", "Low"), ("moderate", "Moderate"), ("high", "High")]
 
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="assessments",
+        help_text="Whose assessment this is. Empty only for rows from before accounts.",
+    )
     profile = models.ForeignKey(
         Profile, null=True, blank=True, on_delete=models.SET_NULL, related_name="assessments")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
