@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useNotifications } from './NotificationsContext';
 import { AlertGroups, GuidanceLink, RiskNotice } from './Alerts';
-import { linkProps } from '../pages/Dashboard/link';
+import { linkProps } from '../components/link';
 
 const BellIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">

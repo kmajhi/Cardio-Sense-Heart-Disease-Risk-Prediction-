@@ -1,11 +1,19 @@
-import { linkProps } from '../link';
-import NotificationsMenu from '../../../notifications/NotificationsMenu';
-import NavWeather from '../../../components/NavWeather';
+import { linkProps } from './link';
+import NotificationsMenu from '../notifications/NotificationsMenu';
+import NavWeather from './NavWeather';
+import { useAuth } from '../auth/AuthContext';
 
+// Signed in: the app. Home is only the way in, so it isn't listed.
 const NAV_ITEMS = [
-  { label: 'Dashboard', to: '/' },
+  { label: 'Dashboard', to: '/dashboard' },
   { label: 'Prediction', to: '/prediction' },
   { label: 'History', to: '/history' },
+  { label: 'About', to: '/about' },
+];
+// Signed out: Home and the pages a visitor can look at.
+const GUEST_ITEMS = [
+  { label: 'Home', to: '/' },
+  { label: 'Prediction', to: '/prediction' },
   { label: 'About', to: '/about' },
 ];
 
@@ -18,7 +26,7 @@ const initials = (name = '') =>
     .join('');
 
 // Cardio Sense logo: an anatomical heart with pulse rays, traced from the
-// brand artwork into a vector (also saved as assets/cardio-sense-logo.svg).
+// brand artwork into a vector (also saved as src/assets/cardio-sense-logo.svg).
 // Uses currentColor, so its colour comes from CSS (--pc-brand).
 const LOGO_BODY =
   'M95.73 33.00C96.15 32.59 96.12 32.53 97.00 32.53C97.88 32.53 100.00 32.62 101.00 33.00C102.00 33.38 102.75 32.67 103.00 34.83C103.25 37.00 102.42 43.81 102.49 46.00C102.57 48.19 101.54 47.27 103.46 48.00C105.38 48.73 110.91 50.94 114.00 50.38C117.09 49.82 118.67 46.57 122.00 44.66C125.33 42.75 131.67 39.68 134.00 38.93C136.33 38.18 134.79 38.14 136.00 40.15C137.21 42.16 140.59 48.71 141.25 51.00C141.92 53.29 141.38 52.52 140.00 53.92C138.62 55.32 134.87 57.71 133.00 59.39C131.13 61.07 129.97 62.39 128.80 64.00C127.63 65.61 126.66 67.36 126.00 69.03C125.34 70.69 124.85 72.17 124.83 74.00C124.82 75.83 124.99 77.83 125.90 80.00C126.82 82.17 129.19 84.67 130.31 87.00C131.42 89.33 132.07 91.83 132.61 94.00C133.16 96.17 133.41 98.00 133.57 100.00C133.73 102.00 133.93 103.67 133.59 106.00C133.25 108.33 133.61 108.17 131.55 114.00C129.48 119.83 123.46 135.37 121.20 141.00C118.95 146.63 119.37 145.83 118.00 147.77C116.63 149.71 115.00 151.36 113.00 152.62C111.00 153.89 108.00 154.93 106.00 155.37C104.00 155.82 102.50 155.48 101.00 155.28C99.50 155.08 98.33 154.80 97.00 154.18C95.67 153.56 98.81 157.42 93.00 151.56C87.19 145.70 67.81 125.09 62.12 119.00C56.44 112.91 59.91 116.53 58.89 115.00C57.87 113.47 56.84 111.65 56.00 109.82C55.16 107.99 54.38 106.14 53.86 104.00C53.34 101.86 52.84 99.83 52.86 97.00C52.87 94.17 53.12 90.50 53.94 87.00C54.77 83.50 56.52 79.17 57.80 76.00C59.07 72.83 59.76 71.00 61.62 68.00C63.48 65.00 67.69 60.00 68.95 58.00C70.20 56.00 69.44 58.17 69.15 56.00C68.86 53.83 67.44 47.33 67.20 45.00C66.97 42.67 66.92 42.79 67.72 42.00C68.52 41.21 70.95 40.51 72.00 40.25C73.05 39.98 73.42 40.10 74.00 40.40C74.58 40.69 74.74 40.57 75.45 42.00C76.16 43.43 77.49 47.62 78.24 49.00C79.00 50.38 78.21 50.46 80.00 50.27C81.79 50.08 87.17 48.59 89.00 47.87C90.83 47.14 90.08 48.09 91.00 45.94C91.92 43.80 93.73 37.16 94.52 35.00C95.31 32.84 95.32 33.41 95.73 33.00ZM96.27 68.00C97.69 67.52 100.94 67.12 102.00 67.12C103.06 67.12 102.57 67.52 102.65 68.00C102.72 68.48 102.72 69.40 102.45 70.00C102.17 70.60 102.24 71.38 101.00 71.58C99.76 71.77 96.26 71.45 95.00 71.18C93.74 70.92 93.45 70.00 93.45 70.00C93.45 70.00 94.84 68.48 96.27 68.00Z';
@@ -33,19 +41,38 @@ export function HeartMark(props) {
   );
 }
 
-export default function NavBar({ user, hasNotifications, activePath, LinkComponent }) {
+/**
+ * - onAuth: ('login' | 'register') => void, for the Home page's own dialog.
+ *           Elsewhere the Log in / Register buttons go to Home, which opens it.
+ */
+export default function NavBar({ user, hasNotifications, activePath, LinkComponent, onAuth }) {
   const L = LinkComponent;
+  const auth = useAuth(); // null when the nav is rendered outside the app (no log-out button then)
+  const signedIn = auth ? Boolean(auth.user) : true;
+  const items = signedIn ? NAV_ITEMS : GUEST_ITEMS;
+
+  const authButton = (mode, label, className) =>
+    onAuth ? (
+      <button type="button" className={className} onClick={() => onAuth(mode)}>
+        {label}
+      </button>
+    ) : (
+      <L {...linkProps(L, '/')} {...(L === 'a' ? {} : { state: { auth: mode } })} className={className}>
+        {label}
+      </L>
+    );
+
   return (
     // No entrance animation: the nav is the one thing that stays put between pages.
     <header className="pc-nav">
-      <L {...linkProps(L, '/')} className="pc-logo">
+      <L {...linkProps(L, signedIn ? '/dashboard' : '/')} className="pc-logo">
         <HeartMark />
         Cardio Sense
       </L>
 
       <nav aria-label="Main" className="pc-nav-scroll">
         <ul className="pc-nav-links">
-          {NAV_ITEMS.map((item) => (
+          {items.map((item) => (
             <li key={item.to}>
               <L
                 {...linkProps(L, item.to)}
@@ -61,17 +88,33 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
       </nav>
 
       <div className="pc-nav-actions">
-        <NavWeather />
-        <NotificationsMenu LinkComponent={LinkComponent} fallbackDot={hasNotifications} />
-        <L
-          {...linkProps(L, '/profile')}
-          className="pc-avatar"
-          aria-label={`Profile: ${user?.name ?? 'you'}`}
-          aria-current={activePath === '/profile' ? 'page' : undefined}
-        >
-          {/* Only a data:image URL made by the Profile page is shown as a photo. */}
-          {user?.photo?.startsWith?.('data:image/jpeg;base64,') ? <img src={user.photo} alt="" /> : initials(user?.name)}
-        </L>
+        {!signedIn ? (
+          <>
+            {authButton('login', 'Log in', 'pc-nav-auth')}
+            {authButton('register', 'Register', 'pc-nav-auth pc-nav-auth--solid')}
+          </>
+        ) : (
+          <>
+            <NavWeather />
+            <NotificationsMenu LinkComponent={LinkComponent} fallbackDot={hasNotifications} />
+            <L
+              {...linkProps(L, '/profile')}
+              className="pc-avatar"
+              aria-label={`Profile: ${user?.name ?? 'you'}`}
+              aria-current={activePath === '/profile' ? 'page' : undefined}
+            >
+              {/* Only a data:image URL made by the Profile page is shown as a photo. */}
+              {user?.photo?.startsWith?.('data:image/jpeg;base64,') ? <img src={user.photo} alt="" /> : initials(user?.name)}
+            </L>
+            {auth?.user && (
+              <button type="button" className="pc-icon-btn" aria-label="Log out" title="Log out" onClick={auth.logout}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10" />
+                </svg>
+              </button>
+            )}
+          </>
+        )}
       </div>
     </header>
   );

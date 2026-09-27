@@ -8,21 +8,11 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def client():
-    return APIClient()
-
-
-@pytest.fixture
-def profile_body():
-    """What the Profile page's saveProfile() sends (profileFields.js → clean())."""
-    return {
-        "full_name": " Rahim Uddin ", "photo": "", "email": "rahim@example.com", "phone": "+880 1711 000000",
-        "date_of_birth": "1974-03-02", "sex": "M", "height_cm": 168, "weight_kg": "",
-        "blood_group": "B+", "hypertension": 1, "diabetes": 0, "family_history": None,
-        "chest_pain_history": None, "smoker": "former", "activity": "moderate",
-        "medications": ["Amlodipine 5 mg"], "allergies": [], "emergency_name": "", "emergency_phone": "",
-        "connections": {}, "created_at": "2020-01-01T00:00:00Z", "updated_at": "2020-01-01T00:00:00Z",
-    }
+def client(user):
+    """Signed in as `user` (conftest.py): every endpoint here needs an account."""
+    api = APIClient()
+    api.force_login(user)
+    return api
 
 
 # ---------- /api/predict/ + /api/history/ ----------
@@ -68,24 +58,36 @@ def test_history_lists_records_oldest_first_and_deletes(trained, client, patient
     assert len(client.get(reverse("history")).json()) == 1
 
 
-def test_assessments_link_to_the_profile(trained, client, patient, profile_body):
+def test_assessments_belong_to_the_user_and_their_profile(trained, client, user, patient, profile_body):
     client.put(reverse("profile"), profile_body, format="json")
     client.post(reverse("predict"), patient, format="json")
-    assert Assessment.objects.get().profile == Profile.objects.get()
+    saved = Assessment.objects.get()
+    assert saved.user == user and saved.profile == Profile.objects.get(user=user)
 
 
 # ---------- /api/profile/ ----------
 
+def demo_profile():
+    """The profile migration 0002 seeds. It belongs to no account."""
+    from predictor.serializers import ProfileSerializer
+
+    return ProfileSerializer(Profile.objects.get(user__isnull=True)).data
+
+
+def test_new_user_does_not_see_the_demo_profile(client):
+    assert client.get(reverse("profile")).status_code == 404
+
+
 def test_demo_profile_is_seeded_and_valid(client):
     """Migration 0002 adds a demo profile that the API itself would accept."""
-    demo = client.get(reverse("profile")).json()
+    demo = demo_profile()
     assert demo["full_name"] == "Nadia Rahman"
     assert demo["photo"].startswith("data:image/jpeg;base64,")
     assert client.put(reverse("profile"), demo, format="json").status_code == 200
 
 
-def test_demo_profile_has_a_location(client):
-    demo = client.get(reverse("profile")).json()
+def test_demo_profile_has_a_location():
+    demo = demo_profile()
     assert (demo["city"], demo["country"], demo["timezone"]) == ("Dhaka", "Bangladesh", "Asia/Dhaka")
 
 
@@ -120,7 +122,8 @@ def test_profile_location_validation(client, profile_body, change):
     assert res.status_code == 400 and res.json()["detail"]
 
 
-def test_profile_is_404_once_deleted(client):
+def test_profile_is_404_once_deleted(client, profile_body):
+    client.put(reverse("profile"), profile_body, format="json")
     client.delete(reverse("profile"))
     res = client.get(reverse("profile"))
     assert res.status_code == 404 and res.json()["detail"]
@@ -136,7 +139,7 @@ def test_profile_round_trip(client, profile_body):
     assert client.get(reverse("profile")).json() == saved
 
     client.put(reverse("profile"), {**profile_body, "weight_kg": 76.5}, format="json")
-    assert Profile.objects.count() == 1  # PUT replaces, never duplicates
+    assert Profile.objects.filter(user__isnull=False).count() == 1  # PUT replaces, never duplicates
     assert client.get(reverse("profile")).json()["weight_kg"] == 76.5
 
 
@@ -167,7 +170,7 @@ def test_profile_delete_keeps_assessments(trained, client, patient, profile_body
 def test_admin_pages_render(trained, client, patient, profile_body, admin_client):
     client.put(reverse("profile"), profile_body, format="json")
     client.post(reverse("predict"), patient, format="json")
-    assessment, profile = Assessment.objects.get(), Profile.objects.get()
+    assessment, profile = Assessment.objects.get(), Profile.objects.get(user__isnull=False)
     for url in [
         reverse("admin:predictor_assessment_changelist"),
         reverse("admin:predictor_assessment_change", args=[assessment.pk]),

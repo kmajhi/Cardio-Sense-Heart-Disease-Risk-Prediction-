@@ -1,4 +1,4 @@
-import { linkProps } from '../link';
+import { linkProps } from '../../../components/link';
 
 export default function AlertCard({ alert, LinkComponent }) {
   if (!alert) return null;
@@ -8,6 +8,7 @@ export default function AlertCard({ alert, LinkComponent }) {
       <span className="pc-alert-dot" aria-hidden="true" />
       <div>
         <p className="pc-alert-title">{alert.title}</p>
+        {alert.detail && <p className="pc-alert-detail">{alert.detail}</p>}
         <L {...linkProps(L, alert.href ?? '/history')} className="pc-alert-link">
           {alert.linkLabel ?? 'See details'}
         </L>

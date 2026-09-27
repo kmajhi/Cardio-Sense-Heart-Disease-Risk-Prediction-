@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { linkProps } from '../link';
+import { linkProps } from './link';
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
 import heartWebm from '../assets/heart-loop.webm';
 import heartMp4 from '../assets/heart-loop.mp4';

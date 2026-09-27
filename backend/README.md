@@ -23,6 +23,10 @@ The frontend's dev server proxies `/api/*` to `:8000`. Put `VITE_USE_MOCK_API=fa
 
 | Method | Path | Body → response |
 |---|---|---|
+| GET | `/api/auth/me/` | `{ name, email }` of the signed-in user, or 401; sets the `csrftoken` cookie |
+| POST | `/api/auth/register/` | `{ name, email, password }` → 201 `{ name, email }`, signed in |
+| POST | `/api/auth/login/` | `{ email, password }` → `{ name, email }`, signed in |
+| POST | `/api/auth/logout/` | 204 |
 | POST | `/api/predict/` | `toPayload()` body → `{ probability, risk_level, top_factors }`; saved as an Assessment |
 | GET | `/api/history/` | `[{ id, created_at, inputs, result }]`, oldest first |
 | DELETE | `/api/history/<id>/` | `id` as shown (`A-0012`) → 204 |
@@ -36,10 +40,19 @@ The frontend's dev server proxies `/api/*` to `:8000`. Put `VITE_USE_MOCK_API=fa
 Errors are HTTP 400 `{ "detail": "..." }`, which the frontend's `api/client.js` displays. A
 missing model file is a 503.
 
-**No user accounts yet.** The API is open and the site has a single profile (`Profile.user` is
-empty). `Profile.user` is ready for when accounts arrive; the views' `current_profile()` is the
-one place that has to change. Don't deploy the API publicly before then: anyone could read the
-stored data.
+**User accounts** (`predictor/accounts.py`). Django's own users (the lower-cased email is the
+username) and password hashing, with its password rules (`AUTH_PASSWORD_VALIDATORS`), signed in
+with a session cookie. Every other endpoint needs a signed-in user (HTTP 403 otherwise) and only
+ever reads or changes that user's own profile and assessments; a new account starts empty.
+
+- **CSRF:** `GET /api/auth/me/` sets the `csrftoken` cookie and every data-changing request sends
+  it back as `X-CSRFToken` (the frontend's `api/client.js`). Register, login and logout check it
+  too, so a hostile page can't sign a visitor into its own account. `FRONTEND_URL` is trusted as
+  an origin; add others with `DJANGO_CSRF_TRUSTED_ORIGINS`.
+- **Rate limit:** register and login allow 10 attempts a minute per client
+  (`AUTH_THROTTLE_RATE`).
+- **Older rows:** assessments and the seeded demo profile from before accounts have no user; the
+  admin shows them, the API never does.
 
 ## Linked accounts (real OAuth)
 

@@ -23,6 +23,12 @@ def oauth_settings(settings):
     }
 
 
+@pytest.fixture(autouse=True)
+def users_profile(user):
+    """Give the seeded demo profile to the signed-in user, so they have one to link to."""
+    Profile.objects.update(user=user)
+
+
 @pytest.fixture
 def provider_calls(monkeypatch):
     """Fakes the provider's token and identity endpoints; records what was sent."""

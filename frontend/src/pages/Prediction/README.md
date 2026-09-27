@@ -7,7 +7,7 @@ rebuilt in the dashboard's own style with the **trained model's actual inputs**.
 ## Usage
 
 Routed at `/prediction` in `src/App.jsx`, which passes `predict` from `src/api/predictionApi.js`.
-It reuses `../Dashboard/components/NavBar` and `../Dashboard/Dashboard.css`.
+It reuses `src/components/NavBar` and `../Dashboard/Dashboard.css`.
 `predictionApi.js` uses `predictionMock.js` (a hand-tuned stand-in, **not the model's numbers**)
 unless `VITE_USE_MOCK_API=false`.
 
