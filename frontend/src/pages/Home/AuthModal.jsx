@@ -20,6 +20,20 @@ const XIcon = () => (
 
 const PROVIDER_ICONS = { gmail: <GoogleIcon />, x: <XIcon /> };
 
+const EyeIcon = ({ open }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+    {!open && <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />}
+  </svg>
+);
+
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const HEADS = {
@@ -50,6 +64,7 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
   const [values, setValues] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState(initialError);
   const [busy, setBusy] = useState(null); // the mode being submitted
+  const [showPassword, setShowPassword] = useState(false); // the eye button in the password field
   const [providers, setProviders] = useState({}); // { gmail: true, x: false } from the server
   const [offline, setOffline] = useState(false); // the API couldn't be reached
 
@@ -110,6 +125,7 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
   // so keyboard focus goes to the newly selected tab.
   const switchTo = (next, moveFocus = false) => {
     setError('');
+    setShowPassword(false);
     setForgot(false);
     setResetSent(false);
     onMode(next);
@@ -197,6 +213,39 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
     </label>
   );
 
+  // Password with a show/hide button. The button sits outside the <label> text, so
+  // clicking it doesn't move focus away from what the user is typing.
+  const passwordField = (how, props) => {
+    const id = `${uid}-${how}-password`;
+    return (
+      <div className="hm-label">
+        <label htmlFor={id}>Password</label>
+        <div className="hm-pw">
+          <input
+            id={id}
+            className="hm-input"
+            required
+            value={values.password}
+            onChange={set('password')}
+            {...props}
+            type={showPassword ? 'text' : 'password'}
+          />
+          <button
+            type="button"
+            className="hm-pw-toggle"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
+            aria-controls={id}
+            title={showPassword ? 'Hide password' : 'Show password'}
+          >
+            <EyeIcon open={!showPassword} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const form = (how) => {
     const active = mode === how;
     const isLogin = how === 'login';
@@ -212,8 +261,7 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
       >
         {!isLogin && field(how, 'name', 'Full name', { type: 'text', maxLength: 80, autoComplete: 'name', placeholder: 'Your name' })}
         {field(how, 'email', 'Email', { type: 'email', autoComplete: active ? 'email' : 'off', placeholder: 'you@example.com' })}
-        {field(how, 'password', 'Password', {
-          type: 'password',
+        {passwordField(how, {
           minLength: isLogin ? undefined : 8,
           autoComplete: active ? (isLogin ? 'current-password' : 'new-password') : 'off',
           placeholder: isLogin ? 'Your password' : 'At least 8 characters',

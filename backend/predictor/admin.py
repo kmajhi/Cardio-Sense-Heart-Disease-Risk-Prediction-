@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.http import HttpResponse
 from django.utils.html import format_html
 
-from .models import Assessment, ConnectionEvent, Profile, SocialAccount
+from .models import ActivityEvent, Assessment, ConnectionEvent, Profile, SiteSettings, SocialAccount
 
 
 def cell(value):
@@ -173,4 +173,31 @@ class SocialAccountAdmin(admin.ModelAdmin):
     readonly_fields = ["user", "provider", "uid", "handle", "created_at", "last_login_at"]
 
     def has_add_permission(self, request):
+        return False
+
+
+@admin.register(ActivityEvent)
+class ActivityEventAdmin(admin.ModelAdmin):
+    """The activity log (also in the admin console). Written by the app only."""
+
+    list_display = ["created_at", "kind", "email", "summary", "ip"]
+    list_filter = ["kind", "created_at"]
+    search_fields = ["email", "summary", "ip"]
+    date_hierarchy = "created_at"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    list_display = ["__str__", "maintenance_mode", "registration_open", "predictions_open", "updated_at", "updated_by"]
+
+    def has_add_permission(self, request):
+        return not SiteSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
         return False

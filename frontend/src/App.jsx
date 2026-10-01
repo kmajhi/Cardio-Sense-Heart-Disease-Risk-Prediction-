@@ -11,7 +11,9 @@ const About = lazy(() => import('./pages/About/About'));
 const Profile = lazy(() => import('./pages/Profile/Profile'));
 const Guidance = lazy(() => import('./pages/Guidance/Guidance'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword/ResetPassword'));
+const Console = lazy(() => import('./pages/Admin/Console'));
 import DemoBanner from './components/DemoBanner';
+import SiteBanner from './components/SiteBanner';
 import { AuthProvider, RequireAuth, useAuth } from './auth/AuthContext';
 import { NotificationsProvider } from './notifications/NotificationsContext';
 import NavBar from './components/NavBar';
@@ -127,6 +129,7 @@ function AppRoutes() {
   return (
     // Keyed on the account, so a different user never sees the last one's notifications.
     <NotificationsProvider key={account?.email ?? 'signed-out'} profile={profile} account={account?.email}>
+      <SiteBanner />
       <DemoBanner />
       <ScrollToTop />
       <Suspense fallback={<LoadingShell {...shared} />}>
@@ -152,6 +155,8 @@ function AppRoutes() {
         <Route path="/profile" element={guard(<ProfileRoute {...shared} account={account} onProfileChange={setProfile} />)} />
         <Route path="/guidance" element={guard(<Guidance {...shared} />)} />
         <Route path="/reset-password" element={<ResetPassword {...shared} />} />
+        {/* Admin console: staff only (it checks, and so does every API call). */}
+        <Route path="/console/*" element={<Console />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>

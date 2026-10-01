@@ -39,6 +39,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from .connections import PROVIDERS, STATE_TTL_SECONDS, ConnectError, authorize_redirect, client, exchange_code, fetch_json
+from .activity import record
 from .models import SocialAccount
 
 log = logging.getLogger(__name__)
@@ -121,6 +122,8 @@ def account_for(provider, uid, email, verified, name):
         # The same identity finished signing up in another tab a moment ago.
         return SocialAccount.objects.select_related("user").get(provider=provider, uid=uid).user
     log.info("New account created with %s sign-in", provider)
+    record("signup", f"{handle or name} created an account with {'Google' if provider == 'gmail' else 'X'}",
+           user=user, provider=provider)
     return user
 
 

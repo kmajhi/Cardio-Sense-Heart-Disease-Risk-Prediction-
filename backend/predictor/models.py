@@ -192,3 +192,86 @@ class SocialAccount(models.Model):
 
     def __str__(self):
         return f"{self.get_provider_display()} · {self.handle or self.uid}"
+
+
+class ActivityEvent(models.Model):
+    """What happened in the app, for the admin console's activity log and monitoring:
+    sign-ups, logins (and failed ones), predictions, account changes and admin actions.
+    Never holds passwords, tokens or health values; `detail` is a short summary.
+    Kept 180 days (admin console → Maintenance → "Purge old activity")."""
+
+    KINDS = [
+        ("signup", "Sign-up"),
+        ("login", "Login"),
+        ("login_failed", "Failed login"),
+        ("logout", "Logout"),
+        ("social_login", "Google / X sign-in"),
+        ("prediction", "Prediction"),
+        ("password_changed", "Password changed"),
+        ("password_reset", "Password reset"),
+        ("account_deleted", "Account deleted"),
+        ("admin", "Admin action"),
+        ("maintenance", "Maintenance task"),
+    ]
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    kind = models.CharField(max_length=20, choices=KINDS, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="activity")
+    # Kept even after the account is deleted, so the log stays readable.
+    email = models.CharField(max_length=254, blank=True, db_index=True)
+    summary = models.CharField(max_length=240)
+    detail = models.JSONField(default=dict, blank=True)
+    ip = models.GenericIPAddressField(null=True, blank=True, help_text="For spotting repeated failed logins.")
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.created_at:%Y-%m-%d %H:%M} · {self.get_kind_display()} · {self.summary}"
+
+
+class SiteSettings(models.Model):
+    """Site-wide switches the admin console controls. One row (pk=1); read with load()."""
+
+    LEVELS = [("info", "Information"), ("warning", "Warning"), ("critical", "Critical")]
+
+    maintenance_mode = models.BooleanField(
+        default=False, help_text="Only staff can use the app; everyone else sees the maintenance message.")
+    maintenance_message = models.CharField(
+        max_length=300, blank=True,
+        default="Cardio Sense is down for maintenance. Please try again shortly.")
+    announcement = models.CharField(max_length=300, blank=True, help_text="Shown in a banner on every page.")
+    announcement_level = models.CharField(max_length=10, choices=LEVELS, default="info")
+    registration_open = models.BooleanField(default=True, help_text="New accounts can be created.")
+    predictions_open = models.BooleanField(default=True, help_text="Users can run predictions.")
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.CharField(max_length=254, blank=True)
+
+    class Meta:
+        verbose_name = "site settings"
+        verbose_name_plural = "site settings"
+
+    def __str__(self):
+        return "Site settings"
+
+    CACHE_KEY = "cardio:site-settings"
+
+    @classmethod
+    def load(cls):
+        """The settings row, cached briefly: the maintenance check reads it on every API call."""
+        from django.core.cache import cache
+
+        cached = cache.get(cls.CACHE_KEY)
+        if cached is not None:
+            return cached
+        obj, _ = cls.objects.get_or_create(pk=1)
+        cache.set(cls.CACHE_KEY, obj, 10)
+        return obj
+
+    def save(self, *args, **kwargs):
+        from django.core.cache import cache
+
+        self.pk = 1
+        super().save(*args, **kwargs)
+        cache.delete(self.CACHE_KEY)

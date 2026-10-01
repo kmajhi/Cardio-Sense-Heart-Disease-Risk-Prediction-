@@ -45,5 +45,7 @@ class PredictorConfig(AppConfig):
     verbose_name = "Cardio Sense"
 
     def ready(self):
+        from . import activity  # noqa: F401 (connects the login/logout signal handlers)
+
         if serving():
             threading.Thread(target=warm_up, name="model-warmup", daemon=True).start()
