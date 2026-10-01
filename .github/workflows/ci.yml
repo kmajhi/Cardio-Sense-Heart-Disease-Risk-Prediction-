@@ -1,0 +1,63 @@
+# Runs on every push and pull request: the three test suites, lint, the
+# production build and Django's deployment checks.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+      - name: Deployment checks
+        env:
+          DJANGO_DEBUG: "false"
+          DJANGO_SECRET_KEY: ci-only-${{ github.run_id }}-not-a-real-secret-key-for-deploy-checks
+          DJANGO_ALLOWED_HOSTS: api.example.com
+          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+        run: python manage.py check --deploy --fail-level WARNING
+
+  ml:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: ml/requirements.txt
+      - run: pip install -r requirements.txt
+      # The dataset is private, so its tests skip here; the artifact and regression tests run.
+      - run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

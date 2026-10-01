@@ -1,11 +1,12 @@
 import { request } from './client';
+import { USE_MOCK } from './mode';
 
 // Linked accounts. With the Django API (VITE_USE_MOCK_API=false) connecting is
 // real OAuth: the page navigates to /api/connect/<id>/start/, the provider's own
 // sign-in page asks the user, and the server sends them back to
 // /profile?connected=<id> or ?connect_error=<code> (see backend/predictor/connections.py).
 // The mock (static deploy, no server) keeps the old simulated flow.
-export const REAL_OAUTH = import.meta.env.VITE_USE_MOCK_API === 'false';
+export const REAL_OAUTH = !USE_MOCK;
 
 /** { gmail: true, x: false, ... }: which providers have app keys on the server. */
 export function getProviders() {

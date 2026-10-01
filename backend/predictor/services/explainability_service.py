@@ -6,6 +6,7 @@ percentage points), matching what the frontend renders.
 
 from __future__ import annotations
 
+import threading
 from functools import lru_cache
 
 import joblib
@@ -65,8 +66,27 @@ def _explainer(pipeline):
     if isinstance(clf, (RandomForestClassifier, DecisionTreeClassifier)):
         # Tree SHAP on a sklearn classifier explains predict_proba directly.
         return shap.TreeExplainer(clf), "tree"
+    # Anything else, including the deployed calibrated forest: model-agnostic
+    # permutation SHAP against the k-means background.
     background = joblib.load(SHAP_BACKGROUND_PATH)
     return shap.Explainer(lambda z: clf.predict_proba(z)[:, 1], background), "generic"
+
+
+# Permutation SHAP draws from numpy's global RNG (shap only seeds it once, at
+# creation). Reseeding per call makes the same inputs always get the same
+# explanation; the lock and the saved state keep that from leaking elsewhere.
+_SEED = 0
+_rng_lock = threading.Lock()
+
+
+def _seeded(explainer, x):
+    with _rng_lock:
+        state = np.random.get_state()
+        np.random.seed(_SEED)
+        try:
+            return explainer(x, max_evals=max(2 * x.shape[1] + 1, 100), silent=True)
+        finally:
+            np.random.set_state(state)
 
 
 def shap_values(pipeline, features) -> tuple[np.ndarray, list[str]]:
@@ -78,7 +98,7 @@ def shap_values(pipeline, features) -> tuple[np.ndarray, list[str]]:
         values = np.asarray(explainer.shap_values(x, check_additivity=False))
         values = values[0, :, 1] if values.ndim == 3 else values[0]
     else:
-        values = np.asarray(explainer(x, max_evals=max(2 * x.shape[1] + 1, 100)).values)[0]
+        values = np.asarray(_seeded(explainer, x).values)[0]
     return values, pre.get_feature_names_out().tolist()
 
 

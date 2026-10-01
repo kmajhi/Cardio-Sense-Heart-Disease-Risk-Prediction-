@@ -9,8 +9,9 @@ import { describe } from './analyze';
 import { GROUPS, rank } from './ranges';
 import { RISK } from './risk';
 
-const FISH = /fish|sea ?food|shellfish|prawn|shrimp|crab/i;
-const NUTS = /nut|peanut|almond|walnut|cashew|pistachio/i;
+// Whole words only: "nutmeg", "coconut" and "doughnut" are not nut allergies.
+const FISH = /\b(fish|sea ?food|shellfish|prawns?|shrimps?|crabs?|lobsters?)\b/i;
+const NUTS = /\b(nuts?|tree ?nuts?|peanuts?|almonds?|walnuts?|cashews?|pistachios?|hazelnuts?|pecans?)\b/i;
 
 function context(notification, profile) {
   const { analysis, risk } = notification;
@@ -69,7 +70,7 @@ function doctor(c, notification) {
   }
   if (c.bpCrisis) {
     out.push(item('bp-crisis',
-      'Blood pressure of 180 mmHg or more: rest for 5 minutes and measure again. If it’s still that high, or you ' +
+      'Blood pressure above 180 mmHg: rest for 5 minutes and measure again. If it’s still that high, or you ' +
       'have chest pain, severe headache, vision changes, weakness or trouble speaking, get emergency care.',
       c.why('bp_mmhg'), 'American Heart Association: hypertensive crisis'));
   }

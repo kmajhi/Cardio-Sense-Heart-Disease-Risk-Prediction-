@@ -26,30 +26,40 @@ The three parts are separate on purpose:
 
 ## Model
 
-The deployed model is a **Random Forest classifier** (scikit-learn). Training reproduces the
-research notebook's method: it compares four models and keeps the best one.
+The deployed model is a **calibrated Random Forest classifier** (scikit-learn). Training
+follows the research notebook's method, comparing four models and keeping the best, with three
+changes made after a QA review: Troponin-I is left out (it runs backwards in this dataset), the
+model is chosen on cross-validation only, and the winner is calibrated.
 
 | Model | CV ROC-AUC | Test ROC-AUC | Test accuracy | Test recall |
 |---|---|---|---|---|
-| **Random Forest (selected)** | 0.999 | 0.992 | 95.7% | 94.9% |
-| SVM | 0.989 | 0.991 | 95.7% | 94.0% |
-| Logistic Regression | 0.988 | 0.985 | 93.7% | 90.6% |
-| Decision Tree | 0.957 | 0.964 | 88.4% | 89.7% |
+| **Random Forest (selected, calibrated)** | 0.992 | 0.987 | 95.7% | 95.7% |
+| Logistic Regression | 0.987 | 0.990 | 94.7% | 91.5% |
+| SVM | 0.986 | 0.989 | 94.2% | 91.5% |
+| Decision Tree | 0.939 | 0.929 | 88.4% | 85.5% |
 
-- **Selection rule:** highest CV ROC-AUC first, then CV recall, then CV F1, then test ROC-AUC.
-- **Settings:** 200 trees, no depth limit, `max_features = log2`, `min_samples_leaf = 1`, and
-  `class_weight = balanced` for the mild 56.5% / 43.5% class imbalance.
+> **Internal validation only**: one hospital's data, stratified hold-out. The other rows are
+> uncalibrated, as compared.
+
+- **Selection rule:** highest CV ROC-AUC first, then CV recall, then CV F1, then CV Brier score.
+  The test set plays no part in the choice.
+- **Settings:** 400 trees, `max_depth = 10`, `max_features = log2`, `min_samples_leaf = 1`,
+  `class_weight = balanced`, then Platt scaling (5-fold, training data only). Test Brier score
+  0.043; estimates are never exactly 0% or 100%.
 - **Data:** 1,035 adult records, stratified 80/20 split (828 train / 207 held-out test), with
   every model tuned by 5-fold cross-validation on ROC-AUC.
 - **Pipeline:** preprocessing is fitted on training data only, inside the saved pipeline.
   Numeric values get median imputation with missing-value flags; sex is one-hot encoded.
   The whole pipeline is saved as `ml/artifacts/heart_disease_inference_pipeline.joblib`.
-- **Explanations:** SHAP `TreeExplainer` gives each prediction's top five factors in
-  probability points.
+- **Explanations:** seeded permutation SHAP gives each prediction's top five factors in
+  probability points (repeatable, and they add up to the estimate).
+- **Missing labs:** blood sugar and the blood-panel labs can be marked "not measured". The
+  model imputes them and the result names them; three or more flag the estimate as low
+  confidence. Age, sex, height, weight, history, blood pressure and the lipid panel are required.
 
 > **These scores are dataset-specific, not clinical accuracy.** The dataset carries shortcuts
-> to the outcome, most notably Troponin-I behaving backwards and LDL almost separating the
-> classes on its own. See [`ml/README.md`](ml/README.md#-data-quality-findings-read-before-trusting-these-numbers)
+> to the outcome, most notably Troponin-I behaving backwards (now left out of the model) and
+> LDL almost separating the classes on its own. See [`ml/README.md`](ml/README.md#-data-quality-findings-read-before-trusting-these-numbers)
 > for the details.
 
 ## Quick start
@@ -59,7 +69,7 @@ research notebook's method: it compares four models and keeps the best one.
 cd frontend && npm install && npm run dev        # http://localhost:5173
 
 # Backend API (admin at http://localhost:8000/admin/) + tests
-cd backend && pip install -r requirements.txt && python manage.py migrate
+cd backend && pip install -r requirements.txt && cp .env.example .env && python manage.py migrate
 python manage.py createsuperuser && python manage.py runserver
 pytest
 # then set VITE_USE_MOCK_API=false in frontend/.env.local to use it

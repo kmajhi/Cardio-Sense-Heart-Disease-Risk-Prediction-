@@ -111,6 +111,10 @@ export default function RecordList({ records }) {
                   </span>
                   <span className="pc-h-record-meta">
                     {rec.id} · {flagged === 0 ? 'all results in range' : `${flagged} outside typical range`}
+                    {rec.result.low_confidence && ' · low confidence'}
+                    {rec.result.missing_fields?.length > 0 && ` · ${rec.result.missing_fields.length} not measured`}
+                    {rec.result.outside_training?.length > 0 && ' · beyond training data'}
+                    {rec.result.top_factors?.some((f) => f.name === 'Troponin-I') && ' · older model'}
                   </span>
                 </span>
                 <span className="pc-h-record-pct">

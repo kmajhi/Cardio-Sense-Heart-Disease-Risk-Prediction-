@@ -1,3 +1,5 @@
+import re
+from datetime import date
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from rest_framework import serializers
@@ -7,6 +9,9 @@ from .models import Profile
 PHOTO_PREFIX = "data:image/jpeg;base64,"
 MAX_PHOTO_CHARS = 300_000  # the frontend stores ~20-40 KB; this leaves plenty of room
 MAX_LIST_ITEMS = 50
+# Same rules as the Profile form (frontend profileFields.js → validate()).
+PHONE = re.compile(r"^\+?[\d\s().-]{7,20}$")
+MAX_AGE = 120
 
 # The frontend sends '' for an empty date or number and expects '' back.
 BLANK_AS_NULL = ("date_of_birth", "height_cm", "weight_kg", "latitude", "longitude")
@@ -16,7 +21,7 @@ LOCATION = ("city", "state", "country", "country_code", "timezone", "latitude", 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        exclude = ["id", "user"]
+        exclude = ["id", "user", "deleted_at"]
         read_only_fields = ["created_at", "updated_at"]
         extra_kwargs = {
             "height_cm": {"min_value": 50, "max_value": 250},
@@ -41,6 +46,29 @@ class ProfileSerializer(serializers.ModelSerializer):
         value = value.strip()
         if not value:
             raise serializers.ValidationError("Enter your name.")
+        return value
+
+    def _phone(self, value):
+        value = value.strip()
+        if value and not PHONE.match(value):
+            raise serializers.ValidationError("Use digits, spaces and an optional leading +.")
+        return value
+
+    def validate_phone(self, value):
+        return self._phone(value)
+
+    def validate_emergency_phone(self, value):
+        return self._phone(value)
+
+    def validate_date_of_birth(self, value):
+        if value is None:
+            return value
+        today = date.today()
+        if value >= today:
+            raise serializers.ValidationError("Pick a date in the past.")
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age > MAX_AGE:
+            raise serializers.ValidationError("Check the year.")
         return value
 
     def validate_timezone(self, value):

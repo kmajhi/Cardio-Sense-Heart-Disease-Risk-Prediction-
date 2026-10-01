@@ -8,19 +8,21 @@ import { getHistory } from '../api/historyApi';
 // and the Guidance page all read from here, so they never disagree.
 
 const NotificationsContext = createContext(null);
-const READ_KEY = 'cardio-sense:notification-read';
+// Per account: two people on one browser each have their own "seen" state
+// (and in mock mode their assessment ids, A-0001…, overlap).
+const readKeyFor = (account) => `cardio-sense:notification-read:${account ?? 'signed-out'}`;
 
-function readStored() {
+function readStored(account) {
   try {
-    return localStorage.getItem(READ_KEY);
+    return localStorage.getItem(readKeyFor(account));
   } catch {
     return null; // storage blocked: the dot just reappears on reload
   }
 }
 
-export function NotificationsProvider({ profile, children }) {
+export function NotificationsProvider({ profile, account, children }) {
   const [assessment, setAssessment] = useState(null);
-  const [readKey, setReadKey] = useState(readStored);
+  const [readKey, setReadKey] = useState(() => readStored(account));
 
   // The latest saved assessment. A prediction made in this session replaces it (setLatest).
   useEffect(() => {
@@ -40,11 +42,11 @@ export function NotificationsProvider({ profile, children }) {
     if (!notification) return;
     setReadKey(notification.key);
     try {
-      localStorage.setItem(READ_KEY, notification.key);
+      localStorage.setItem(readKeyFor(account), notification.key);
     } catch {
       /* per-visit only */
     }
-  }, [notification]);
+  }, [notification, account]);
 
   const value = useMemo(
     () => ({ assessment, notification, profile, unread, markRead, setLatest: setAssessment }),

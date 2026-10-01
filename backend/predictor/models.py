@@ -59,11 +59,15 @@ class Profile(models.Model):
     allergies = models.JSONField(default=list, blank=True, help_text="List of strings.")
     emergency_name = models.CharField(max_length=80, blank=True, verbose_name="emergency contact")
     emergency_phone = models.CharField(max_length=20, blank=True, verbose_name="emergency phone")
-    # { provider: { handle, connected_at } }; connecting is simulated in the UI for now.
+    # { provider: { handle, connected_at } }, written only by the OAuth flow (connections.py).
     connections = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # Set by DELETE /api/profile/. The API treats the profile as gone, but a PUT
+    # within profiles.UNDO_SECONDS restores it (with its linked accounts);
+    # after that it is purged for good (predictor/profiles.py).
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         ordering = ["-updated_at"]
@@ -93,6 +97,12 @@ class Assessment(models.Model):
     probability = models.FloatField()
     risk_level = models.CharField(max_length=10, choices=RISK_LEVELS, db_index=True)
     top_factors = models.JSONField(default=list, help_text="[{ name, contribution }] in probability units.")
+    # Optional labs that weren't measured (imputed by the model), by label.
+    missing_fields = models.JSONField(default=list, blank=True)
+    # Values beyond the training data's range: [{ name, value, min, max, unit }].
+    outside_training = models.JSONField(default=list, blank=True)
+    low_confidence = models.BooleanField(
+        default=False, help_text="Labs were imputed, or values were outside the training data.")
 
     model_name = models.CharField(max_length=60, blank=True)
     model_trained_at = models.CharField(max_length=40, blank=True, help_text="From model_metadata.json.")
@@ -120,6 +130,9 @@ class Assessment(models.Model):
                 "probability": self.probability,
                 "risk_level": self.risk_level,
                 "top_factors": self.top_factors,
+                "missing_fields": self.missing_fields,
+                "outside_training": self.outside_training,
+                "low_confidence": self.low_confidence,
             },
         }
 
@@ -155,3 +168,27 @@ class ConnectionEvent(models.Model):
 
     def __str__(self):
         return f"{self.created_at:%Y-%m-%d %H:%M} · {self.provider} · {self.get_action_display()}"
+
+
+class SocialAccount(models.Model):
+    """A Google or X identity that signs in to a Cardio Sense account (predictor/social_login.py).
+
+    `uid` is the provider's stable id for the person (Google's `sub`, X's user id),
+    never the email or handle, which can change. Different from Profile.connections,
+    which only displays linked handles.
+    """
+
+    PROVIDERS = [("gmail", "Google"), ("x", "X")]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="social_accounts")
+    provider = models.CharField(max_length=20, choices=PROVIDERS)
+    uid = models.CharField(max_length=191, help_text="The provider's id for this person.")
+    handle = models.CharField(max_length=150, blank=True, help_text="Email (Google) or @username (X) at sign-up.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_login_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["provider", "uid"], name="unique_social_identity")]
+
+    def __str__(self):
+        return f"{self.get_provider_display()} · {self.handle or self.uid}"

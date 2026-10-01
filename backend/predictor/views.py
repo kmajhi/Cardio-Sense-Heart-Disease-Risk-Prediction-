@@ -3,12 +3,15 @@
 Errors come back as { "detail": "..." }, which the frontend's api/client.js shows.
 """
 
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .connections import record
-from .models import Assessment, Profile
+from .models import Assessment
+from .profiles import current_profile, purge_expired
 from .serializers import ProfileSerializer
 from .services import prediction_service
 from .services.prediction_service import PredictionInputError
@@ -20,11 +23,6 @@ PAYLOAD_KEYS = (
 )
 
 
-def current_profile(user):
-    """The signed-in user's profile, or None if they haven't made one."""
-    return Profile.objects.filter(user=user).first()
-
-
 def first_error(errors):
     """DRF's { field: [messages] } → 'field: message' for the { detail } contract."""
     field, messages = next(iter(errors.items()))
@@ -33,7 +31,12 @@ def first_error(errors):
 
 
 class PredictView(APIView):
-    """POST /api/predict/ → { probability, risk_level, top_factors }, saved as an Assessment."""
+    """POST /api/predict/ → { probability, risk_level, top_factors, missing_fields, outside_training,
+    low_confidence },
+    saved as an Assessment. Throttled per user: each call runs SHAP and writes a row."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "predict"
 
     def post(self, request):
         if not isinstance(request.data, dict):
@@ -58,6 +61,9 @@ class PredictView(APIView):
             probability=result["probability"],
             risk_level=result["risk_level"],
             top_factors=result["top_factors"],
+            missing_fields=result["missing_fields"],
+            outside_training=result["outside_training"],
+            low_confidence=result["low_confidence"],
             model_name=metadata.get("selected_model", ""),
             model_trained_at=metadata.get("trained_at", ""),
         )
@@ -83,7 +89,11 @@ class HistoryRecordView(APIView):
 
 
 class ProfileView(APIView):
-    """GET → profile | 404, PUT → create or replace, DELETE → 204."""
+    """GET → profile | 404, PUT → create, replace or restore, DELETE → 204 (undoable, see profiles.py)."""
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        purge_expired()  # finish off profiles whose undo window has passed
 
     def get(self, request):
         profile = current_profile(request.user)
@@ -92,7 +102,9 @@ class ProfileView(APIView):
         return Response(ProfileSerializer(profile).data)
 
     def put(self, request):
-        profile = current_profile(request.user)
+        # A profile deleted moments ago is restored in place, so Undo brings
+        # back its linked accounts too.
+        profile = current_profile(request.user, include_deleted=True)
         serializer = ProfileSerializer(profile, data=request.data)
         if not serializer.is_valid():
             return Response({"detail": first_error(serializer.errors)}, status=400)
@@ -103,7 +115,7 @@ class ProfileView(APIView):
         before = (profile.connections or {}) if profile else {}
         sent = serializer.validated_data["connections"] if "connections" in request.data else before
         kept = {provider: before[provider] for provider in sent if provider in before}
-        saved = serializer.save(user=request.user, connections=kept)
+        saved = serializer.save(user=request.user, connections=kept, deleted_at=None)
 
         for provider in before.keys() - kept.keys():
             record(provider, "disconnected", profile=saved, handle=before[provider].get("handle", ""))
@@ -112,8 +124,6 @@ class ProfileView(APIView):
     def delete(self, request):
         profile = current_profile(request.user)
         if profile is not None:
-            for provider, link in (profile.connections or {}).items():
-                record(provider, "disconnected", profile=profile, handle=link.get("handle", ""),
-                       detail="Profile deleted")
-            profile.delete()  # its assessments and audit rows stay, unlinked (SET_NULL)
+            profile.deleted_at = timezone.now()
+            profile.save(update_fields=["deleted_at"])
         return Response(status=status.HTTP_204_NO_CONTENT)

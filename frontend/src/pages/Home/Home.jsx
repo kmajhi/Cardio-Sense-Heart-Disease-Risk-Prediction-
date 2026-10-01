@@ -5,15 +5,15 @@ import SiteFooter from '../../components/SiteFooter';
 import { linkProps } from '../../components/link';
 import { DISCLAIMER, FACTS, METRICS, STEPS } from '../About/content';
 import { useAuth } from '../../auth/AuthContext';
+import { signInErrorMessage } from '../../api/authApi';
 import AuthModal from './AuthModal';
 import heroVideo from '../../assets/hero-heart.mp4';
 import '../Dashboard/Dashboard.css'; // shared tokens, nav, panel, load sequence, page wipe
 import './Home.css';
 
 const SCENE_SWITCH = 3.72; // s into the clip where headline A hands over to headline B
-const LAUNCH_HOLD = 2600; // ms the launch loader holds while the video buffers
-const BUSY_HOLD = 1200; // ms the loader holds before moving to another page
-const LOADER_EXIT = 850; // ms of the loader's exit animation
+const LAUNCH_HOLD = 500; // ms the launch loader holds (first visit of a session only)
+const LOADER_EXIT = 400; // ms of the loader's exit animation (Home.css → .hm-loader.out)
 const BOOTED_KEY = 'cardio-sense:booted'; // the launch loader plays once per browser session
 
 const DEFAULT_GATE = {
@@ -24,13 +24,31 @@ const DASHBOARD_GATE = {
   title: 'Sign in to see your dashboard',
   text: 'Your dashboard holds your personal health data. Log in, or create a free account if you’re new.',
   target: '/dashboard',
-  busy: 'Loading your dashboard…',
 };
+const EXPIRED_GATE = {
+  title: 'Your session has ended',
+  text: 'For your privacy you were signed out after a while. Log in again to carry on where you were.',
+};
+/** ?auth=login&next=/profile → the same shape as router state. `next` must be a local path. */
+function stateFromQuery(search) {
+  const params = new URLSearchParams(search);
+  const auth = params.get('auth');
+  if (auth !== 'login' && auth !== 'register') return null;
+  const next = params.get('next') ?? '';
+  const local = next.startsWith('/') && !next.startsWith('//');
+  // A Google / X sign-in that came back refused (backend/predictor/social_login.py).
+  const error = params.get('auth_error');
+  return {
+    auth,
+    ...(local ? { from: { pathname: next } } : {}),
+    ...(error ? { error: signInErrorMessage(error, params.get('provider')) } : {}),
+  };
+}
+
 const RUN_GATE = {
   title: 'Sign in to run a prediction',
   text: 'Your values are kept. Log in, or create a free account, and the prediction runs and is saved to your History.',
   target: '/prediction',
-  busy: 'Running your prediction…',
 };
 
 // Headline scenes; the video decides which one shows. `d` staggers the words.
@@ -91,12 +109,18 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
   const location = useLocation();
   const L = LinkComponent;
 
-  const booted = useRef(alreadyBooted());
+  // Sent here to sign in (a protected page, Log in elsewhere, or ?auth=login):
+  // skip the launch intro so the login card shows straight away.
+  const arrivingToSignIn = useRef(
+    Boolean(location.state?.from || location.state?.auth || stateFromQuery(location.search)),
+  );
+  const booted = useRef(alreadyBooted() || arrivingToSignIn.current);
   const [ready, setReady] = useState(booted.current);
   const [scene, setScene] = useState('a');
   const [seen, setSeen] = useState(false);
   const [modal, setModal] = useState(null); // null | 'login' | 'register'
   const [gate, setGate] = useState(null); // what a sign-in unlocks
+  const [authError, setAuthError] = useState(''); // a refused Google / X sign-in
   const [loader, setLoader] = useState(booted.current ? null : { mode: 'boot', msg: '' });
   const [loaderOut, setLoaderOut] = useState(false);
 
@@ -170,18 +194,30 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
   }, [runLoader]);
 
   // Sent here to sign in: by a page that needs an account (state.from), by a
-  // Log in / Register button on another page (state.auth), or to run a prediction.
-  const { state } = location;
+  // Log in / Register button on another page (state.auth), to run a prediction,
+  // or by the server (?auth=login&next=/profile, e.g. linking an account while signed out).
+  const state = location.state ?? stateFromQuery(location.search);
   useEffect(() => {
     if (!ready || account !== null || !(state?.from || state?.auth)) return;
     if (state.reason === 'run') setGate(RUN_GATE);
     else if (state.from) {
       const target = `${state.from.pathname}${state.from.search ?? ''}${state.from.hash ?? ''}`;
-      setGate(state.from.pathname === DASHBOARD_GATE.target ? DASHBOARD_GATE : { ...DEFAULT_GATE, target });
+      const gate = state.reason === 'expired' ? EXPIRED_GATE : DEFAULT_GATE;
+      setGate(state.from.pathname === DASHBOARD_GATE.target && !state.reason ? DASHBOARD_GATE : { ...gate, target });
     } else setGate(null);
+    setAuthError(state.error ?? '');
     setModal(state.auth === 'register' ? 'register' : 'login');
     navigate(location.pathname, { replace: true, state: null }); // a refresh won't reopen it
-  }, [ready, account, state, navigate, location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, account, location.state, location.search, navigate, location.pathname]);
+
+  // The login/register card is shown on its own: nothing behind it plays.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !ready) return;
+    if (modal) v.pause();
+    else if (!document.hidden) v.play()?.catch?.(() => {});
+  }, [modal, ready]);
 
   const go = (to) => navigate(to, { viewTransition: true });
 
@@ -192,7 +228,7 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
 
   const seeDashboard = (e) => {
     e.preventDefault();
-    if (account) runLoader('busy', DASHBOARD_GATE.busy, BUSY_HOLD, () => go(DASHBOARD_GATE.target));
+    if (account) go(DASHBOARD_GATE.target); // straight there: no loading screen to sit through
     else {
       setGate(DASHBOARD_GATE);
       setModal('login');
@@ -202,26 +238,23 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
   const closeModal = useCallback(() => {
     setModal(null);
     setGate(null);
+    setAuthError('');
   }, []);
 
   // After signing in: go where the visitor was headed, otherwise the Dashboard.
-  const onSignedIn = (how) => {
+  const onSignedIn = () => {
     const wasGate = gate;
     setModal(null);
     setGate(null);
-    const target = wasGate?.target ?? DASHBOARD_GATE.target;
-    const busy = (wasGate ?? DASHBOARD_GATE).busy;
-    const msg = busy
-      ? `${how === 'register' ? 'Setting up your account' : 'Signing you in'} & ${busy.charAt(0).toLowerCase()}${busy.slice(1)}`
-      : how === 'register' ? 'Setting up your account…' : 'Signing you in…';
-    runLoader('busy', msg, BUSY_HOLD, () => go(target));
+    // Straight to where they were going: no loading screen to sit through.
+    go(wasGate?.target ?? DASHBOARD_GATE.target);
   };
 
   const b = scene === 'b' ? 'on' : seen ? 'off' : 'idle';
   const aCls = scene === 'a' ? 'on' : 'off';
 
   return (
-    <div className={`pc-dash pc-home${ready ? ' is-ready' : ' hm-booting'}`}>
+    <div className={`pc-dash pc-home${ready ? ' is-ready' : ' hm-booting'}${modal ? ' hm-auth-open' : ''}`}>
       <NavBar user={user} activePath={activePath} LinkComponent={LinkComponent} onAuth={openAuth} />
 
       <main>
@@ -436,6 +469,7 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
           login={login}
           register={register}
           onSignedIn={onSignedIn}
+          initialError={authError}
         />
       )}
 
