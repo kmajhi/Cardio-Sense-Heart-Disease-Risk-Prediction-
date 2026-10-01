@@ -935,6 +935,49 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Password field with its show/hide button inside the right edge. */
+.hm-pw {
+  position: relative;
+  display: grid;
+}
+
+.hm-pw .hm-input {
+  padding-right: 52px;
+}
+
+.hm-pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: #6e6984;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.hm-pw-toggle:hover {
+  background: #efe9fd;
+  color: var(--pc-violet-deep);
+}
+
+.hm-pw-toggle:focus-visible {
+  outline: 2px solid var(--pc-violet);
+  outline-offset: 1px;
+}
+
+/* Hide the browser's own reveal button (Edge), so there's only one eye. */
+.hm-pw .hm-input::-ms-reveal,
+.hm-pw .hm-input::-ms-clear {
+  display: none;
+}
+
 .hm-input::placeholder {
   color: #9a95ab;
 }

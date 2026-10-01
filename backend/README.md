@@ -13,6 +13,7 @@ pip install -r requirements.txt
 cp .env.example .env                # sets DJANGO_DEBUG=true: debug mode is OFF unless you ask for it
 python manage.py migrate            # creates db.sqlite3 (git-ignored: it holds health data)
 python manage.py createsuperuser    # an account for the admin panel
+python manage.py seed_demo_accounts # or: demo admin + user logins (see the root README; DEBUG only)
 python manage.py runserver          # http://localhost:8000  ·  admin at /admin/
 pytest
 ```
@@ -84,6 +85,31 @@ works for sign-in with nothing new to register.
 - A new X id creates an account named after the X profile, with no email.
 - These accounts have no password: they can set one on the Profile page, and confirm deleting
   the account by typing `DELETE`. `GET /api/auth/me/` reports `has_password` and `sign_in_with`.
+
+## Admin console (frontend `/console`)
+
+A staff-only console in the React app, backed by `predictor/admin_api.py` (`/api/admin/…`, every
+call checks `is_staff`). Staff see an **Admin** link in the nav. Make an account staff with
+`python manage.py createsuperuser`, or from the console (superusers only).
+
+- **Overview:** users, assessments, low-confidence share, failed logins, 30-day charts by risk band,
+  risk mix, the factors that most often raised estimates, recent activity.
+- **Users:** search and filter; details (profile, assessments, sessions, activity); rename,
+  activate or deactivate, grant or remove staff, send a password reset, sign out everywhere,
+  delete; CSV export. Nobody can lock themselves out, and the last active superuser is protected.
+- **Assessments:** filter by risk, confidence, date, user or text; full inputs, factors and flags;
+  staff notes; delete; CSV export (formula-safe).
+- **Model:** model card and metrics, calibration, model comparison, training ranges, files; a
+  health check that runs the three sample patients; test predictions (never saved); reload.
+- **Activity log:** sign-ups, logins, failed logins (with IP), predictions, password changes and
+  every admin or maintenance action (`ActivityEvent`, kept 180 days); CSV export.
+- **System health:** database, migrations, cache, model, email, sign-in providers, debug mode,
+  secret key and disk space, with versions, build commit and read-only configuration.
+- **Maintenance:** purge deleted profiles, orphans, expired sessions and old activity; clear the
+  cache; warm the model; download a full JSON backup (no password hashes).
+- **Site controls** (`SiteSettings`): maintenance mode (non-staff API calls get 503 with your
+  message, `predictor/middleware.py`), an announcement banner on every page, and switches to
+  pause registration or predictions. `GET /api/site/` gives every visitor the banner.
 
 ## Data retention
 

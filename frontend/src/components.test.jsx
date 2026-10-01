@@ -190,6 +190,17 @@ describe('Login dialog (QA L8)', () => {
     expect(screen.getByRole('alert').textContent).toMatch(/already exists/);
   });
 
+  it('shows and hides the password with the eye button', () => {
+    render(<AuthModal {...props} />);
+    // Both forms stay laid out (the hidden one is inert); the login form comes first.
+    const input = screen.getAllByLabelText('Password')[0];
+    expect(input.type).toBe('password');
+    fireEvent.click(screen.getAllByRole('button', { name: /show password/i })[0]);
+    expect(input.type).toBe('text');
+    fireEvent.click(screen.getAllByRole('button', { name: /hide password/i })[0]);
+    expect(input.type).toBe('password');
+  });
+
   it('offers a password reset', () => {
     render(<AuthModal {...props} />);
     fireEvent.click(screen.getByRole('button', { name: /forgot password/i }));

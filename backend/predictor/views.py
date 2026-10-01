@@ -9,8 +9,9 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from .activity import record as log_activity
 from .connections import record
-from .models import Assessment
+from .models import Assessment, SiteSettings
 from .profiles import current_profile, purge_expired
 from .serializers import ProfileSerializer
 from .services import prediction_service
@@ -39,6 +40,9 @@ class PredictView(APIView):
     throttle_scope = "predict"
 
     def post(self, request):
+        if not SiteSettings.load().predictions_open:
+            return Response({"detail": "Predictions are paused for maintenance. Please try again later."},
+                            status=503)
         if not isinstance(request.data, dict):
             return Response({"detail": "Send the patient's values as a JSON object."}, status=400)
         payload = {k: v for k, v in request.data.items() if k in PAYLOAD_KEYS}
@@ -67,6 +71,9 @@ class PredictView(APIView):
             model_name=metadata.get("selected_model", ""),
             model_trained_at=metadata.get("trained_at", ""),
         )
+        log_activity("prediction", f"Prediction {result['risk_level']} ({result['probability']:.0%})",
+                     user=request.user, request=request, risk_level=result["risk_level"],
+                     low_confidence=result["low_confidence"])
         return Response(result)
 
 

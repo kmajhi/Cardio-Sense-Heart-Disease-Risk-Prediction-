@@ -31,7 +31,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .models import Assessment
+from .activity import record
+from .models import Assessment, SiteSettings
 from .profiles import current_profile
 from .serializers import ProfileSerializer
 
@@ -53,6 +54,9 @@ def public_user(user):
         "email": user.email,
         "has_password": user.has_usable_password(),
         "sign_in_with": sorted(user.social_accounts.values_list("provider", flat=True)),
+        # Staff see the admin console link (frontend /console).
+        "is_staff": user.is_staff,
+        "is_superuser": user.is_superuser,
     }
 
 
@@ -81,6 +85,8 @@ class RegisterView(APIView):
     throttle_scope = "auth"
 
     def post(self, request):
+        if not SiteSettings.load().registration_open:
+            return bad_request("New accounts can't be created right now. Please try again later.")
         data = request.data if isinstance(request.data, dict) else {}
         name = str(data.get("name", "")).strip()
         email = str(data.get("email", "")).strip().lower()
@@ -107,6 +113,7 @@ class RegisterView(APIView):
             return bad_request(err.messages[0])
         user.set_password(password)
         user.save()
+        record("signup", f"{email} created an account", user=user, request=request)
 
         login(request, user)
         return Response(public_user(user), status=status.HTTP_201_CREATED)
@@ -174,6 +181,8 @@ class ChangePasswordView(APIView):
         request.user.set_password(new)
         request.user.save(update_fields=["password"])
         update_session_auth_hash(request, request.user)  # this session stays valid, others end
+        record("password_changed", f"{request.user.email} {'changed' if has_password else 'set'} their password",
+               user=request.user, request=request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -184,6 +193,15 @@ Set a new password here. The link works once and expires in {hours} hours:
 
 If it wasn't you, ignore this email: your password hasn't changed.
 """
+
+
+def send_reset_email(user):
+    """Email `user` a one-time link to FRONTEND_URL/reset-password (also used by the admin console)."""
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
+    body = RESET_EMAIL.format(hours=settings.PASSWORD_RESET_TIMEOUT // 3600, link=link)
+    send_mail("Reset your Cardio Sense password", body, None, [user.email])
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -200,11 +218,8 @@ class PasswordResetRequestView(APIView):
         email = str(data.get("email", "")).strip().lower()
         user = get_user_model().objects.filter(username=email, is_active=True).first()
         if user is not None:
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
-            link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
-            body = RESET_EMAIL.format(hours=settings.PASSWORD_RESET_TIMEOUT // 3600, link=link)
-            send_mail("Reset your Cardio Sense password", body, None, [user.email])
+            send_reset_email(user)
+            record("password_reset", f"Reset link requested for {user.email}", user=user, request=request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -232,6 +247,7 @@ class PasswordResetConfirmView(APIView):
             return bad_request(problem)
         user.set_password(password)  # also invalidates the token, so the link works once
         user.save(update_fields=["password"])
+        record("password_reset", f"{user.email} set a new password from a reset link", user=user, request=request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -271,6 +287,8 @@ class AccountView(APIView):
         elif str(data.get("confirm", "")).strip() != DELETE_WORD:
             return bad_request(f"Type {DELETE_WORD} to confirm.")
         user = request.user
+        email = user.email or user.username
         logout(request)
         user.delete()  # cascades to the profile and assessments
+        record("account_deleted", f"{email} deleted their account", email=email, request=request)
         return Response(status=status.HTTP_204_NO_CONTENT)

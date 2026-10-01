@@ -615,24 +615,40 @@
   color: var(--pc-danger-ink);
 }
 
+/* Risk meter: a green → amber → red scale that spans the whole track (so a
+   position always means the same risk: low under 35%, moderate to 65%, high
+   above), revealed up to the patient's value. The unfilled part shows the
+   same scale faintly, so the reader sees where the value sits. */
 .pc-meter {
+  --pc-risk-scale: linear-gradient(90deg, #1a9e70 0%, #1a9e70 18%, #f2b01e 50%, #e5484d 82%, #e5484d 100%);
+  position: relative;
   height: 8px;
   overflow: hidden;
   border-radius: 4px;
-  background: rgba(28, 22, 51, 0.08);
+  background: rgba(28, 22, 51, 0.06);
+}
+
+.pc-meter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--pc-risk-scale);
+  opacity: 0.16;
 }
 
 .pc-meter-fill {
+  position: relative;
   display: block;
-  width: 0;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--pc-violet-soft), var(--pc-violet));
-  transition: width 1.2s var(--pc-ease) 0.8s;
+  background: var(--pc-risk-scale);
+  clip-path: inset(0 100% 0 0 round 4px);
+  transition: clip-path 1.2s var(--pc-ease) 0.8s;
 }
 
 .is-ready .pc-meter-fill {
-  width: var(--value);
+  clip-path: inset(0 calc(100% - var(--value)) 0 0 round 4px);
 }
 
 .pc-risk-note {
@@ -1708,7 +1724,7 @@
   }
 
   .pc-dash .pc-meter-fill {
-    width: var(--value);
+    clip-path: inset(0 calc(100% - var(--value)) 0 0 round 4px);
   }
 
   .pc-dash .pc-chart-line {
