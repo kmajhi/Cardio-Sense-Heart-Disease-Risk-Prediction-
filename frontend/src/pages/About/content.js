@@ -29,13 +29,14 @@ export const STEPS = [
     title: 'Enter routine values',
     text:
       'Age, sex, height and weight; four yes/no history questions; systolic blood pressure and blood sugar; a lipid ' +
-      'panel; a basic blood panel; and Troponin-I with its assay type. BMI and max heart rate are calculated for you.',
+      'panel; a basic blood panel; and Troponin-I with its assay type. BMI and max heart rate are calculated for you. ' +
+      'Labs you don’t have can be marked “not measured”.',
   },
   {
     title: 'The model estimates',
     text:
-      'A Random Forest trained on hospital records from Northern Bangladesh returns the probability of heart ' +
-      'disease, shown as a low, moderate or high band.',
+      'A calibrated Random Forest trained on hospital records from Northern Bangladesh returns the probability of ' +
+      'heart disease, shown as a low, moderate or high band.',
   },
   {
     title: 'See what moved it',
@@ -76,7 +77,7 @@ export const INPUTS = [
     unit: 'ng/mL or ng/L',
     group: 'Cardiac marker',
     kind: 'marker',
-    note: 'Assay type required; the units are not interchangeable',
+    note: 'Checked against clinical limits, not used by the model (see Limitations). Assay type required.',
   },
 ];
 
@@ -89,12 +90,12 @@ export const FEATURES = [
   {
     icon: 'flask',
     title: 'Unit-safe Troponin-I',
-    text: 'Quantitative (ng/mL) and high-sensitivity (ng/L) results are kept apart, converted correctly and never compared.',
+    text: 'Quantitative (ng/mL) and high-sensitivity (ng/L) results are kept apart and checked against each assay’s own limit, so a raised value is always flagged.',
   },
   {
     icon: 'puzzle',
     title: 'Works with missing labs',
-    text: 'Sent without a lab result, the API fills the gap the same way the model was trained to, instead of refusing the estimate.',
+    text: 'Mark a lab “not measured” and the model fills the gap the way it was trained to. The result names every imputed value and flags the estimate when too many are missing.',
   },
   {
     icon: 'shield',
@@ -107,20 +108,26 @@ export const METHOD = [
   ['Dataset', 'Hospital-sourced records from Northern Bangladesh: 1,048 rows, 13 under-18 records excluded, leaving 1,035 adults (56.5% with heart disease).'],
   ['Leakage controls', 'Patient IDs, ward (CCU vs general) and troponin assay type are excluded, because they give away the outcome instead of predicting it.'],
   ['Training', 'Stratified 80/20 split. Imputation and scaling are fitted inside each pipeline, so the test set is never seen during training.'],
-  ['Model choice', 'Logistic regression, decision tree, SVM and random forest, each tuned with 5-fold cross-validation. The random forest ranked first on ROC-AUC, then recall, then F1.'],
+  ['Model choice', 'Logistic regression, decision tree, SVM and random forest, each tuned with 5-fold cross-validation. The random forest ranked first on cross-validated ROC-AUC, then recall, F1 and Brier score; the test set played no part in the choice.'],
+  ['Calibration', 'The chosen forest is calibrated (Platt scaling, fitted on the training folds), so a 30% estimate means roughly 3 in 10 similar patients had heart disease. Held-out Brier score 0.043.'],
+  ['Troponin-I', 'Left out of the model: in this dataset normal troponin values were almost all heart disease cases, the reverse of clinical reality. The app still checks your troponin against clinical limits.'],
 ];
 
-// Held-out test set (207 patients, same hospital dataset).
+// Held-out test set (207 patients, same hospital dataset), deployed calibrated
+// model. From ml/artifacts/model_metadata.json → selected_model_metrics.
 export const METRICS = [
-  { value: 0.992, label: 'ROC-AUC', digits: 3 },
+  { value: 0.987, label: 'ROC-AUC', digits: 3 },
   { value: 95.7, label: 'Accuracy', suffix: '%', digits: 1 },
-  { value: 94.9, label: 'Recall', suffix: '%', digits: 1 },
-  { value: 97.4, label: 'Precision', suffix: '%', digits: 1 },
+  { value: 95.7, label: 'Recall', suffix: '%', digits: 1 },
+  { value: 96.6, label: 'Precision', suffix: '%', digits: 1 },
 ];
 
 export const LIMITATIONS = [
   'Trained and tested on a single hospital’s records, so these scores are not proof it works elsewhere.',
   'Not externally validated, and not approved for clinical use.',
-  'Some fields in the source data follow recording patterns rather than physiology (for example, Troponin-I), and the model can inherit them.',
+  'Some fields in the source data follow recording patterns rather than physiology. Troponin-I ran backwards and is left out; LDL almost separates the two groups on its own, so the model leans on it heavily.',
+  'Internal validation only: the figures above come from one hospital’s data and are not a measure of clinical accuracy.',
+  'Adults only. The data’s 13 children were all heart-disease cases, so there is nothing to learn a child’s risk from; the app explains this instead of estimating.',
+  'Trained on ages 18–97, weights 38–101 kg and heights 141–186 cm. Values beyond that are accepted, but the model treats them like the nearest value it saw, so those estimates are flagged as less reliable.',
   'It estimates probability. It does not diagnose, and it doesn’t replace a clinician’s judgement or an ECG.',
 ];

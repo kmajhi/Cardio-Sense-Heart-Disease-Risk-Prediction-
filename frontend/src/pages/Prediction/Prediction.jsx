@@ -15,8 +15,10 @@ import {
   maxHRFormula,
   toPayload,
   troponinError,
+  patientError,
+  BMI_TRAIN,
 } from './fields';
-import { mockPredict } from './predictionMock';
+import { USE_MOCK } from '../../api/mode';
 import { buildNotification } from '../../clinical/notifications';
 import { useNotifications } from '../../notifications/NotificationsContext';
 import '../Dashboard/Dashboard.css'; // shared tokens, nav, load sequence
@@ -59,16 +61,15 @@ const YES_NO = [
  * Cardio Sense — Prediction page.
  *
  * Props
- * - predict:       async (payload) => { probability, risk_level, top_factors }.
- *                  Defaults to a mock; pass `predict` from api/predictionApi.js
- *                  once POST /api/predict/ exists.
+ * - predict:       async (payload) => { probability, risk_level, top_factors,
+ *                  missing_fields, low_confidence }: api/predictionApi.js.
  * - signedIn:      running the model needs an account (results go to History).
  *                  Signed out, Run keeps the values and calls onRequireLogin;
  *                  back here signed in, the prediction runs with them.
  * - user, hasNotifications, LinkComponent, activePath: same as <Dashboard />.
  */
 export default function Prediction({
-  predict = mockPredict,
+  predict,
   signedIn = true,
   onRequireLogin,
   user = { name: 'Demo User' },
@@ -133,9 +134,16 @@ export default function Prediction({
     setTriedRun(false);
   };
 
+  // A child, or an impossible height/weight pair: explained, never sent.
+  const blocked = patientError(values);
+
   const run = async (e) => {
     e.preventDefault();
     setTriedRun(true);
+    if (blocked) {
+      document.getElementById('pr-blocked')?.focus();
+      return;
+    }
     if (troponinError(values)) {
       document.getElementById('pr-troponin')?.focus();
       return;
@@ -168,7 +176,13 @@ export default function Prediction({
   const section = (id) => SECTIONS.find((s) => s.id === id);
   const sliders = (id) =>
     section(id).fields.map((field) => (
-      <SliderField key={field.key} field={field} value={values[field.key]} onChange={set(field.key)} />
+      <SliderField
+        key={field.key}
+        field={field}
+        value={values[field.key]}
+        fallback={DEFAULTS[field.key]}
+        onChange={set(field.key)}
+      />
     ));
 
   return (
@@ -195,8 +209,9 @@ export default function Prediction({
               ))}
             </h1>
             <p className="pc-pr-sub pc-enter" style={{ '--d': '200ms' }}>
-              Enter the patient's clinical values. The model estimates the probability of heart disease
-              from the same measurements it was trained on.
+              {USE_MOCK
+                ? 'Enter the patient’s clinical values. In demo mode a simple built-in formula gives an illustrative score; it is not the trained model.'
+                : 'Enter the patient’s clinical values. The model estimates the probability of heart disease from the same measurements it was trained on. Mark any lab you don’t have as “Not measured”.'}
             </p>
           </div>
 
@@ -210,6 +225,7 @@ export default function Prediction({
                 type="button"
                 className="pc-filter"
                 aria-pressed={activePreset === p.id}
+                title={p.description}
                 onClick={() => loadPreset(p)}
               >
                 {p.label}
@@ -240,9 +256,13 @@ export default function Prediction({
                   <div>
                     <dt>BMI</dt>
                     <dd>
-                      {bmi.toFixed(1)} <span>kg/m²</span>
+                      {Number.isFinite(bmi) ? bmi.toFixed(1) : '—'} <span>kg/m²</span>
                     </dd>
-                    <dd className="pc-pr-derived-note">From height and weight</dd>
+                    <dd className="pc-pr-derived-note">
+                      {bmi < BMI_TRAIN[0] || bmi > BMI_TRAIN[1]
+                        ? `Beyond the training data (${BMI_TRAIN[0]}–${BMI_TRAIN[1]})`
+                        : 'From height and weight'}
+                    </dd>
                   </div>
                   <div>
                     <dt>Max heart rate</dt>
@@ -320,6 +340,7 @@ export default function Prediction({
             LinkComponent={LinkComponent}
             saveNote={saveNote}
             signedIn={signedIn}
+            blocked={blocked}
           />
         </form>
       </main>

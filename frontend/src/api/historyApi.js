@@ -1,14 +1,23 @@
 import { request } from './client';
+import { USE_MOCK } from './mode';
 import { readForAccount, writeForAccount } from './mockStore';
 
 // The signed-in user's saved assessments: GET /api/history/ (every POST
 // /api/predict/ they made). Mock unless VITE_USE_MOCK_API=false, in which case
 // they're kept per account in this browser. A new account has none.
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_API !== 'false';
+
+// Several parts of a page ask for the history as it opens (the page itself and
+// the notifications bell). While one request is in flight, the others share it.
+let inflight = null;
 
 /** [{ id, created_at, inputs, result }], oldest first. */
 export function getHistory() {
-  if (!USE_MOCK) return request('/history/');
+  if (!USE_MOCK) {
+    inflight ??= request('/history/').finally(() => {
+      inflight = null;
+    });
+    return inflight;
+  }
   try {
     return Promise.resolve(readForAccount('history', []));
   } catch (err) {

@@ -1,4 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { SIGN_IN_PROVIDERS, requestPasswordReset, signInWith } from '../../api/authApi';
+import { getProviders } from '../../api/connectApi';
+import loginHeart from '../../assets/login-heart.webp';
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
@@ -9,12 +12,29 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const FacebookIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-    <circle cx="12" cy="12" r="12" fill="#1877F2" />
-    <path d="M13.4 24v-8.4h2.8l.4-3.3h-3.2v-2.1c0-.9.3-1.6 1.6-1.6h1.7V5.7c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.4H7.2v3.3H10V24h3.4z" fill="#ffffff" />
+const XIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+    <path fill="currentColor" d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3Zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5Z" />
   </svg>
 );
+
+const PROVIDER_ICONS = { gmail: <GoogleIcon />, x: <XIcon /> };
+
+const EyeIcon = ({ open }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+    {!open && <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />}
+  </svg>
+);
+
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const HEADS = {
   login: { title: 'Welcome back', sub: 'Log in to track your heart health and predictions.' },
@@ -29,19 +49,71 @@ const HEADS = {
  *
  * With a `gate` (the visitor asked for something that needs an account) it
  * leads with a lock and says what signing in unlocks.
+ *
+ * Keyboard focus stays inside while it's open (Tab wraps around) and goes back
+ * to whatever had it when it closes. "Forgot password?" swaps the login form
+ * for a reset request in the same place.
+ *
+ * "Continue with Google / X" runs the provider's own sign-in on the server
+ * (backend/predictor/social_login.py); only providers the server has keys for
+ * are shown. `initialError` is a message from a sign-in that came back refused.
  */
-export default function AuthModal({ mode, gate, onMode, onClose, login, register, onSignedIn }) {
+export default function AuthModal({ mode, gate, onMode, onClose, login, register, onSignedIn, initialError = '' }) {
   const uid = useId();
   const dialogRef = useRef(null);
   const [values, setValues] = useState({ name: '', email: '', password: '' });
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError);
   const [busy, setBusy] = useState(null); // the mode being submitted
+  const [showPassword, setShowPassword] = useState(false); // the eye button in the password field
+  const [providers, setProviders] = useState({}); // { gmail: true, x: false } from the server
+  const [offline, setOffline] = useState(false); // the API couldn't be reached
 
   useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
+    let alive = true;
+    getProviders()
+      .then((p) => alive && setProviders(p ?? {}))
+      .catch(() => alive && setOffline(true)); // say so, rather than silently hiding Google / X
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const social = SIGN_IN_PROVIDERS.filter((p) => providers[p.id]);
+  const continueWith = (id) => {
+    setBusy(id);
+    signInWith(id);
+  };
+  const [forgot, setForgot] = useState(false); // login form shows the reset request instead
+  const [resetSent, setResetSent] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Tab' || !dialogRef.current) return;
+      // Trap focus: only the visible, enabled controls of the dialog take part.
+      const items = [...dialogRef.current.querySelectorAll(FOCUSABLE)].filter(
+        (el) => !el.closest('[inert]') && el.offsetParent !== null,
+      );
+      if (!items.length) return;
+      const first = items[0];
+      const last = items.at(-1);
+      if (e.shiftKey && (document.activeElement === first || !dialogRef.current.contains(document.activeElement))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // Give focus back to whatever opened the dialog.
+  useEffect(() => {
+    const opener = document.activeElement;
+    return () => opener?.focus?.({ preventScroll: true });
+  }, []);
 
   // Focus the first field once, when the dialog opens.
   useEffect(() => {
@@ -53,6 +125,9 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
   // so keyboard focus goes to the newly selected tab.
   const switchTo = (next, moveFocus = false) => {
     setError('');
+    setShowPassword(false);
+    setForgot(false);
+    setResetSent(false);
     onMode(next);
     if (moveFocus) requestAnimationFrame(() => dialogRef.current?.querySelector(`[data-tab="${next}"]`)?.focus());
   };
@@ -73,7 +148,56 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
     }
   };
 
-  const social = (provider) => setError(`${provider} sign-in isn't available yet. Use your email and password for now.`);
+  const sendReset = async (e) => {
+    e.preventDefault();
+    setBusy('reset');
+    setError('');
+    try {
+      await requestPasswordReset(values.email.trim());
+      setResetSent(true);
+    } catch (err) {
+      setError(err.message || "Couldn't reach the server. Try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const showForgot = (on) => {
+    setError('');
+    setResetSent(false);
+    setForgot(on);
+    requestAnimationFrame(() => dialogRef.current?.querySelector('[data-mode="login"] input')?.focus());
+  };
+
+  const resetForm = () => (
+    <form key="reset" data-mode="login" className="hm-form is-active" onSubmit={sendReset}>
+      <p className="hm-reset-note">
+        Enter your account’s email and we’ll send a link to set a new password.
+      </p>
+      {field('login', 'email', 'Email', { type: 'email', autoComplete: 'email', placeholder: 'you@example.com' })}
+      {error && (
+        <p className="hm-error" role="alert">
+          {error}
+        </p>
+      )}
+      {resetSent && (
+        <p className="hm-success" role="status">
+          If that email has an account, a reset link is on its way. It works once and expires in 2 hours.
+        </p>
+      )}
+      <button type="submit" className="hm-btn-main" disabled={busy !== null}>
+        {busy === 'reset' ? 'Sending…' : resetSent ? 'Send again' : 'Send reset link'}
+      </button>
+      <div className="hm-form-foot">
+        <p className="hm-switch">
+          Remembered it?{' '}
+          <button type="button" className="hm-linkish" onClick={() => showForgot(false)}>
+            Back to log in
+          </button>
+        </p>
+      </div>
+    </form>
+  );
 
   const field = (how, key, label, props) => (
     <label className="hm-label" htmlFor={`${uid}-${how}-${key}`}>
@@ -89,9 +213,43 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
     </label>
   );
 
+  // Password with a show/hide button. The button sits outside the <label> text, so
+  // clicking it doesn't move focus away from what the user is typing.
+  const passwordField = (how, props) => {
+    const id = `${uid}-${how}-password`;
+    return (
+      <div className="hm-label">
+        <label htmlFor={id}>Password</label>
+        <div className="hm-pw">
+          <input
+            id={id}
+            className="hm-input"
+            required
+            value={values.password}
+            onChange={set('password')}
+            {...props}
+            type={showPassword ? 'text' : 'password'}
+          />
+          <button
+            type="button"
+            className="hm-pw-toggle"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
+            aria-controls={id}
+            title={showPassword ? 'Hide password' : 'Show password'}
+          >
+            <EyeIcon open={!showPassword} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const form = (how) => {
     const active = mode === how;
     const isLogin = how === 'login';
+    if (isLogin && forgot && active) return resetForm();
     return (
       <form
         key={how}
@@ -103,12 +261,17 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
       >
         {!isLogin && field(how, 'name', 'Full name', { type: 'text', maxLength: 80, autoComplete: 'name', placeholder: 'Your name' })}
         {field(how, 'email', 'Email', { type: 'email', autoComplete: active ? 'email' : 'off', placeholder: 'you@example.com' })}
-        {field(how, 'password', 'Password', {
-          type: 'password',
+        {passwordField(how, {
           minLength: isLogin ? undefined : 8,
           autoComplete: active ? (isLogin ? 'current-password' : 'new-password') : 'off',
           placeholder: isLogin ? 'Your password' : 'At least 8 characters',
         })}
+
+        {isLogin && (
+          <button type="button" className="hm-linkish hm-forgot" onClick={() => showForgot(true)}>
+            Forgot password?
+          </button>
+        )}
 
         {active && error && (
           <p className="hm-error" role="alert">
@@ -122,21 +285,35 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
 
         {/* Pinned to the bottom, so both forms end at the same place. */}
         <div className="hm-form-foot">
-          <div role="separator" aria-label="Or" className="hm-or">
-            <span />
-            Or
-            <span />
-          </div>
-          <div className="hm-social">
-            <button type="button" className="hm-btn-social" onClick={() => social('Google')}>
-              <GoogleIcon />
-              Google
-            </button>
-            <button type="button" className="hm-btn-social" onClick={() => social('Facebook')}>
-              <FacebookIcon />
-              Facebook
-            </button>
-          </div>
+          {offline && (
+            <p className="hm-error" role="status">
+              Can’t reach the Cardio Sense server, so logging in won’t work yet (Google sign-in included). Make
+              sure the backend is running, then reopen this window.
+            </p>
+          )}
+          {social.length > 0 && (
+            <>
+              <div role="separator" aria-label="Or" className="hm-or">
+                <span />
+                Or
+                <span />
+              </div>
+              <div className={`hm-social${social.length === 1 ? ' is-single' : ''}`}>
+                {social.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`hm-btn-social is-${p.id}`}
+                    onClick={() => continueWith(p.id)}
+                    disabled={busy !== null}
+                  >
+                    {PROVIDER_ICONS[p.id]}
+                    {busy === p.id ? `Opening ${p.name}…` : `${isLogin ? 'Continue' : 'Sign up'} with ${p.name}`}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <p className="hm-switch">
             {isLogin ? 'New to Cardio Sense? ' : 'Already have an account? '}
             <button type="button" className="hm-linkish" onClick={() => switchTo(isLogin ? 'register' : 'login', true)}>
@@ -158,6 +335,8 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
   return (
     <div className="hm-modal">
       <button type="button" className="hm-scrim" aria-label="Close" tabIndex={-1} onClick={onClose} />
+      {/* Decoration only: the glass-anatomy heart, faded into the backdrop on the left. */}
+      <div className="hm-auth-art" aria-hidden="true" style={{ '--hm-auth-art': `url(${loginHeart})` }} />
       <div ref={dialogRef} className="hm-dialog" role="dialog" aria-modal="true" aria-labelledby={`${uid}-title`}>
         <button type="button" className="hm-x" aria-label="Close" onClick={onClose}>
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">

@@ -5,8 +5,15 @@
 
 Reproduces sections 10–20 of the research notebook: stratified 80/20 split,
 leakage-safe preprocessing inside each pipeline, the four required models tuned
-by 5-fold CV on ROC-AUC, CV stability, held-out test metrics, and the same
-selection rule (CV ROC-AUC -> CV recall -> CV F1 -> test ROC-AUC).
+by 5-fold CV on ROC-AUC, CV stability and held-out test metrics. Two changes
+from the notebook, both for the deployed model:
+
+- Troponin-I is left out (it runs backwards in this dataset, see ml/README.md).
+  `--with-troponin` keeps it, for research comparisons only.
+- Selection uses cross-validation only (CV ROC-AUC -> CV recall -> CV F1 ->
+  CV Brier score), so the test set stays held out. The winner is then
+  calibrated (Platt scaling, 5-fold, training data only), so its output reads
+  as a probability.
 
 Writes to ml/artifacts/ (the backend loads the model from there):
     heart_disease_inference_pipeline.joblib   complete sklearn pipeline
@@ -29,12 +36,15 @@ import joblib
 import numpy as np
 import pandas as pd
 import sklearn
+from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
+    brier_score_loss,
     confusion_matrix,
     f1_score,
     precision_score,
@@ -47,7 +57,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from training.data import EXCLUDED_COLUMNS, TARGET, build_modeling_frame, load_raw, split_xy
+from training.data import EXCLUDED_COLUMNS, TARGET, TROPONIN_COLUMNS, build_modeling_frame, load_raw, split_xy
 
 RANDOM_STATE = 42
 TEST_SIZE = 0.20
@@ -60,6 +70,11 @@ RESULTS_FILE = "model_comparison_results.csv"
 SHAP_BACKGROUND_FILE = "shap_background.joblib"
 
 DISCLAIMER = "Research prototype. Not externally validated, not approved for clinical use."
+VALIDATION = "Internal validation only (one hospital dataset, stratified hold-out). Not externally validated."
+SELECTION_RULE = "CV ROC-AUC, then CV recall, then CV F1, then CV Brier score (lower is better)"
+SELECTION_KEYS = ["CV ROC-AUC Mean", "CV Recall Mean", "CV F1 Mean", "CV Brier Mean"]
+SELECTION_ASCENDING = [False, False, False, True]
+CALIBRATION = "sigmoid"  # Platt scaling: stable on ~800 rows, never outputs exactly 0 or 1
 
 
 def make_preprocessor(numeric, categorical, scale_numeric):
@@ -130,6 +145,7 @@ def test_metrics(est, X_test, y_test):
         "Test Recall": recall_score(y_test, pred, zero_division=0),
         "Test F1": f1_score(y_test, pred, zero_division=0),
         "Test ROC-AUC": roc_auc_score(y_test, prob),
+        "Test Brier": brier_score_loss(y_test, prob),
     }
 
 
@@ -160,13 +176,18 @@ def main(argv=None):
     parser.add_argument("--data", required=True, type=Path, help="Path to the Northern Bangladesh .xlsx")
     parser.add_argument("--out", type=Path, default=ARTIFACTS_DIR, help="Artifact directory (default: ml/artifacts)")
     parser.add_argument("--jobs", type=int, default=2, help="Parallel CV jobs (default 2, keeps memory low)")
+    parser.add_argument("--with-troponin", action="store_true",
+                        help="Keep Troponin-I (research only: it runs backwards in this dataset; never deploy this model)")
     args = parser.parse_args(argv)
     args.out.mkdir(parents=True, exist_ok=True)
 
     # ---- Data (sections 2–7)
     df_model = build_modeling_frame(load_raw(args.data))
-    X, y = split_xy(df_model)
+    left_out = [] if args.with_troponin else TROPONIN_COLUMNS
+    X, y = split_xy(df_model, drop=left_out)
     assert TARGET not in X and not set(EXCLUDED_COLUMNS) & set(X.columns)
+    if args.with_troponin:
+        print("WARNING: training WITH Troponin-I. Research only; do not deploy this model.")
     print(f"Modeling population: {len(df_model)} rows, {X.shape[1]} predictors")
     print(f"Class balance: {y.mean():.3f} positive / {1 - y.mean():.3f} negative")
 
@@ -190,26 +211,37 @@ def main(argv=None):
 
     # ---- CV stability + held-out test (sections 14–15)
     scoring = {"accuracy": "accuracy", "precision": "precision", "recall": "recall",
-               "f1": "f1", "roc_auc": "roc_auc"}
+               "f1": "f1", "roc_auc": "roc_auc", "brier": "neg_brier_score"}
     rows = []
     for name, search in searches.items():
         r = cross_validate(search.best_estimator_, X_train, y_train, cv=cv, scoring=scoring, n_jobs=args.jobs)
         row = {"Model": name}
         for key, label in [("accuracy", "Accuracy"), ("precision", "Precision"), ("recall", "Recall"),
-                           ("f1", "F1"), ("roc_auc", "ROC-AUC")]:
-            row[f"CV {label} Mean"] = r[f"test_{key}"].mean()
-            row[f"CV {label} SD"] = r[f"test_{key}"].std()
+                           ("f1", "F1"), ("roc_auc", "ROC-AUC"), ("brier", "Brier")]:
+            values = -r[f"test_{key}"] if key == "brier" else r[f"test_{key}"]  # sklearn negates Brier
+            row[f"CV {label} Mean"] = values.mean()
+            row[f"CV {label} SD"] = values.std()
         row.update(test_metrics(search.best_estimator_, X_test, y_test))
         row["Best Params"] = json.dumps(search.best_params_)
         rows.append(row)
 
-    # ---- Selection (section 17): CV ROC-AUC -> CV recall -> CV F1 -> test ROC-AUC
-    comparison = pd.DataFrame(rows).sort_values(
-        ["CV ROC-AUC Mean", "CV Recall Mean", "CV F1 Mean", "Test ROC-AUC"], ascending=False
-    ).reset_index(drop=True)
+    # ---- Selection (section 17), on cross-validation only: the test set never picks the model.
+    comparison = pd.DataFrame(rows).sort_values(SELECTION_KEYS, ascending=SELECTION_ASCENDING).reset_index(drop=True)
     comparison["Test_CV_ROC_AUC_Abs_Gap"] = (comparison["Test ROC-AUC"] - comparison["CV ROC-AUC Mean"]).abs()
     final_name = comparison.loc[0, "Model"]
-    final = searches[final_name].best_estimator_
+    uncalibrated = searches[final_name].best_estimator_
+
+    # ---- Calibration: the same tuned pipeline, with its classifier wrapped in
+    # Platt scaling fitted by 5-fold CV on the training set only.
+    final = clone(uncalibrated)
+    final.set_params(model=CalibratedClassifierCV(clone(uncalibrated.named_steps["model"]), method=CALIBRATION, cv=cv))
+    final.fit(X_train, y_train)
+    prob_uncal = uncalibrated.predict_proba(X_test)[:, 1]
+    prob_cal = final.predict_proba(X_test)[:, 1]
+    frac_pos, mean_pred = calibration_curve(y_test, prob_cal, n_bins=5, strategy="quantile")
+    deployed = test_metrics(final, X_test, y_test)
+    print(f"Calibration ({CALIBRATION}): test Brier {brier_score_loss(y_test, prob_uncal):.4f} -> "
+          f"{brier_score_loss(y_test, prob_cal):.4f}; probability range {prob_cal.min():.3f}-{prob_cal.max():.3f}")
 
     # ---- SHAP background: k-means centroids of the transformed training set,
     # so explanations work for any model type without storing patient rows.
@@ -226,7 +258,7 @@ def main(argv=None):
 
     pred = final.predict(X_test)
     tn, fp, fn, tp = confusion_matrix(y_test, pred).ravel()
-    best = comparison.loc[0]
+    best = comparison.loc[0]  # CV figures come from the search; test figures are the deployed (calibrated) model
     metadata = {
         "project": "AI-Driven Web-Based Heart Disease Prediction System",
         "dataset": "Northern Bangladesh hospital-sourced dataset",
@@ -243,6 +275,12 @@ def main(argv=None):
         "test_rows": int(len(X_test)),
         "class_balance": {"positive": round(float(y.mean()), 4), "negative": round(float(1 - y.mean()), 4)},
         "excluded_columns": EXCLUDED_COLUMNS,
+        "deployment_excluded_columns": left_out,
+        "deployment_exclusion_reason": (
+            "Troponin-I runs backwards in this dataset (normal values ~100% positive), so the deployed "
+            "model leaves it out. The app still checks troponin against clinical limits."
+        ) if left_out else "None: research model WITH Troponin-I. Do not deploy.",
+        "validation": VALIDATION,
         "pediatric_rule": "Age < 18 excluded from modeling population",
         "troponin_model_unit": "ng/mL",
         "troponin_note": "High-sensitivity results (ng/L) are divided by 1000 before prediction.",
@@ -251,20 +289,32 @@ def main(argv=None):
             "MaxHR": "208 - 0.7*Age (male), 206 - 0.88*Age (female)",
         },
         "models_compared": list(searches),
-        "selection_rule": "CV ROC-AUC, then CV recall, then CV F1, then test ROC-AUC",
+        "selection_rule": SELECTION_RULE,
         "selected_model": final_name,
         "best_parameters": searches[final_name].best_params_,
         "decision_threshold": 0.5,
+        "calibration": {
+            "method": f"{CALIBRATION} (Platt scaling), {CV_FOLDS}-fold CV on the training set",
+            "test_brier_uncalibrated": round(float(brier_score_loss(y_test, prob_uncal)), 4),
+            "test_brier_calibrated": round(float(brier_score_loss(y_test, prob_cal)), 4),
+            "test_probability_range": [round(float(prob_cal.min()), 4), round(float(prob_cal.max()), 4)],
+            "reliability": [
+                {"mean_predicted": round(float(m), 3), "observed_positive": round(float(f), 3)}
+                for m, f in zip(mean_pred, frac_pos)
+            ],
+        },
         "selected_model_metrics": {
             "cv_roc_auc_mean": round(float(best["CV ROC-AUC Mean"]), 4),
             "cv_roc_auc_sd": round(float(best["CV ROC-AUC SD"]), 4),
             "cv_recall_mean": round(float(best["CV Recall Mean"]), 4),
             "cv_f1_mean": round(float(best["CV F1 Mean"]), 4),
-            "test_accuracy": round(float(best["Test Accuracy"]), 4),
-            "test_precision": round(float(best["Test Precision"]), 4),
-            "test_recall": round(float(best["Test Recall"]), 4),
-            "test_f1": round(float(best["Test F1"]), 4),
-            "test_roc_auc": round(float(best["Test ROC-AUC"]), 4),
+            "cv_brier_mean": round(float(best["CV Brier Mean"]), 4),
+            "test_accuracy": round(float(deployed["Test Accuracy"]), 4),
+            "test_precision": round(float(deployed["Test Precision"]), 4),
+            "test_recall": round(float(deployed["Test Recall"]), 4),
+            "test_f1": round(float(deployed["Test F1"]), 4),
+            "test_roc_auc": round(float(deployed["Test ROC-AUC"]), 4),
+            "test_brier": round(float(deployed["Test Brier"]), 4),
             "test_confusion_matrix": {"tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp)},
         },
         "raw_input_features": X.columns.tolist(),
@@ -276,10 +326,11 @@ def main(argv=None):
     with open(args.out / METADATA_FILE, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
 
-    cols = ["Model", "CV ROC-AUC Mean", "CV ROC-AUC SD", "CV Recall Mean", "CV F1 Mean",
+    cols = ["Model", "CV ROC-AUC Mean", "CV ROC-AUC SD", "CV Recall Mean", "CV F1 Mean", "CV Brier Mean",
             "Test Accuracy", "Test Recall", "Test F1", "Test ROC-AUC"]
     print("\n" + comparison[cols].round(4).to_string(index=False))
-    print(f"\nSelected: {final_name}")
+    print(f"\nSelected: {final_name} (calibrated: {CALIBRATION})")
+    print(VALIDATION)
     print(f"Saved to {args.out}")
     print(DISCLAIMER)
 

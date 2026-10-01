@@ -7,8 +7,10 @@ the browser), used once to read who the account is, and then dropped: only the
 handle and the link time are kept, in Profile.connections. Nothing is posted
 or sent on the user's behalf, so no token needs storing.
 
-Every attempt and its outcome is written to ConnectionEvent (the audit log in
-the admin), without tokens or codes.
+Every attempt by a signed-in user and its outcome is written to
+ConnectionEvent (the audit log in the admin), without tokens or codes.
+Signed-out requests are sent to log in and never write to the log, so the
+log can't be flooded anonymously.
 
 Each step is guarded by a one-time random `state` kept in the session (and by
 PKCE where the provider supports it), so a callback can't be forged or replayed. The flow always ends with a
@@ -31,7 +33,8 @@ from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET
 
-from .models import ConnectionEvent, Profile
+from .models import ConnectionEvent
+from .profiles import current_profile as profile_of
 
 log = logging.getLogger(__name__)
 
@@ -151,9 +154,7 @@ def identify(provider, token):
 
 def current_profile(request):
     """The signed-in user's profile; None when signed out or they haven't made one."""
-    if not request.user.is_authenticated:
-        return None
-    return Profile.objects.filter(user=request.user).first()
+    return profile_of(request.user)
 
 
 def record(provider, action, *, profile=None, handle="", detail=""):
@@ -166,10 +167,16 @@ def record(provider, action, *, profile=None, handle="", detail=""):
 ERROR_ACTIONS = {"denied": "cancelled"}
 
 
-def fail(provider, code, *, profile=None, detail=""):
-    """Log the failed attempt and send the user back to /profile with the error code."""
-    record(provider, ERROR_ACTIONS.get(code, code), profile=profile, detail=detail)
+def fail(request, provider, code, *, profile=None, detail=""):
+    """Log the failed attempt (signed-in users only) and send the user back to /profile with the error code."""
+    if request.user.is_authenticated:
+        record(provider, ERROR_ACTIONS.get(code, code), profile=profile, detail=detail)
     return back_to_profile(connect_error=code, provider=provider)
+
+
+def to_login():
+    """Signed out: back to the homepage's login, then to /profile. Nothing is logged."""
+    return HttpResponseRedirect(f"{settings.FRONTEND_URL}/?{urlencode({'auth': 'login', 'next': '/profile'})}")
 
 
 @require_GET
@@ -183,27 +190,37 @@ def start(request, provider):
     """GET /api/connect/<provider>/start/ → 302 to the provider's authorize page."""
     if provider not in PROVIDERS:
         raise Http404
+    if not request.user.is_authenticated:
+        return to_login()
     if client(provider) is None:
-        return fail(provider, "not_configured", detail="Client ID or secret missing on the server")
+        return fail(request, provider, "not_configured", detail="Client ID or secret missing on the server")
     profile = current_profile(request)
     if profile is None:
-        return fail(provider, "no_profile")
+        return fail(request, provider, "no_profile")
 
+    record(provider, "started", profile=profile)
+    return authorize_redirect(request, provider, purpose="connect")
+
+
+def authorize_redirect(request, provider, *, purpose, scope=None):
+    """Remember a one-time state (and PKCE verifier) in the session, then send the
+    browser to the provider. `purpose` tells the shared callback what to do:
+    "connect" links a handle to the profile, "login" signs in (social_login.py)."""
     state, verifier = secrets.token_urlsafe(32), secrets.token_urlsafe(64)
-    request.session["oauth"] = {"provider": provider, "state": state, "verifier": verifier, "at": time.time()}
-
+    request.session["oauth"] = {
+        "provider": provider, "state": state, "verifier": verifier, "at": time.time(), "purpose": purpose,
+    }
     conf = PROVIDERS[provider]
     query = {
         "response_type": "code",
         "client_id": client(provider)["client_id"],
         "redirect_uri": callback_url(provider),
-        "scope": conf["scope"],
+        "scope": scope or conf["scope"],
         "state": state,
         **conf.get("extra", {}),
     }
     if conf.get("pkce"):
         query.update(code_challenge=pkce_challenge(verifier), code_challenge_method="S256")
-    record(provider, "started", profile=profile)
     return HttpResponseRedirect(f"{conf['authorize_url']}?{urlencode(query)}")
 
 
@@ -213,31 +230,36 @@ def callback(request, provider):
     if provider not in PROVIDERS:
         raise Http404
     pending = request.session.pop("oauth", None)  # one-time: a replayed callback finds nothing
+    # Sign-in with Google/X uses the same registered callback URL.
+    if pending and pending.get("purpose") == "login":
+        from . import social_login
+
+        return social_login.finish(request, provider, pending)
 
     profile = current_profile(request)
 
     fresh = pending and time.time() - pending["at"] < STATE_TTL_SECONDS
     state = request.GET.get("state", "")
     if not pending:
-        return fail(provider, "expired", profile=profile, detail="No sign-in pending (replayed or new browser session)")
+        return fail(request, provider, "expired", profile=profile, detail="No sign-in pending (replayed or new browser session)")
     if not fresh:
-        return fail(provider, "expired", profile=profile, detail=f"Took over {STATE_TTL_SECONDS // 60} minutes")
+        return fail(request, provider, "expired", profile=profile, detail=f"Took over {STATE_TTL_SECONDS // 60} minutes")
     if pending["provider"] != provider or not secrets.compare_digest(pending["state"], state):
-        return fail(provider, "expired", profile=profile, detail="State didn't match: possible forged callback")
+        return fail(request, provider, "expired", profile=profile, detail="State didn't match: possible forged callback")
     if request.GET.get("error"):  # e.g. access_denied: the user pressed Cancel
-        return fail(provider, "denied", profile=profile, detail=request.GET["error"][:60])
+        return fail(request, provider, "denied", profile=profile, detail=request.GET["error"][:60])
     if not request.GET.get("code"):
-        return fail(provider, "failed", profile=profile, detail="Callback had no code")
+        return fail(request, provider, "failed", profile=profile, detail="Callback had no code")
 
     try:
         token = exchange_code(provider, request.GET["code"], pending["verifier"])
         handle = identify(provider, token)
     except ConnectError as err:
         log.warning("Linking %s failed: %s", provider, err)
-        return fail(provider, err.code, profile=profile, detail=str(err))
+        return fail(request, provider, err.code, profile=profile, detail=str(err))
 
     if profile is None:
-        return fail(provider, "no_profile")
+        return fail(request, provider, "no_profile")
     profile.connections = {
         **(profile.connections or {}),
         provider: {"handle": handle, "connected_at": timezone.now().isoformat()},

@@ -20,6 +20,11 @@ TARGET = "Heart_Disease"
 # is excluded; Troponin-I itself is kept after harmonising units.
 EXCLUDED_COLUMNS = ["SL", "UNIT", "Troponin_Assay_Type"]
 
+# Troponin-I and its censoring flags. In this dataset troponin runs backwards
+# (normal values are ~100% positive, raised ones 26-37%: see ml/README.md), so
+# the deployed model leaves them out. `train.py --with-troponin` keeps them for research.
+TROPONIN_COLUMNS = ["Troponin_I", "Troponin_Censored_High", "Troponin_Censored_Low", "Troponin_Censor_Ambiguous"]
+
 HS_ASSAY = "High-Sensitivity Troponin-I (ng/L)"
 QUANT_ASSAY = "Quantitative Troponin-I (ng/mL)"
 
@@ -108,7 +113,7 @@ def build_modeling_frame(raw: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def split_xy(df_model: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
+def split_xy(df_model: pd.DataFrame, drop: list[str] | None = None) -> tuple[pd.DataFrame, pd.Series]:
     y = df_model[TARGET].astype(int)
-    X = df_model.drop(columns=[TARGET])
+    X = df_model.drop(columns=[TARGET, *(drop or [])])
     return X, y

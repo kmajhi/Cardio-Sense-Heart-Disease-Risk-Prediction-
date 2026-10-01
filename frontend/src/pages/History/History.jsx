@@ -8,7 +8,6 @@ import FactorsCard from './components/FactorsCard';
 import HeartInsights from './components/HeartInsights';
 import LabTable from './components/LabTable';
 import RecordList from './components/RecordList';
-import { historyMock } from './historyMock';
 import '../Dashboard/Dashboard.css'; // shared tokens, nav, load sequence, page wipe
 import './History.css';
 
@@ -23,7 +22,7 @@ import './History.css';
  * - user, hasNotifications, LinkComponent, activePath: same as <Dashboard />.
  */
 export default function History({
-  records = historyMock,
+  records = [],
   user = { name: 'Demo User' },
   hasNotifications = false,
   LinkComponent = 'a',

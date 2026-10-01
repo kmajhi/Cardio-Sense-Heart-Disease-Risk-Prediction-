@@ -51,6 +51,18 @@ def start(client, provider):
     return res, parse_qs(urlparse(res["Location"]).query)
 
 
+def expire_deleted_profiles():
+    """Move every soft-deleted profile past its undo window."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from predictor.profiles import UNDO_SECONDS
+
+    Profile.objects.filter(deleted_at__isnull=False).update(
+        deleted_at=timezone.now() - timedelta(seconds=UNDO_SECONDS + 1))
+
+
 def landed(res):
     """The query the flow redirected back to /profile with."""
     url = urlparse(res["Location"])
@@ -201,11 +213,35 @@ def test_disconnecting_is_logged_and_omitting_the_field_keeps_links(client):
     assert (event.action, event.handle) == ("disconnected", "real@gmail.com")
 
 
-def test_deleting_the_profile_logs_its_links_and_keeps_the_log(client):
+def test_deleting_the_profile_logs_its_links_once_purged(client):
     linked_profile()
     client.delete(reverse("profile"))
+    assert not ConnectionEvent.objects.exists()  # still restorable: nothing unlinked yet
+
+    expire_deleted_profiles()
+    assert client.get(reverse("profile")).status_code == 404
     event = ConnectionEvent.objects.get()
     assert event.action == "disconnected" and event.detail == "Profile deleted" and event.profile is None
+
+
+def test_undoing_a_delete_keeps_the_links(client):
+    linked_profile()
+    body = client.get(reverse("profile")).json()
+    client.delete(reverse("profile"))
+    assert client.get(reverse("profile")).status_code == 404
+
+    restored = client.put(reverse("profile"), body, content_type="application/json").json()
+    assert "gmail" in restored["connections"]
+    assert not ConnectionEvent.objects.exists()
+
+
+def test_signed_out_start_goes_to_login_and_logs_nothing(anon):
+    res = anon.get(reverse("connect-start", args=["x"]))
+    url = urlparse(res["Location"])
+    assert f"{url.scheme}://{url.netloc}{url.path}" == f"{FRONTEND}/"
+    assert parse_qs(url.query) == {"auth": ["login"], "next": ["/profile"]}
+    anon.get(reverse("connect-callback", args=["x"]), {"state": "forged", "code": "c"})
+    assert not ConnectionEvent.objects.exists()
 
 
 # ---------- Admin and logs ----------

@@ -10,7 +10,7 @@ Without a router, `<Dashboard />` falls back to plain `<a>` links.
 
 ## Connect real data
 
-`dashboardMock.js` shows the exact shape each widget expects. Fetch from the Django API
+`dashboardMock.js` shows the exact shape each widget expects (reference only, not bundled). Fetch from the Django API
 and pass it in:
 
 ```jsx

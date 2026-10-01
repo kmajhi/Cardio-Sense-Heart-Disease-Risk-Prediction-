@@ -18,6 +18,14 @@ def user(django_user_model):
 
 
 @pytest.fixture
+def anon():
+    """A signed-out API client."""
+    from rest_framework.test import APIClient
+
+    return APIClient()
+
+
+@pytest.fixture
 def client(client, user):
     """pytest-django's test client, signed in as `user`."""
     client.force_login(user)

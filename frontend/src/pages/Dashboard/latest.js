@@ -46,7 +46,7 @@ function recoveryFrom(records) {
   };
 }
 
-/** The Dashboard's `data` for a signed-in user (see dashboardMock.js for the shape). */
+/** The Dashboard's `data` for a signed-in user (dashboardMock.js documents the shape). */
 export function dashboardFrom(records = []) {
   const { risk, alert } = fromHistory(records);
   return {
