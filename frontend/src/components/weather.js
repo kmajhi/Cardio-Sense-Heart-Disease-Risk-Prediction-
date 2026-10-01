@@ -1,5 +1,6 @@
-// Current weather for the nav, from Open-Meteo (free, no API key; only the
-// place's coordinates are sent). The place is the profile's city, or Dhaka if
+// Current weather for the nav, from Open-Meteo (free, no API key). Only the
+// place's coordinates are sent, rounded to 2 decimals (about 1 km): enough for
+// weather, too coarse to pinpoint a home (QA L6). The place is the profile's city, or Dhaka if
 // none is set. Cached per place in memory and sessionStorage for 15 minutes,
 // so moving between pages shows the same values instantly instead of
 // re-fetching and flickering.
@@ -22,7 +23,7 @@ const KEY = 'cardio-sense:weather';
 const keyOf = (place) => `${place.latitude.toFixed(2)},${place.longitude.toFixed(2)}`;
 const urlOf = (place) =>
   'https://api.open-meteo.com/v1/forecast' +
-  `?latitude=${place.latitude}&longitude=${place.longitude}` +
+  `?latitude=${place.latitude.toFixed(2)}&longitude=${place.longitude.toFixed(2)}` +
   `&current=temperature_2m,weather_code,is_day&timezone=${encodeURIComponent(place.timeZone)}`;
 
 const memory = new Map(); // place key -> { at, data }

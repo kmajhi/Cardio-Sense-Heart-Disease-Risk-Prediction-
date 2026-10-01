@@ -135,10 +135,10 @@
 .pc-enter {
   opacity: 0;
   transform: translateY(var(--pc-rise, 40px));
-  /* Delays are written for the full sequence; run it at 60% so pages settle fast. */
+  /* Delays are written for the full sequence; run it at 30% so pages settle fast. */
   transition:
-    opacity 0.55s var(--pc-ease) calc(var(--d, 0ms) * 0.6),
-    transform 0.55s var(--pc-ease) calc(var(--d, 0ms) * 0.6);
+    opacity 0.35s var(--pc-ease) calc(var(--d, 0ms) * 0.3),
+    transform 0.35s var(--pc-ease) calc(var(--d, 0ms) * 0.3);
 }
 
 .is-ready .pc-enter {

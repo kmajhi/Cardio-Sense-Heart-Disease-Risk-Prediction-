@@ -24,7 +24,7 @@ def register(api, email="rahim@example.com", name="Rahim Uddin", password=PASSWO
 def test_register_creates_a_signed_in_account_with_a_hashed_password(anon):
     res = register(anon, email=" Rahim@Example.com ")
     assert res.status_code == 201
-    assert res.json() == {"name": "Rahim Uddin", "email": "rahim@example.com"}
+    assert res.json() == {"name": "Rahim Uddin", "email": "rahim@example.com", "has_password": True, "sign_in_with": []}
     assert anon.get(reverse("auth-me")).json()["email"] == "rahim@example.com"
 
     user = get_user_model().objects.get(username="rahim@example.com")
@@ -34,7 +34,9 @@ def test_register_creates_a_signed_in_account_with_a_hashed_password(anon):
 def test_register_refuses_a_taken_email_in_any_case(anon, user):
     res = register(anon, email="NADIA@example.com")
     assert res.status_code == 400
-    assert "already exists" in res.json()["detail"]
+    # Same message whatever the reason, so the form can't confirm who has an account.
+    assert "couldn't create an account" in res.json()["detail"]
+    assert "already exists" not in res.json()["detail"]
 
 
 @pytest.mark.parametrize(
@@ -63,7 +65,7 @@ def test_login_and_logout(anon, user):
     assert wrong.json() == unknown.json() == {"detail": "Incorrect email or password."}
 
     ok = anon.post(reverse("auth-login"), {"email": "Nadia@Example.com", "password": PASSWORD}, format="json")
-    assert ok.json() == {"name": "Nadia Rahman", "email": "nadia@example.com"}
+    assert ok.json() == {"name": "Nadia Rahman", "email": "nadia@example.com", "has_password": True, "sign_in_with": []}
     assert anon.get(reverse("auth-me")).status_code == 200
 
     assert anon.post(reverse("auth-logout")).status_code == 204
@@ -101,7 +103,8 @@ def test_login_is_rate_limited(anon, user):
     [("post", "predict"), ("get", "history"), ("get", "profile"), ("put", "profile"), ("delete", "profile")],
 )
 def test_data_endpoints_need_an_account(anon, method, name):
-    assert getattr(anon, method)(reverse(name), {}, format="json").status_code == 403
+    # 401, not 403: the frontend treats it as "session ended, log in again".
+    assert getattr(anon, method)(reverse(name), {}, format="json").status_code == 401
 
 
 # ---------- Each user sees only their own ----------
@@ -134,7 +137,7 @@ def test_records_are_kept_across_sessions(trained, anon, patient):
     register(anon)
     anon.post(reverse("predict"), patient, format="json")
     anon.post(reverse("auth-logout"))
-    assert anon.get(reverse("history")).status_code == 403
+    assert anon.get(reverse("history")).status_code == 401
 
     anon.post(reverse("auth-login"), {"email": "rahim@example.com", "password": PASSWORD}, format="json")
     assert len(anon.get(reverse("history")).json()) == 1

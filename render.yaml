@@ -1,8 +1,18 @@
 # Render Blueprint: https://render.com/docs/blueprint-spec
 #
-# The frontend deploys as a free static site. The Django API (now with user
-# accounts) isn't deployed yet, so the hosted site uses the in-browser mock
-# (VITE_USE_MOCK_API=true), which keeps each account's data in the browser.
+# Three resources:
+#   cardio-sense       the React site (static)
+#   cardio-sense-api   the Django API (Python web service, gunicorn)
+#   cardio-sense-db    PostgreSQL for accounts, profiles and assessments
+#
+# The site still runs on the in-browser mock (VITE_USE_MOCK_API=true): every
+# page shows a "Demo mode" banner and its scores are labelled illustrative.
+# To switch the site to the real model once the API is up:
+#   1. Open https://cardio-sense-api.onrender.com/api/connect/ and check it answers.
+#   2. Below, set VITE_USE_MOCK_API to "false" and uncomment the /api/* rewrite.
+# The rewrite keeps /api on the site's own origin, so the session and CSRF
+# cookies work with no CORS setup (as the Vite proxy does in development).
+
 services:
   - type: web
     runtime: static
@@ -18,6 +28,10 @@ services:
       - key: VITE_USE_MOCK_API
         value: "true"
     routes:
+      # Step 2 above: proxy the API through the site's own origin.
+      # - type: rewrite
+      #   source: /api/*
+      #   destination: https://cardio-sense-api.onrender.com/api/*
       # Client-side routing: /prediction, /history and /about load the app.
       - type: rewrite
         source: /*
@@ -30,3 +44,70 @@ services:
       - path: /*
         name: X-Content-Type-Options
         value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: same-origin
+
+  - type: web
+    runtime: python
+    name: cardio-sense-api
+    plan: free
+    autoDeployTrigger: commit
+    # The API reads the model from ml/artifacts, so it builds from the repository root.
+    buildCommand: >-
+      pip install -r backend/requirements.txt &&
+      cd backend &&
+      python manage.py collectstatic --noinput &&
+      python manage.py migrate --noinput &&
+      python manage.py createcachetable
+    startCommand: cd backend && gunicorn config.wsgi --workers 2 --timeout 120
+    healthCheckPath: /api/connect/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.14.6"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cardio-sense-db
+          property: connectionString
+      # The site the API sends people back to (OAuth, password-reset links).
+      - key: FRONTEND_URL
+        value: https://cardio-sense.onrender.com
+      - key: OAUTH_REDIRECT_BASE
+        value: https://cardio-sense.onrender.com
+      # Set these in the dashboard (never in this file) to send password-reset mail:
+      # EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL.
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+
+  # Purges profiles past their 10-minute undo window (they're also purged on the
+  # next API call). Cron jobs are a paid Render service: uncomment to use one.
+  # - type: cron
+  #   runtime: python
+  #   name: cardio-sense-purge
+  #   schedule: "*/15 * * * *"
+  #   buildCommand: pip install -r backend/requirements.txt
+  #   startCommand: cd backend && python manage.py purge_deleted_profiles
+  #   envVars:
+  #     - key: PYTHON_VERSION
+  #       value: "3.14.6"
+  #     - key: DJANGO_SECRET_KEY
+  #       fromService: { type: web, name: cardio-sense-api, envVarKey: DJANGO_SECRET_KEY }
+  #     - key: DATABASE_URL
+  #       fromDatabase: { name: cardio-sense-db, property: connectionString }
+
+databases:
+  - name: cardio-sense-db
+    plan: free
+    databaseName: cardio_sense
+    user: cardio_sense

@@ -5,7 +5,18 @@ from django.contrib import admin
 from django.http import HttpResponse
 from django.utils.html import format_html
 
-from .models import Assessment, ConnectionEvent, Profile
+from .models import Assessment, ConnectionEvent, Profile, SocialAccount
+
+
+def cell(value):
+    """A CSV cell that spreadsheets show as text. Values starting with = + - @ (or a
+    tab/CR) would otherwise run as formulas, and names and notes are user input."""
+    text = "" if value is None else str(value)
+    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
+
+
+def csv_row(writer, values):
+    writer.writerow([cell(v) for v in values])
 
 
 def pretty_json(value):
@@ -40,9 +51,9 @@ class AssessmentInline(admin.TabularInline):
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ["full_name", "user", "email", "phone", "sex", "date_of_birth", "assessment_count", "updated_at"]
-    list_filter = ["sex", "blood_group", "hypertension", "diabetes", "smoker"]
+    list_filter = ["sex", "blood_group", "hypertension", "diabetes", "smoker", "deleted_at"]
     search_fields = ["full_name", "email", "phone"]
-    readonly_fields = ["photo_preview", "created_at", "updated_at"]
+    readonly_fields = ["photo_preview", "created_at", "updated_at", "deleted_at"]
     inlines = [AssessmentInline, ConnectionEventInline]
     fieldsets = [
         (None, {"fields": ["user", "full_name", "photo_preview", "photo", "email", "phone"]}),
@@ -53,7 +64,7 @@ class ProfileAdmin(admin.ModelAdmin):
             "medications", "allergies"]}),
         ("Emergency contact", {"fields": ["emergency_name", "emergency_phone"]}),
         ("Linked accounts", {"fields": ["connections"], "classes": ["collapse"]}),
-        ("Record", {"fields": ["created_at", "updated_at"]}),
+        ("Record", {"fields": ["created_at", "updated_at", "deleted_at"]}),
     ]
 
     @admin.display(description="Assessments")
@@ -70,7 +81,7 @@ class ProfileAdmin(admin.ModelAdmin):
 @admin.register(Assessment)
 class AssessmentAdmin(admin.ModelAdmin):
     list_display = ["reference", "created_at", "user", "profile", "age", "sex", "probability_pct", "risk_level", "model_name"]
-    list_filter = ["risk_level", "sex", "model_name", "created_at"]
+    list_filter = ["risk_level", "low_confidence", "sex", "model_name", "created_at"]
     search_fields = ["id", "user__email", "profile__full_name", "notes"]
     date_hierarchy = "created_at"
     list_select_related = ["profile"]
@@ -78,11 +89,11 @@ class AssessmentAdmin(admin.ModelAdmin):
     # What the model saw and said is an audit trail: staff can relink or annotate, not rewrite it.
     readonly_fields = [
         "reference", "created_at", "age", "sex", "probability_pct", "risk_level",
-        "inputs_display", "factors_display", "model_name", "model_trained_at",
+        "inputs_display", "factors_display", "missing_fields", "outside_training", "low_confidence", "model_name", "model_trained_at",
     ]
     fieldsets = [
         (None, {"fields": ["reference", "created_at", "profile", "notes"]}),
-        ("Result", {"fields": ["probability_pct", "risk_level", "factors_display"]}),
+        ("Result", {"fields": ["probability_pct", "risk_level", "factors_display", "missing_fields", "outside_training", "low_confidence"]}),
         ("Request", {"fields": ["age", "sex", "inputs_display"]}),
         ("Model", {"fields": ["model_name", "model_trained_at"]}),
     ]
@@ -114,7 +125,7 @@ class AssessmentAdmin(admin.ModelAdmin):
         writer.writerow(["reference", "created_at", "profile", "age", "sex", "probability",
                          "risk_level", "model_name", "model_trained_at", "inputs", "top_factors", "notes"])
         for a in queryset.select_related("profile"):
-            writer.writerow([a.reference, a.created_at.isoformat(), a.profile or "", a.age, a.sex,
+            csv_row(writer, [a.reference, a.created_at.isoformat(), a.profile or "", a.age, a.sex,
                              a.probability, a.risk_level, a.model_name, a.model_trained_at,
                              json.dumps(a.inputs), json.dumps(a.top_factors), a.notes])
         return response
@@ -148,5 +159,18 @@ class ConnectionEventAdmin(admin.ModelAdmin):
         writer = csv.writer(response)
         writer.writerow(["created_at", "provider", "action", "handle", "profile", "detail"])
         for e in queryset.select_related("profile"):
-            writer.writerow([e.created_at.isoformat(), e.provider, e.action, e.handle, e.profile or "", e.detail])
+            csv_row(writer, [e.created_at.isoformat(), e.provider, e.action, e.handle, e.profile or "", e.detail])
         return response
+
+
+@admin.register(SocialAccount)
+class SocialAccountAdmin(admin.ModelAdmin):
+    """Google / X identities that sign in to an account. Created only by the sign-in flow."""
+
+    list_display = ["user", "provider", "handle", "created_at", "last_login_at"]
+    list_filter = ["provider", "created_at"]
+    search_fields = ["user__email", "user__username", "handle", "uid"]
+    readonly_fields = ["user", "provider", "uid", "handle", "created_at", "last_login_at"]
+
+    def has_add_permission(self, request):
+        return False

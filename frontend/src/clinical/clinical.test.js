@@ -34,8 +34,8 @@ suite('reference bands', () => {
 
   it.each([
     [119, 'normal'], [120, 'elevated'], [129, 'elevated'], [130, 'elevated'],
-    [139, 'elevated'], [140, 'high'], [179, 'high'], [180, 'urgent'], [85, 'elevated'],
-  ])('systolic BP %i mmHg → %s (ACC/AHA 2017)', (bp, expected) => {
+    [139, 'elevated'], [140, 'high'], [179, 'high'], [180, 'high'], [181, 'urgent'], [85, 'elevated'],
+  ])('systolic BP %i mmHg → %s (ACC/AHA 2017: crisis is above 180)', (bp, expected) => {
     expect(level({ bp_mmhg: bp }, 'bp_mmhg').level).toBe(expected);
   });
 
@@ -61,9 +61,38 @@ suite('reference bands', () => {
 
   it('upper limits are inclusive where the reference says so', () => {
     expect(level({ sodium: 145 }, 'sodium').level).toBe('normal');
-    expect(level({ sodium: 146 }, 'sodium').level).toBe('high');
     expect(level({ potassium: 5.1 }, 'potassium').level).toBe('normal');
     expect(level({ potassium: 6.5 }, 'potassium').level).toBe('urgent');
+  });
+
+  it.each([
+    [146, 'elevated', 'Mildly high'], [150, 'elevated', 'Mildly high'], [152, 'high', 'Moderately high'],
+    [158, 'high', 'Markedly high'], [161, 'urgent', 'Severely high'],
+  ])('sodium %i mmol/L → %s (CTCAE v5 hypernatremia grades)', (na, expected, band) => {
+    expect(level({ sodium: na }, 'sodium')).toMatchObject({ level: expected, band });
+  });
+
+  it.each([
+    [5.3, 'elevated', 'Above typical range'], [5.7, 'elevated', 'Mildly high'], [6.2, 'high', 'Moderately high'],
+  ])('potassium %f mmol/L → %s (ERC 2021: mild hyperkalaemia starts at 5.5)', (k, expected, band) => {
+    expect(level({ potassium: k }, 'potassium')).toMatchObject({ level: expected, band });
+  });
+
+  it('grades the value as displayed, so the label never contradicts the number', () => {
+    const na = level({ sodium: 145.4 }, 'sodium');
+    expect([na.display, na.level]).toEqual(['145', 'normal']);
+    const cl = level({ chloride: 107.4 }, 'chloride');
+    expect([cl.display, cl.level]).toEqual(['107', 'normal']);
+    expect(level({ sodium: 145.6 }, 'sodium')).toMatchObject({ display: '146', level: 'elevated' });
+  });
+
+  it('labs marked "not measured" are missing, not judged', () => {
+    const payload = toPayload({ ...DEFAULTS, potassium: null, platelets: null, troponin: '' });
+    expect(payload).toMatchObject({ potassium: null, platelets: null, troponin_i: null, troponin_assay: null });
+    const a = analyze(payload);
+    expect(a.find('potassium').status).toBe('missing');
+    expect(a.find('platelets').status).toBe('missing');
+    expect(a.missing).toEqual(expect.arrayContaining(['Potassium', 'Platelets', 'Troponin-I']));
   });
 
   it('platelets are judged in ×10³/µL although the payload sends a count', () => {
@@ -224,8 +253,62 @@ suite('recommendations', () => {
 });
 
 suite('model risk bands', () => {
+  it('report and share text never show a flat 0% or 100%', async () => {
+    const { buildReportHtml, buildShareText } = await import('../pages/Profile/report');
+    const { EMPTY_PROFILE } = await import('../pages/Profile/profileFields');
+    const records = [{ id: 'A-0001', created_at: '2026-01-01T00:00:00Z', inputs: base, result: { probability: 1, risk_level: 'high', top_factors: [] } }];
+    const html = buildReportHtml({ ...EMPTY_PROFILE, full_name: 'Test' }, records);
+    expect(html).toContain('&gt;99%');
+    expect(html).not.toMatch(/>100%</);
+    expect(buildShareText(EMPTY_PROFILE, records[0], { percent: true })).toContain('>99%');
+  });
+
   it('match the backend’s RISK_BANDS', () => {
     expect([0.34, 0.35, 0.64, 0.65].map(riskLevel)).toEqual(['low', 'moderate', 'moderate', 'high']);
     expect([0.004, 0.5, 0.996].map(pctText)).toEqual(['<1', '50', '>99']);
+  });
+});
+
+suite('allergy matching', () => {
+  const omega = (allergies) =>
+    recommend(buildNotification(assessment({ triglycerides: 300 })), { allergies }).sections
+      .find((sec) => sec.id === 'diet')
+      .items.find((i) => i.id === 'omega-3').text;
+
+  it('matches whole words only', () => {
+    expect(omega(['Nutmeg', 'Coconut'])).toMatch(/fish/i); // not a fish allergy either
+    expect(omega(['Shellfish'])).toMatch(/walnuts/);
+    expect(omega(['Shellfish', 'Peanuts'])).toMatch(/flaxseed or chia seeds/);
+    expect(omega(['Shellfish', 'Doughnut glaze'])).toMatch(/walnuts/);
+  });
+});
+
+suite('sample patients tell three different stories', () => {
+  const sample = (id) => analyze(toPayload(PRESETS.find((p) => p.id === id).values));
+
+  it('low: a healthy adult, nothing flagged', () => {
+    const a = sample('low');
+    expect(a.flagged).toEqual([]);
+    expect(a.level).toBe('normal');
+  });
+
+  it('moderate: risk factors worth a check-up, nothing urgent', () => {
+    const a = sample('moderate');
+    expect(a.level).toBe('elevated');
+    expect(a.flagged.map((f) => f.key)).toEqual(
+      expect.arrayContaining(['hypertension', 'family_history', 'ldl', 'total_cholesterol', 'bmi']),
+    );
+    expect(a.flagged.some((f) => f.level === 'urgent')).toBe(false);
+  });
+
+  it('high: an emergency, with urgent troponin and blood pressure alerts', () => {
+    const a = sample('high');
+    expect(a.level).toBe('urgent');
+    expect(a.flagged.filter((f) => f.level === 'urgent').map((f) => f.key)).toEqual(
+      expect.arrayContaining(['troponin_i', 'bp_mmhg']),
+    );
+    const plan = recommend(buildNotification({ inputs: toPayload(PRESETS.find((p) => p.id === 'high').values), result: { probability: 0.99, risk_level: 'high' } }));
+    const doctor = plan.sections.find((s) => s.id === 'doctor').items.map((i) => i.id);
+    expect(doctor).toEqual(expect.arrayContaining(['troponin', 'bp-crisis']));
   });
 });

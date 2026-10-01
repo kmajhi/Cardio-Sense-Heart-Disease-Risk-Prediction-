@@ -37,14 +37,13 @@ export default function TroponinField({ assay, value, onAssayChange, onValueChan
             onChange={(e) => onValueChange(e.target.value)}
             aria-invalid={showError || undefined}
             aria-describedby="pr-trop-note"
-            required
           />
           <span>{current.unit}</span>
         </div>
         <p id="pr-trop-note" className={`pc-pr-hint${showError ? ' is-error' : ''}`}>
           {showError
             ? error
-            : `Enter the value as reported, in ${current.unit}. The two assays use different units and aren't interchangeable.`}
+            : `Optional. Enter the value as reported, in ${current.unit}; it's checked against the assay's clinical limit. The model doesn't use it (it ran backwards in the training data).`}
         </p>
       </div>
     </div>

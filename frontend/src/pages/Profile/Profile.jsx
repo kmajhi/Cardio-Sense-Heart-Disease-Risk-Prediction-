@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import NavBar from '../../components/NavBar';
 import SiteFooter from '../../components/SiteFooter';
-import { historyMock } from '../History/historyMock';
 import { PROFILE_STORAGE, deleteProfile, getProfile, saveProfile } from '../../api/profileApi';
 import { clearConnectResult, readConnectResult } from '../../api/connectApi';
 import IdentityCard from './components/IdentityCard';
@@ -11,6 +10,7 @@ import ReportCard from './components/ReportCard';
 import ConnectionsCard, { SERVICES } from './components/ConnectionsCard';
 import ShareDialog from './components/ShareDialog';
 import LocationSettings from './components/LocationSettings';
+import AccountCard from './components/AccountCard';
 import Modal from './components/Modal';
 import Toast from './components/Toast';
 import PhotoCropper from './components/PhotoCropper';
@@ -26,15 +26,14 @@ const updatedFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: '
  * delete), the downloadable health report, sharing, and linked accounts.
  *
  * Props
- * - records:         assessments for the report, oldest first (History's shape).
- *                    Defaults to historyMock.js until the API exists.
+ * - records:         the user's assessments for the report, oldest first (History's shape).
  * - onProfileChange: called with the saved profile (or null) so the app can
  *                    update the name in the nav.
  * - account:         the signed-in { name, email }; prefills a new profile.
  * - user, hasNotifications, LinkComponent, activePath: same as <Dashboard />.
  */
 export default function Profile({
-  records = historyMock,
+  records = [],
   onProfileChange = () => {},
   user = { name: 'Demo User' },
   account = null,
@@ -170,7 +169,7 @@ export default function Profile({
   const onCropError = useCallback((message) => {
     setCropSource(null);
     notify(message, 'error');
-  }, [notify, connectResult]);
+  }, [notify]);
 
   const applyPhoto = async (photo) => {
     setCropSource(null);
@@ -343,6 +342,8 @@ export default function Profile({
           </div>
         )}
 
+        {status === 'ready' && !editing && <AccountCard notify={notify} />}
+
         <p className="pc-p-privacy pc-enter" style={{ '--d': '600ms' }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
             <path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Z" strokeLinejoin="round" />
@@ -351,7 +352,8 @@ export default function Profile({
           {PROFILE_STORAGE === 'browser'
             ? 'Your profile is stored only in this browser (demo mode).'
             : 'Your profile is saved to your account on this Cardio Sense server, visible only to you.'}{' '}
-          Risk figures are model estimates, not diagnoses.
+          The weather in the menu bar comes from Open-Meteo, which receives your city’s approximate position (to about
+          1 km), never your name. Risk figures are model estimates, not diagnoses.
         </p>
       </main>
       <SiteFooter LinkComponent={LinkComponent} activePath={activePath} />
@@ -371,7 +373,11 @@ export default function Profile({
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         title="Delete your profile?"
-        subtitle="Your details, medications and connected accounts will be removed from this device."
+        subtitle={
+          PROFILE_STORAGE === 'browser'
+            ? 'Your details, medications and connected accounts will be removed from this browser. Your assessments stay in History.'
+            : 'Your details, medications and connected accounts will be removed from your account. You can undo this for a few minutes; after that it is permanent. Your assessments stay in History (delete them there, or delete your whole account below).'
+        }
         size="sm"
         tone="danger"
       >

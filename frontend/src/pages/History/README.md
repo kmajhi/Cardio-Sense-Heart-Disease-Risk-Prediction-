@@ -7,7 +7,7 @@ the glowing heart from the Dashboard, with tab pills and callouts pinned to the 
 ## Usage
 
 Routed at `/history` in `src/App.jsx`. It reuses `src/components/NavBar` and
-`../Dashboard/Dashboard.css`. Without a `records` prop it uses `historyMock.js`.
+`../Dashboard/Dashboard.css`. Without a `records` prop it shows the empty state.
 
 ## Data shape
 
@@ -60,7 +60,7 @@ timestamp. The page then needs no mapping.
 
 - `History.jsx`: page layout and load sequence.
 - `tests.js`: test list, units, typical ranges, troponin assay handling, change logic.
-- `historyMock.js`: six sample assessments (the troponin assay switches in May on purpose).
+- `historyMock.js`: six sample assessments for reference and design work (not bundled; the troponin assay switches in May on purpose).
 - `board.js`: status counts, group summaries and risk labels used by the board.
 - `components/`: `RiskSummaryCard`, `RiskBarsCard`, `TestsDonutCard`, `FactorsCard`, `HeartInsights`
   (the board), `LabTable`, `RecordList`.

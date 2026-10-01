@@ -2424,3 +2424,94 @@ select.pc-p-input {
     left: var(--at);
   }
 }
+
+/* ---------- Share: full report needs confirming (QA M3) ---------- */
+.pc-p-share-report {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(28, 22, 51, 0.08);
+}
+
+.pc-dash .pc-p-hint.is-warn {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(252, 183, 29, 0.16);
+  color: var(--pc-warn-ink);
+  font-weight: 600;
+}
+
+.pc-p-share-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.pc-p-linkish {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pc-violet-deep, #4a1fb8);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pc-p-linkish:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Account & data (QA M5, L8) ---------- */
+.pc-p-account {
+  display: grid;
+  gap: 18px;
+  margin-top: 24px;
+  padding: 24px;
+  border-radius: 28px;
+  background: var(--pc-card, #fff);
+  color: var(--pc-ink);
+}
+
+.pc-p-account h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.pc-p-account-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.pc-p-account-block {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.pc-p-account-block h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pc-p-account-block p {
+  margin: 0;
+  color: var(--pc-ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pc-p-account-block .pc-p-btn {
+  justify-self: start;
+}
+
+.pc-p-account-form {
+  display: grid;
+  gap: 8px;
+}

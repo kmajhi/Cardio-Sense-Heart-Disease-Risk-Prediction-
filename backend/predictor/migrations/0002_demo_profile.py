@@ -1,8 +1,8 @@
-"""Seeds a made-up demo profile, so the site isn't empty before accounts exist.
+"""Seeds a made-up demo profile, from before user accounts existed.
 
-Runs once, on `migrate`, and only when there's no profile yet. Deleting the
-profile from the app or the admin keeps it deleted. The frontend's mock mode
-seeds the same person (frontend/src/pages/Profile/demoProfile.js).
+Runs once, on `migrate`, and only when there's no profile yet. It belongs to
+no account, so the API never shows it; the admin does. Remove it (and any
+other pre-accounts rows) with `python manage.py purge_orphans --yes`.
 """
 
 import base64

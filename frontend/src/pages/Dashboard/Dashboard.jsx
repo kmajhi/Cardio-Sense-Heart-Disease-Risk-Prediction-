@@ -8,25 +8,25 @@ import AssessmentsCard from './components/AssessmentsCard';
 import HeartRateChart from './components/HeartRateChart';
 import AlertCard from './components/AlertCard';
 import BreathingPlayer from './components/BreathingPlayer';
-import { dashboardMock } from './dashboardMock';
+import { dashboardFrom } from './latest';
 import './Dashboard.css';
 
 /**
  * PulseCheck — Heart health overview (Dashboard page).
  *
  * Props
- * - data:          dashboard payload (see dashboardMock.js for the expected shape).
- *                  Swap the mock for data from the Django REST API when it's ready.
+ * - data:          dashboard payload: latest.js → dashboardFrom(records). dashboardMock.js
+ *                  documents the shape (it's no longer bundled).
  * - LinkComponent: pass react-router's <Link> to get client-side navigation.
  *                  Defaults to a plain <a>.
  * - activePath:    which nav item is highlighted.
- * - user:          { name } for the nav avatar. Defaults to data.user.
+ * - user:          { name, photo } for the nav avatar.
  */
 export default function Dashboard({
-  data = dashboardMock,
+  data = dashboardFrom([]),
   LinkComponent = 'a',
   activePath = '/dashboard',
-  user = data.user,
+  user = { name: 'Demo User' },
 }) {
   // Adding `is-ready` on the next frame triggers the one-time load sequence
   // (same choreography as the Figma "01 · Intro → 02 · Overview" transition).

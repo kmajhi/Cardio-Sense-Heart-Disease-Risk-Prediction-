@@ -1,4 +1,5 @@
 import { request } from './client';
+import { USE_MOCK } from './mode';
 import { readForAccount, writeForAccount } from './mockStore';
 
 // The signed-in user's profile. Mock by default. Same switch as predictionApi.js:
@@ -7,7 +8,6 @@ import { readForAccount, writeForAccount } from './mockStore';
 //   DELETE /api/profile/ → 204
 // The mock keeps each account's profile in this browser's localStorage.
 // A new account has none, until they create it.
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_API !== 'false';
 
 /** Where saved profiles live, for the page's privacy note. */
 export const PROFILE_STORAGE = USE_MOCK ? 'browser' : 'server';
