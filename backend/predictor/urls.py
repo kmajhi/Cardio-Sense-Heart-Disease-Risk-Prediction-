@@ -1,12 +1,43 @@
 from django.urls import path
 
-from . import accounts, connections, views
+from . import accounts, admin_api, connections, social_login, views
+
+A = admin_api
 
 urlpatterns = [
+    path("site/", A.PublicSiteView.as_view(), name="site"),
+    # Admin console (staff only): see predictor/admin_api.py.
+    path("admin/overview/", A.OverviewView.as_view(), name="admin-overview"),
+    path("admin/users/", A.UsersView.as_view(), name="admin-users"),
+    path("admin/users/export/", A.UsersExportView.as_view(), name="admin-users-export"),
+    path("admin/users/<int:pk>/", A.UserDetailView.as_view(), name="admin-user"),
+    path("admin/users/<int:pk>/send-reset/", A.UserSendResetView.as_view(), name="admin-user-reset"),
+    path("admin/users/<int:pk>/sign-out/", A.UserSignOutView.as_view(), name="admin-user-sign-out"),
+    path("admin/assessments/", A.AssessmentsView.as_view(), name="admin-assessments"),
+    path("admin/assessments/export/", A.AssessmentsExportView.as_view(), name="admin-assessments-export"),
+    path("admin/assessments/<str:ref>/", A.AssessmentDetailView.as_view(), name="admin-assessment"),
+    path("admin/model/", A.ModelView.as_view(), name="admin-model"),
+    path("admin/model/check/", A.ModelCheckView.as_view(), name="admin-model-check"),
+    path("admin/model/test/", A.ModelTestView.as_view(), name="admin-model-test"),
+    path("admin/model/reload/", A.ModelReloadView.as_view(), name="admin-model-reload"),
+    path("admin/activity/", A.ActivityView.as_view(), name="admin-activity"),
+    path("admin/activity/export/", A.ActivityExportView.as_view(), name="admin-activity-export"),
+    path("admin/system/", A.SystemView.as_view(), name="admin-system"),
+    path("admin/maintenance/", A.MaintenanceView.as_view(), name="admin-maintenance"),
+    path("admin/maintenance/<str:task>/", A.MaintenanceRunView.as_view(), name="admin-maintenance-run"),
+    path("admin/backup/", A.BackupView.as_view(), name="admin-backup"),
+    path("admin/settings/", A.SettingsView.as_view(), name="admin-settings"),
     path("auth/me/", accounts.MeView.as_view(), name="auth-me"),
     path("auth/register/", accounts.RegisterView.as_view(), name="auth-register"),
     path("auth/login/", accounts.LoginView.as_view(), name="auth-login"),
     path("auth/logout/", accounts.LogoutView.as_view(), name="auth-logout"),
+    path("auth/oauth/<str:provider>/start/", social_login.start, name="auth-oauth-start"),
+    path("auth/password/", accounts.ChangePasswordView.as_view(), name="auth-password"),
+    path("auth/password-reset/", accounts.PasswordResetRequestView.as_view(), name="auth-password-reset"),
+    path("auth/password-reset/confirm/", accounts.PasswordResetConfirmView.as_view(),
+         name="auth-password-reset-confirm"),
+    path("auth/export/", accounts.ExportView.as_view(), name="auth-export"),
+    path("auth/account/", accounts.AccountView.as_view(), name="auth-account"),
     path("connect/", connections.providers, name="connect-providers"),
     path("connect/<str:provider>/start/", connections.start, name="connect-start"),
     path("connect/<str:provider>/callback/", connections.callback, name="connect-callback"),

@@ -518,6 +518,111 @@
   flex-shrink: 0;
 }
 
+/* Before the first estimate the card is a showcase: the glass-anatomy heart
+   (cropped to the heart, assets/prediction-heart.webp) on its own deep navy,
+   with light text, so it reads with full contrast instead of a grey wash.
+   As soon as an estimate (or its loading state) arrives, the card goes back
+   to its normal white style. Decoration only: clicks pass through. */
+.pc-pr-result {
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.pc-pr-result::before,
+.pc-pr-result::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+/* The heart sits centred behind the gauge. */
+.pc-pr-result::before {
+  background: var(--pr-art) 50% 38% / cover no-repeat;
+}
+
+/* Fog and legibility: a soft vignette at the edges, clearer around the heart,
+   and a deeper navy where the text and button sit. */
+.pc-pr-result::after {
+  background:
+    radial-gradient(60% 45% at 50% 34%, rgba(6, 14, 40, 0) 0%, rgba(6, 14, 40, 0.35) 70%, rgba(6, 14, 40, 0.75) 100%),
+    linear-gradient(180deg, rgba(6, 14, 40, 0.45) 0%, rgba(6, 14, 40, 0.05) 18%, rgba(6, 14, 40, 0.1) 50%,
+      rgba(6, 14, 40, 0.82) 72%, rgba(6, 14, 40, 0.94) 100%);
+}
+
+.pc-dash .pc-pr-result.is-empty {
+  border-color: rgba(120, 150, 255, 0.25);
+  background-color: #060e28;
+}
+
+.pc-pr-result.is-empty::before {
+  opacity: 0.95;
+}
+
+.pc-pr-result.is-empty::after {
+  opacity: 1;
+}
+
+/* Text on the showcase: light, and a little larger than on the white card. */
+.pc-dash .pc-pr-result.is-empty .pc-pr-eyebrow {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.pc-pr-result.is-empty .pc-pr-gauge-track {
+  stroke: rgba(255, 255, 255, 0.22);
+}
+
+.pc-pr-result.is-empty .pc-pr-gauge-value {
+  color: #fff;
+  text-shadow: 0 2px 14px rgba(6, 14, 40, 0.6);
+}
+
+.pc-dash .pc-pr-result.is-empty .pc-pr-gauge-label {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 8px rgba(6, 14, 40, 0.8);
+}
+
+.pc-dash .pc-pr-result.is-empty .pc-pr-empty {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 15px;
+  line-height: 1.5;
+  text-shadow: 0 1px 8px rgba(6, 14, 40, 0.8);
+}
+
+.pc-dash .pc-pr-result.is-empty .pc-pr-disclaimer {
+  border-color: rgba(252, 183, 29, 0.45);
+  background: rgba(252, 183, 29, 0.14);
+  color: #ffe3a6;
+  font-size: 13px;
+}
+
+.pc-dash .pc-pr-result.is-empty .pc-pr-missing-note.is-low {
+  background: rgba(252, 183, 29, 0.16);
+  color: #ffe3a6;
+}
+
+/* The button stays the strongest thing on the card. */
+.pc-pr-result.is-empty .pc-pr-run {
+  background: #fff;
+  color: var(--pc-ink);
+}
+
+.pc-pr-result.is-empty .pc-pr-run:hover {
+  background: #efe9fd;
+}
+
+/* Content stays above the image and fog. */
+.pc-pr-result > * {
+  position: relative;
+  z-index: 1;
+}
+
 .pc-pr-result > .pc-pr-result-scroll {
   display: flex;
   flex-direction: column;
@@ -826,4 +931,54 @@
   .pc-pr-result-body {
     transition: none;
   }
+}
+
+/* ---------- Optional labs: "Not measured" (QA H2) ---------- */
+.pc-pr-missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: -2px;
+  color: var(--pc-ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pc-pr-missing input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--pc-violet, #6833e4);
+}
+
+.pc-pr-field.is-missing .pc-pr-range,
+.pc-pr-field.is-missing .pc-pr-scale,
+.pc-pr-field.is-missing .pc-pr-num {
+  opacity: 0.35;
+}
+
+.pc-pr-field.is-missing .pc-pr-range {
+  cursor: not-allowed;
+}
+
+/* ---------- Result: what was left out, and model caveats ---------- */
+.pc-dash .pc-pr-missing-note {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(104, 51, 228, 0.08);
+  color: var(--pc-ink-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.pc-dash .pc-pr-missing-note.is-low {
+  background: rgba(252, 183, 29, 0.18);
+  color: var(--pc-warn-ink);
+}
+
+.pc-dash .pc-pr-missing-note strong {
+  font-weight: 700;
 }

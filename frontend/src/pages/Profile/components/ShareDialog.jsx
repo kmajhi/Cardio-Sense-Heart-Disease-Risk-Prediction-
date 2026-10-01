@@ -30,6 +30,8 @@ const TARGETS = [
 /**
  * Share a short summary. Health data is personal, so nothing beyond the risk
  * level is included unless the user ticks it, and the text stays editable.
+ * Sending the full report (name, contacts, medications…) is a separate,
+ * confirmed action: it's never attached to an ordinary share.
  */
 export default function ShareDialog({ open, onClose, profile, records, reportFile, notify }) {
   const latest = records.at(-1);
@@ -40,6 +42,10 @@ export default function ShareDialog({ open, onClose, profile, records, reportFil
   );
   const [text, setText] = useState(generated);
   useEffect(() => setText(generated), [generated]);
+  const [confirmReport, setConfirmReport] = useState(false);
+  useEffect(() => {
+    if (!open) setConfirmReport(false);
+  }, [open]);
   const url = `${window.location.origin}/`;
 
   const copy = async (message = 'Copied to clipboard.') => {
@@ -61,9 +67,10 @@ export default function ShareDialog({ open, onClose, profile, records, reportFil
     }
   }, [reportFile]);
 
-  const nativeShare = async () => {
+  const nativeShare = async (withReport = false) => {
     const data = { title: 'My Cardio Sense summary', text, url };
-    if (canShareFile) data.files = [reportFile()];
+    if (withReport) data.files = [reportFile()];
+    setConfirmReport(false);
     try {
       await navigator.share(data);
     } catch (err) {
@@ -121,13 +128,38 @@ export default function ShareDialog({ open, onClose, profile, records, reportFil
           </li>
           {typeof navigator !== 'undefined' && navigator.share && (
             <li>
-              <button type="button" className="pc-p-share-btn is-device" onClick={nativeShare}>
+              <button type="button" className="pc-p-share-btn is-device" onClick={() => nativeShare(false)}>
                 <span className="pc-p-share-icon">{BRAND_ICONS.device}</span>
-                {canShareFile ? 'More (with report)' : 'More…'}
+                More…
               </button>
             </li>
           )}
         </ul>
+
+        {canShareFile && (
+          <div className="pc-p-share-report">
+            {confirmReport ? (
+              <>
+                <p className="pc-p-hint is-warn" role="alert">
+                  The full report includes your name, phone, email, location, date of birth, medications, allergies,
+                  emergency contact and every risk estimate. Only send it to someone you trust, such as your doctor.
+                </p>
+                <div className="pc-p-share-report-actions">
+                  <button type="button" className="pc-p-btn pc-p-btn--soft" onClick={() => setConfirmReport(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className="pc-p-btn pc-p-btn--primary" onClick={() => nativeShare(true)}>
+                    Share full report
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button type="button" className="pc-p-linkish" onClick={() => setConfirmReport(true)}>
+                Send the full health report instead…
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </Modal>
   );

@@ -1,11 +1,14 @@
 """Django settings for the Cardio Sense API.
 
-Development runs with the defaults below. For a deployment set
-DJANGO_SECRET_KEY, DJANGO_DEBUG=false and DJANGO_ALLOWED_HOSTS (comma-separated).
+Secure by default: DEBUG is off unless DJANGO_DEBUG=true (backend/.env sets it
+for local development), and then DJANGO_SECRET_KEY is required. For a
+deployment also set DJANGO_ALLOWED_HOSTS and DATABASE_URL (PostgreSQL); see
+backend/README.md and `python manage.py check --deploy`.
 """
 
 import os
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,14 +31,21 @@ def env_bool(name, default):
     return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
 
 
-DEBUG = env_bool("DJANGO_DEBUG", True)
+# Off unless asked for: a deployment that forgets the variable must not show
+# tracebacks and settings to the world.
+DEBUG = env_bool("DJANGO_DEBUG", False)
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY") or (
     "dev-only-insecure-key" if DEBUG else None
 )
 if not SECRET_KEY:
-    raise RuntimeError("Set DJANGO_SECRET_KEY when DJANGO_DEBUG is false.")
+    raise RuntimeError(
+        "Set DJANGO_SECRET_KEY, or DJANGO_DEBUG=true for local development (see backend/.env.example)."
+    )
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+# Render sets this to the service's own hostname (e.g. cardio-sense-api.onrender.com).
+if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
 
 INSTALLED_APPS = [
@@ -56,6 +66,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Maintenance mode from the admin console (predictor/middleware.py).
+    "predictor.middleware.MaintenanceMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -78,13 +90,43 @@ TEMPLATES = [
     },
 ]
 
-# SQLite for development; the file is git-ignored. DJANGO_DB_PATH moves it
-# (e.g. onto a persistent disk when deployed).
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.environ.get("DJANGO_DB_PATH", BASE_DIR / "db.sqlite3"),
+def database_from_url(url):
+    """postgres://user:password@host:port/name → Django's DATABASES entry."""
+    parts = urlparse(url)
+    if parts.scheme not in ("postgres", "postgresql"):
+        raise RuntimeError("DATABASE_URL must be a postgres:// URL.")
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parts.path.lstrip("/"),
+        "USER": unquote(parts.username or ""),
+        "PASSWORD": unquote(parts.password or ""),
+        "HOST": parts.hostname or "",
+        "PORT": str(parts.port or ""),
+        "CONN_MAX_AGE": 60,
+        "OPTIONS": {"sslmode": os.environ.get("DATABASE_SSLMODE", "prefer")},
     }
+
+
+# PostgreSQL when DATABASE_URL is set (deployments: it holds health data).
+# Otherwise SQLite for development; the file is git-ignored.
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {"default": database_from_url(os.environ["DATABASE_URL"])}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.environ.get("DJANGO_DB_PATH", BASE_DIR / "db.sqlite3"),
+        }
+    }
+
+# Throttle counts must be shared by every worker process, so outside development
+# they live in the database (`python manage.py createcachetable` once per database).
+CACHES = {
+    "default": (
+        {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+        if DEBUG
+        else {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": "cardio_cache"}
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -134,6 +176,38 @@ OAUTH_CLIENTS = {
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+# Health data: a signed-in session lasts a working day, not Django's default two weeks.
+SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", 12 * 3600))
+
+# ---------- HTTPS (everything outside development) ----------
+if not DEBUG:
+    # Behind Render's (or any) proxy, HTTPS is announced in this header.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = env_bool("DJANGO_SSL_REDIRECT", True)
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", 31536000))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_HSTS_INCLUDE_SUBDOMAINS", False)
+    SECURE_HSTS_PRELOAD = False
+# Deliberate: on a shared domain like onrender.com, HSTS must not claim every
+# subdomain or ask for preloading. `check --deploy` would warn about both.
+SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
+# ---------- Email (password reset links) ----------
+# Development prints emails to the runserver console. Set EMAIL_HOST (and
+# friends) to send real mail.
+if os.environ.get("EMAIL_HOST"):
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = os.environ["EMAIL_HOST"]
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Cardio Sense <no-reply@cardiosense.local>")
+PASSWORD_RESET_TIMEOUT = 2 * 3600  # reset links expire after 2 hours
 
 # Same output as Django's defaults, plus a filter that masks OAuth codes, states
 # and tokens in every logged line (predictor/logfilters.py).
@@ -162,9 +236,14 @@ LOGGING = {
 REST_FRAMEWORK = {
     # Signed in with a Django session (predictor/accounts.py). Every endpoint
     # needs a user unless it says otherwise, and sees only that user's data.
-    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
+    # Signed out → 401 (not DRF's default 403), so the frontend knows to log in again.
+    "DEFAULT_AUTHENTICATION_CLASSES": ["predictor.authentication.SessionAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
-    # Register and login: slows down password guessing from one address.
-    "DEFAULT_THROTTLE_RATES": {"auth": os.environ.get("AUTH_THROTTLE_RATE", "10/minute")},
+    "DEFAULT_THROTTLE_RATES": {
+        # Register, login, password and account changes: slows down guessing from one address.
+        "auth": os.environ.get("AUTH_THROTTLE_RATE", "10/minute"),
+        # Each prediction runs SHAP and writes a row.
+        "predict": os.environ.get("PREDICT_THROTTLE_RATE", "30/minute"),
+    },
 }

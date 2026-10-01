@@ -1,4 +1,7 @@
 import { AlertGroups, GuidanceLink, RiskNotice } from '../../../notifications/Alerts';
+import { USE_MOCK } from '../../../api/mode';
+import { pctText } from '../../../clinical/risk';
+import heartArt from '../../../assets/prediction-heart.webp';
 
 const LEVELS = {
   low: { label: 'Low risk', className: 'is-low', stroke: 'var(--pc-mint)' },
@@ -38,6 +41,45 @@ function Gauge({ probability, stroke }) {
   );
 }
 
+/** What the estimate was made without, and whether to trust it less (QA H2/H3). */
+export function MissingNote({ data }) {
+  const missing = data?.missing_fields ?? [];
+  if (!missing.length) return null;
+  return (
+    <p className={`pc-pr-missing-note${data.low_confidence ? ' is-low' : ''}`}>
+      {data.low_confidence && <strong>Low confidence. </strong>}
+      Estimated without {missing.join(', ')}: the model filled {missing.length === 1 ? 'it' : 'them'} in from typical
+      values.{data.low_confidence ? ' Add the missing labs for a more reliable estimate.' : ''}
+    </p>
+  );
+}
+
+/** Values beyond what the model was trained on: it treats them like the nearest value it saw. */
+export function OutsideNote({ data }) {
+  const items = data?.outside_training ?? [];
+  if (!items.length) return null;
+  const describe = (o) =>
+    `${o.name} ${o.value.toLocaleString()} ${o.unit} (${o.value > o.max ? `highest seen ${o.max.toLocaleString()}` : `lowest seen ${o.min.toLocaleString()}`})`;
+  return (
+    <p className="pc-pr-missing-note is-low">
+      <strong>Beyond the training data. </strong>
+      {items.map(describe).join('; ')}. The model treats {items.length === 1 ? 'it' : 'these'} like the nearest
+      value it saw, so this estimate is less reliable.
+    </p>
+  );
+}
+
+/** Estimates made before the model was retrained used Troponin-I backwards (QA C1). */
+export function TroponinCaveat({ factors }) {
+  if (!factors?.some((f) => f.name === 'Troponin-I')) return null;
+  return (
+    <p className="pc-pr-missing-note is-low">
+      <strong>Older model. </strong>This estimate came from a model version that used Troponin-I in the reverse of its
+      clinical meaning. Run it again for an estimate from the current model.
+    </p>
+  );
+}
+
 function FactorList({ factors }) {
   const biggest = Math.max(...factors.map((f) => Math.abs(f.contribution)), 0.0001);
 
@@ -73,15 +115,32 @@ function FactorList({ factors }) {
  * Right-hand result panel. Holds the form's submit button, so running the
  * model always happens next to the number it produces.
  */
-export default function ResultCard({ status, data, stale, error, notification, LinkComponent, saveNote, signedIn = true }) {
+export default function ResultCard({
+  status,
+  data,
+  stale,
+  error,
+  notification,
+  LinkComponent,
+  saveNote,
+  signedIn = true,
+  blocked = '',
+}) {
   const level = data ? LEVELS[data.risk_level] : null;
   const loading = status === 'loading';
+  // Before the first estimate the card would be bare: show the glass-anatomy
+  // heart behind it, faded and foggy (decoration only, see Prediction.css).
+  const empty = !data && !loading;
 
   return (
-    <aside className="pc-pr-result pc-enter" style={{ '--d': '200ms' }} aria-labelledby="pr-result-title">
+    <aside
+      className={`pc-pr-result pc-enter${empty ? ' is-empty' : ''}`}
+      style={{ '--d': '200ms', '--pr-art': `url(${heartArt})` }}
+      aria-labelledby="pr-result-title"
+    >
       <div className="pc-pr-result-head">
         <h2 id="pr-result-title" className="pc-pr-eyebrow">
-          Model estimate
+          {USE_MOCK ? 'Illustrative score (demo)' : 'Model estimate'}
         </h2>
         {level && <span className={`pc-badge ${level.className}`}>{level.label}</span>}
         {data && !level && <span className="pc-badge">{data.risk_level}</span>}
@@ -92,7 +151,7 @@ export default function ResultCard({ status, data, stale, error, notification, L
         <p className="pc-pr-gauge-label">Estimated probability of heart disease</p>
         {data ? (
           <p className="pc-visually-hidden">
-            Estimated probability of heart disease {Math.round(data.probability * 100)} percent,{' '}
+            Estimated probability of heart disease {pctText(data.probability)} percent,{' '}
             {level?.label ?? data.risk_level}.
           </p>
         ) : (
@@ -106,6 +165,9 @@ export default function ResultCard({ status, data, stale, error, notification, L
           {stale && !loading && (
             <p className="pc-pr-stale">Inputs changed since this estimate. Run it again to update.</p>
           )}
+          <MissingNote data={data} />
+          <OutsideNote data={data} />
+          <TroponinCaveat factors={data?.top_factors} />
           {/* Keyed per result so a new estimate re-announces and re-animates. */}
           {notification && (
             <div key={data?.probability} className="pc-pr-alerts">
@@ -132,13 +194,20 @@ export default function ResultCard({ status, data, stale, error, notification, L
         </span>
       </p>
 
+      {blocked && (
+        <p id="pr-blocked" tabIndex={-1} className="pc-pr-missing-note is-low" role="alert">
+          <strong>No estimate for this patient. </strong>
+          {blocked}
+        </p>
+      )}
+
       {status === 'error' && (
         <p className="pc-pr-error" role="alert">
           Couldn't get a prediction. {error}
         </p>
       )}
 
-      <button type="submit" className="pc-pr-run" disabled={loading}>
+      <button type="submit" className="pc-pr-run" disabled={loading || Boolean(blocked)}>
         {loading ? 'Running model…' : !signedIn ? 'Log in to run prediction' : data ? 'Run again' : 'Run prediction'}
         <span className="pc-hero-cta-arrow" aria-hidden="true">
           →

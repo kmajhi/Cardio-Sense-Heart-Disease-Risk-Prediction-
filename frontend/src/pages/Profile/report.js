@@ -11,6 +11,7 @@ import {
   smokerLabel,
 } from './profileFields';
 import { isPhoto } from './photo';
+import { pctText } from '../../clinical/risk';
 
 const LEVELS = { low: 'Low risk', moderate: 'Moderate risk', high: 'High risk' };
 const DISCLAIMER =
@@ -38,7 +39,7 @@ export function buildReportHtml(profile, records = [], today = new Date()) {
     <section>
       <h2>Latest risk estimate</h2>
       <div class="score">
-        <strong>${Math.round(latest.result.probability * 100)}%</strong>
+        <strong>${esc(pctText(latest.result.probability))}%</strong>
         <span>${esc(LEVELS[latest.result.risk_level] ?? latest.result.risk_level)} · ${esc(dayFmt.format(new Date(latest.created_at)))}</span>
       </div>
       <h3>What moved this estimate</h3>
@@ -52,7 +53,7 @@ export function buildReportHtml(profile, records = [], today = new Date()) {
       <table class="cols"><tr><th>Date</th><th>Estimate</th><th>Level</th></tr>${records
         .map(
           (r) =>
-            `<tr><td>${esc(dayFmt.format(new Date(r.created_at)))}</td><td>${Math.round(r.result.probability * 100)}%</td><td>${esc(
+            `<tr><td>${esc(dayFmt.format(new Date(r.created_at)))}</td><td>${esc(pctText(r.result.probability))}%</td><td>${esc(
               LEVELS[r.result.risk_level] ?? r.result.risk_level,
             )}</td></tr>`,
         )
@@ -158,7 +159,7 @@ export function buildShareText(profile, latest, include) {
   const parts = [];
   if (latest && (include.level || include.percent)) {
     const level = (LEVELS[latest.result.risk_level] ?? latest.result.risk_level).toLowerCase();
-    const pct = `${Math.round(latest.result.probability * 100)}%`;
+    const pct = `${pctText(latest.result.probability)}%`;
     const what = include.level && include.percent ? `${pct} (${level})` : include.percent ? pct : level;
     parts.push(`My latest Cardio Sense heart risk estimate: ${what}.`);
   }

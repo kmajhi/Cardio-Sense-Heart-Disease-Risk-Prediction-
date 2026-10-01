@@ -1,12 +1,19 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { Suspense, forwardRef, lazy, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import Dashboard from './pages/Dashboard/Dashboard';
-import Prediction from './pages/Prediction/Prediction';
-import History from './pages/History/History';
-import About from './pages/About/About';
-import Profile from './pages/Profile/Profile';
-import Guidance from './pages/Guidance/Guidance';
 import Home from './pages/Home/Home';
+
+// Every page but the homepage is downloaded the first time it's opened, so the
+// first load only fetches what it shows.
+const Dashboard = lazy(() => import('./pages/Dashboard/Dashboard'));
+const Prediction = lazy(() => import('./pages/Prediction/Prediction'));
+const History = lazy(() => import('./pages/History/History'));
+const About = lazy(() => import('./pages/About/About'));
+const Profile = lazy(() => import('./pages/Profile/Profile'));
+const Guidance = lazy(() => import('./pages/Guidance/Guidance'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword/ResetPassword'));
+const Console = lazy(() => import('./pages/Admin/Console'));
+import DemoBanner from './components/DemoBanner';
+import SiteBanner from './components/SiteBanner';
 import { AuthProvider, RequireAuth, useAuth } from './auth/AuthContext';
 import { NotificationsProvider } from './notifications/NotificationsContext';
 import NavBar from './components/NavBar';
@@ -121,8 +128,11 @@ function AppRoutes() {
 
   return (
     // Keyed on the account, so a different user never sees the last one's notifications.
-    <NotificationsProvider key={account?.email ?? 'signed-out'} profile={profile}>
+    <NotificationsProvider key={account?.email ?? 'signed-out'} profile={profile} account={account?.email}>
+      <SiteBanner />
+      <DemoBanner />
       <ScrollToTop />
+      <Suspense fallback={<LoadingShell {...shared} />}>
       <Routes>
         <Route path="/" element={<LandingRoute {...shared} />} />
         <Route path="/dashboard" element={guard(<DashboardRoute {...shared} />)} />
@@ -144,8 +154,12 @@ function AppRoutes() {
         <Route path="/about" element={<About {...shared} />} />
         <Route path="/profile" element={guard(<ProfileRoute {...shared} account={account} onProfileChange={setProfile} />)} />
         <Route path="/guidance" element={guard(<Guidance {...shared} />)} />
+        <Route path="/reset-password" element={<ResetPassword {...shared} />} />
+        {/* Admin console: staff only (it checks, and so does every API call). */}
+        <Route path="/console/*" element={<Console />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </NotificationsProvider>
   );
 }

@@ -163,7 +163,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
             center
             eyebrow="What the model looks at"
             title="21 routine measurements"
-            text="The same inputs the model was trained on: 21 that you enter, plus BMI and max heart rate, which are calculated for you. Troponin-I always travels with its assay type."
+            text="21 values that you enter, plus BMI and max heart rate, which are calculated for you. The model uses all of them except Troponin-I, which is checked against clinical limits instead and always travels with its assay type."
           />
           <div className="pc-a-pills" role="group" aria-label="Filter inputs by group">
             {INPUT_GROUPS.map((g) => (
@@ -225,7 +225,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
           </div>
 
           <div className="pc-a-model-results">
-            <p className="pc-a-eyebrow">Held-out test · 207 patients</p>
+            <p className="pc-a-eyebrow">Held-out test · 207 patients · internal validation only</p>
             <ul className="pc-a-metrics">
               {METRICS.map((m, i) => (
                 <li key={m.label} style={{ '--i': i }}>

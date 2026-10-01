@@ -49,7 +49,9 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
   const L = LinkComponent;
   const auth = useAuth(); // null when the nav is rendered outside the app (no log-out button then)
   const signedIn = auth ? Boolean(auth.user) : true;
-  const items = signedIn ? NAV_ITEMS : GUEST_ITEMS;
+  // Staff also get the admin console.
+  const isStaff = Boolean(auth?.user?.is_staff);
+  const items = signedIn ? (isStaff ? [...NAV_ITEMS, { label: 'Admin', to: '/console' }] : NAV_ITEMS) : GUEST_ITEMS;
 
   const authButton = (mode, label, className) =>
     onAuth ? (

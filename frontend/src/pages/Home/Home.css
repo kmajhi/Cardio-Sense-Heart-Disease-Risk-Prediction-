@@ -20,6 +20,9 @@
   align-items: center;
   column-gap: 40px;
   row-gap: 0;
+  /* The heart video is wider than its column (.hm-visual): keep it inside the
+     card's rounded edge. `clip` (not `hidden`) adds no scroll container. */
+  overflow: clip;
 }
 
 .hm-copy {
@@ -706,17 +709,58 @@
   overflow-y: auto;
 }
 
+/* Log in / Register is a page of its own: a plain backdrop, no blurred page,
+   video or effects behind the card, and nothing to fade in. */
 .hm-scrim {
   position: fixed;
   inset: 0;
   margin: 0;
   padding: 0;
   border: 0;
-  background: rgba(225, 218, 240, 0.55);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #f3f0f9;
   cursor: default;
-  animation: hm-fade 0.3s ease both;
+}
+
+/* The glass-anatomy heart on the left of the login page: see-through and
+   foggy, so it sets the mood without competing with the card. Static (no
+   animation) and decorative only; clicks pass through to the backdrop. */
+.hm-auth-art {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 52vw;
+  pointer-events: none;
+  background: var(--hm-auth-art) 72% 42% / cover no-repeat;
+  opacity: 0.38;
+  filter: blur(2px) saturate(0.85);
+  /* Fades out towards the card and the screen edges. */
+  -webkit-mask-image: radial-gradient(75% 70% at 58% 50%, #000 30%, rgba(0, 0, 0, 0.45) 62%, transparent 85%);
+  mask-image: radial-gradient(75% 70% at 58% 50%, #000 30%, rgba(0, 0, 0, 0.45) 62%, transparent 85%);
+}
+
+/* Fog: a soft wash of the backdrop colour drifting over the image. */
+.hm-auth-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 45% at 30% 85%, rgba(243, 240, 249, 0.9), transparent 70%),
+    radial-gradient(55% 40% at 20% 15%, rgba(243, 240, 249, 0.8), transparent 70%),
+    linear-gradient(90deg, rgba(243, 240, 249, 0.15), rgba(243, 240, 249, 0.6) 80%, #f3f0f9);
+}
+
+/* Narrow screens: the card fills the width, so the image would sit behind it. */
+@media (max-width: 900px) {
+  .hm-auth-art {
+    display: none;
+  }
+}
+
+/* With the card open, the page underneath isn't painted at all (fast, and
+   nothing shows through). The loader stays: it runs after signing in. */
+.hm-auth-open > :not(.hm-modal):not(.hm-loader) {
+  visibility: hidden;
 }
 
 @keyframes hm-fade {
@@ -735,17 +779,8 @@
   padding: 36px 38px 34px;
   border-radius: 32px;
   background: #fff;
-  box-shadow: 0 40px 90px rgba(40, 20, 90, 0.22);
+  box-shadow: 0 24px 60px rgba(40, 20, 90, 0.12);
   color: var(--pc-ink);
-  animation: hm-dlg-in 0.4s var(--pc-ease) both;
-}
-
-/* A soft rise on open; no bounce. */
-@keyframes hm-dlg-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
 }
 
 .hm-x {
@@ -900,6 +935,49 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Password field with its show/hide button inside the right edge. */
+.hm-pw {
+  position: relative;
+  display: grid;
+}
+
+.hm-pw .hm-input {
+  padding-right: 52px;
+}
+
+.hm-pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: #6e6984;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.hm-pw-toggle:hover {
+  background: #efe9fd;
+  color: var(--pc-violet-deep);
+}
+
+.hm-pw-toggle:focus-visible {
+  outline: 2px solid var(--pc-violet);
+  outline-offset: 1px;
+}
+
+/* Hide the browser's own reveal button (Edge), so there's only one eye. */
+.hm-pw .hm-input::-ms-reveal,
+.hm-pw .hm-input::-ms-clear {
+  display: none;
+}
+
 .hm-input::placeholder {
   color: #9a95ab;
 }
@@ -946,6 +1024,31 @@
   opacity: 0.8;
 }
 
+.pc-dash .hm-success {
+  margin: 0;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: #e9f8f1;
+  color: #135c3e;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.pc-dash .hm-reset-note {
+  margin: 0;
+  color: var(--pc-ink-soft);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.hm-forgot {
+  align-self: flex-end;
+  margin-top: -6px;
+  font-size: 13px;
+}
+
+/* "Continue with Google / X" */
 .hm-or {
   display: flex;
   align-items: center;
@@ -968,27 +1071,46 @@
   gap: 10px;
 }
 
+.hm-social.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .hm-btn-social {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  height: 50px;
+  min-height: 50px;
+  padding: 0 14px;
   border: 1.5px solid #e2dcee;
   border-radius: 25px;
   background: #fff;
   color: var(--pc-ink);
   font: inherit;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.3s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
-.hm-btn-social:hover {
+.hm-btn-social:hover:not(:disabled) {
   border-color: #d6cfe6;
   background: #faf9fc;
-  box-shadow: 0 10px 22px rgba(60, 30, 120, 0.1);
+}
+
+.hm-btn-social:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.hm-btn-social.is-x svg {
+  color: #000;
+}
+
+@media (max-width: 420px) {
+  .hm-social {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .pc-dash .hm-switch {
@@ -1030,7 +1152,7 @@
 }
 
 .hm-loader.out {
-  animation: hm-ld-out 0.75s cubic-bezier(0.65, 0, 0.35, 1) 0.12s both;
+  animation: hm-ld-out 0.35s cubic-bezier(0.65, 0, 0.35, 1) 0.05s both;
 }
 
 @keyframes hm-ld-out {
@@ -1099,7 +1221,7 @@
 }
 
 .hm-loader.out .hm-lw {
-  animation: hm-lw-out 0.45s cubic-bezier(0.5, 0, 0.75, 0) both;
+  animation: hm-lw-out 0.25s cubic-bezier(0.5, 0, 0.75, 0) both;
 }
 
 @keyframes hm-lw-out {

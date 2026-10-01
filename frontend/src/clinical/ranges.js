@@ -107,12 +107,12 @@ export const MEASURES = [
       [120, 'normal', 'Normal'],
       [130, 'elevated', 'Elevated', 'high'],
       [140, 'elevated', 'Stage 1 hypertension range', 'high'],
-      [180, 'high', 'Stage 2 hypertension range', 'high'],
+      [through(180), 'high', 'Stage 2 hypertension range', 'high'],
       [INF, 'urgent', 'Hypertensive crisis range', 'high'],
     ],
     source:
       '2017 ACC/AHA High Blood Pressure Guideline (Whelton et al., Hypertension 2018): normal <120, ' +
-      'elevated 120–129, stage 1 130–139, stage 2 ≥140, crisis ≥180 mmHg. Low: <90 mmHg (AHA).',
+      'elevated 120–129, stage 1 130–139, stage 2 ≥140, crisis >180 mmHg. Low: <90 mmHg (AHA).',
   },
   {
     key: 'rbs_mmol_l',
@@ -270,11 +270,15 @@ export const MEASURES = [
       [130, 'high', 'Moderately low', 'low'],
       [135, 'elevated', 'Mildly low', 'low'],
       [through(145), 'normal', 'Normal'],
-      [INF, 'high', 'High', 'high'],
+      [through(150), 'elevated', 'Mildly high', 'high'],
+      [through(155), 'high', 'Moderately high', 'high'],
+      [through(160), 'high', 'Markedly high', 'high'],
+      [INF, 'urgent', 'Severely high', 'high'],
     ],
     source:
       'Reference 135–145 mmol/L. Hyponatremia grades from the European clinical practice guideline ' +
-      '(Spasovski et al., 2014): mild 130–135, moderate 125–129, profound <125.',
+      '(Spasovski et al., 2014): mild 130–135, moderate 125–129, profound <125. Hypernatremia grades from ' +
+      'CTCAE v5.0: grade 1 >145–150, grade 2 >150–155, grade 3 >155–160, grade 4 >160 mmol/L.',
   },
   {
     key: 'potassium',
@@ -288,6 +292,7 @@ export const MEASURES = [
       [3.0, 'high', 'Moderately low', 'low'],
       [3.5, 'elevated', 'Mildly low', 'low'],
       [through(5.1), 'normal', 'Normal'],
+      [5.5, 'elevated', 'Above typical range', 'high'],
       [6.0, 'elevated', 'Mildly high', 'high'],
       [6.5, 'high', 'Moderately high', 'high'],
       [INF, 'urgent', 'Severely high', 'high'],

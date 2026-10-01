@@ -1,7 +1,7 @@
 // Feature-level analysis: checks each of the 21 prediction inputs against the
 // clinical ranges in ranges.js and groups what's outside them. Pure functions,
 // no React, so the same logic serves the Prediction, History, Dashboard and
-// Guidance pages and is unit-tested (analyze.test.js).
+// Guidance pages and is unit-tested (clinical.test.js).
 //
 // Input: an /api/predict/ request body (fields.js → toPayload). Output:
 //   findings  every feature with its value, level and reference range
@@ -40,7 +40,10 @@ function measured(spec, inputs, sex) {
   if (raw === null) return { ...base, value: null, level: null, status: 'missing' };
 
   const value = raw * (spec.scale ?? 1);
-  let result = band(bandsFor(spec, sex), value);
+  // Graded as displayed, so the label always agrees with the number shown
+  // (145.4 shows as "145" and is Normal, not "145 · High").
+  const shown = Number(value.toFixed(spec.digits));
+  let result = band(bandsFor(spec, sex), shown);
   const extra = {};
 
   if (spec.key === 'creatinine') {
