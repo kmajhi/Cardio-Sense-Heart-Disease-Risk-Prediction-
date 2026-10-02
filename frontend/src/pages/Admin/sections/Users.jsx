@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { admin, download } from '../../../api/adminApi';
 import { useAuth } from '../../../auth/AuthContext';
 import { ActivityList } from './Overview';
 import {
-  Badge, ConfirmDialog, DataTable, Drawer, ErrorNote, Facts, Loading, PageHeader, Pagination, RiskBadge,
-  SearchBox, Select, Toolbar, fmtAgo, fmtDateTime, fmtPct, useDebounced, useLoad, useToast,
+  Avatar, Badge, ConfirmDialog, DataTable, Drawer, ErrorNote, Facts, Icon, Loading, PageHeader, Pagination, RiskBadge,
+  SearchBox, Select, Skeleton, Toolbar, fmtAgo, fmtDateTime, fmtNumber, fmtPct, useDebounced, useLoad, useToast,
 } from '../ui';
 
 const providers = (ids) => ids.map((p) => (p === 'gmail' ? 'Google' : 'X')).join(', ');
@@ -37,8 +37,8 @@ function UserDetail({ id, onClose, onChanged, openAssessment }) {
     <Drawer
       open
       onClose={onClose}
-      title={u ? u.name : 'User'}
-      subtitle={u?.email}
+      title="User details"
+      subtitle={u ? `Account #${u.id}${u.username && u.username !== u.email ? ` · ${u.username}` : ''}` : ''}
       footer={
         u && (
           <>
@@ -59,6 +59,19 @@ function UserDetail({ id, onClose, onChanged, openAssessment }) {
       <ErrorNote error={error} onRetry={reload} />
       {u && (
         <>
+          <div className="ad-profile-card">
+            <Avatar name={u.name} email={u.email} size={52} />
+            <div>
+              <strong>{u.name}</strong>
+              <span className="ad-muted">{u.email || 'no email'}</span>
+              <span className="ad-muted">Member since {fmtDateTime(u.date_joined)}</span>
+            </div>
+          </div>
+          <div className="ad-mini-stats">
+            <div><span>Assessments</span><strong>{u.assessments}</strong></div>
+            <div><span>Sessions</span><strong>{u.sessions}</strong></div>
+            <div><span>Last seen</span><strong>{fmtAgo(u.last_login)}</strong></div>
+          </div>
           <div className="ad-chips">
             <Badge tone={u.is_active ? 'ok' : 'danger'}>{u.is_active ? 'Active' : 'Deactivated'}</Badge>
             {u.is_superuser && <Badge tone="violet">Superuser</Badge>}
@@ -195,15 +208,38 @@ function UserDetail({ id, onClose, onChanged, openAssessment }) {
   );
 }
 
-export default function Users({ openAssessment }) {
+const TABS = [
+  ['all', 'All', {}],
+  ['active', 'Active', { status: 'active' }],
+  ['inactive', 'Deactivated', { status: 'inactive' }],
+  ['staff', 'Staff', { role: 'staff' }],
+];
+
+const BULK = {
+  activate: { label: 'Activate', done: 'activated' },
+  deactivate: { label: 'Deactivate', done: 'deactivated', confirm: true },
+  sign_out: { label: 'Sign out everywhere', done: 'signed out', confirm: true },
+};
+
+export default function Users({ openAssessment, initialUser, onOpened }) {
   const notify = useToast();
+  const { user: me } = useAuth();
   const [q, setQ] = useState('');
-  const [status, setStatus] = useState('');
-  const [role, setRole] = useState('');
+  const [tab, setTab] = useState('all');
   const [sort, setSort] = useState('-date_joined');
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(initialUser ?? null);
+  const [picked, setPicked] = useState(() => new Set());
+  const [bulk, setBulk] = useState(null); // action waiting for confirmation
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (initialUser) {
+      setSelected(initialUser);
+      onOpened?.();
+    }
+  }, [initialUser, onOpened]);
   const search = useDebounced(q);
+  const { status = '', role = '' } = TABS.find((t) => t[0] === tab)[2];
   const params = { q: search, status, role, sort, page };
   const { data, error, loading, reload } = useLoad(() => admin.users(params), [search, status, role, sort, page]);
 
@@ -212,25 +248,47 @@ export default function Users({ openAssessment }) {
     setPage(1);
   };
 
+  const runBulk = async (action) => {
+    setBusy(true);
+    try {
+      const res = await admin.bulkUsers([...picked], action);
+      notify(res.detail, res.skipped?.length ? 'error' : 'ok');
+      res.skipped?.forEach((s) => notify(`${s.email}: ${s.reason}`, 'error'));
+      setPicked(new Set());
+      reload();
+    } catch (err) {
+      notify(err.message, 'error');
+    } finally {
+      setBusy(false);
+      setBulk(null);
+    }
+  };
+
   return (
     <>
       <PageHeader
         title="Users"
-        subtitle="Accounts, access and sign-in"
+        subtitle={data ? `${fmtNumber(data.count)} ${data.count === 1 ? 'account' : 'accounts'} · access, sign-in and sessions` : 'Accounts, access and sign-in'}
         actions={
           <button
             type="button"
             className="ad-btn"
             onClick={() => download('/admin/users/export/', { q: search, status, role }, 'users.csv').catch((e) => notify(e.message, 'error'))}
           >
+            <Icon name="download" size={15} />
             Export CSV
           </button>
         }
       />
+      <div className="ad-tabs" role="tablist" aria-label="Filter users">
+        {TABS.map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'is-on' : undefined} onClick={() => { filter(setTab)(id); setPicked(new Set()); }}>
+            {label}
+          </button>
+        ))}
+      </div>
       <Toolbar>
         <SearchBox value={q} onChange={filter(setQ)} placeholder="Search name or email" />
-        <Select label="Status" value={status} onChange={filter(setStatus)} options={[['', 'All'], ['active', 'Active'], ['inactive', 'Deactivated']]} />
-        <Select label="Role" value={role} onChange={filter(setRole)} options={[['', 'All'], ['staff', 'Staff'], ['user', 'Users']]} />
         <Select
           label="Sort"
           value={sort}
@@ -240,21 +298,30 @@ export default function Users({ openAssessment }) {
       </Toolbar>
       <ErrorNote error={error} onRetry={reload} />
       {loading && !data ? (
-        <Loading />
+        <Skeleton rows={1} />
       ) : (
-        <>
+        <div className="ad-card-table">
           <DataTable
             rows={data?.results}
             onRowClick={(r) => setSelected(r.id)}
             empty="No users match these filters."
+            selected={picked}
+            onSelect={setPicked}
+            isSelectable={(r) => r.email !== me?.email}
+            sort={sort}
+            onSort={filter(setSort)}
             columns={[
               {
                 key: 'name',
                 label: 'User',
+                sortKey: 'email',
                 render: (r) => (
-                  <div className="ad-cell-main">
-                    <strong>{r.name}</strong>
-                    <span className="ad-muted">{r.email}</span>
+                  <div className="ad-user-cell">
+                    <Avatar name={r.name} email={r.email} size={32} />
+                    <div className="ad-cell-main">
+                      <strong>{r.name}</strong>
+                      <span className="ad-muted">{r.email}</span>
+                    </div>
                   </div>
                 ),
               },
@@ -263,16 +330,48 @@ export default function Users({ openAssessment }) {
                 label: 'Role',
                 render: (r) => (r.is_superuser ? <Badge tone="violet">Superuser</Badge> : r.is_staff ? <Badge tone="violet">Staff</Badge> : <span className="ad-muted">User</span>),
               },
-              { key: 'status', label: 'Status', render: (r) => <Badge tone={r.is_active ? 'ok' : 'danger'}>{r.is_active ? 'Active' : 'Deactivated'}</Badge> },
-              { key: 'signin', label: 'Sign-in', render: (r) => (r.sign_in_with.length ? providers(r.sign_in_with) : 'Password') },
-              { key: 'assessments', label: 'Assessments', align: 'right' },
-              { key: 'last_login', label: 'Last login', render: (r) => fmtAgo(r.last_login) },
-              { key: 'joined', label: 'Joined', render: (r) => fmtAgo(r.date_joined) },
+              { key: 'status', label: 'Status', render: (r) => <Badge tone={r.is_active ? 'ok' : 'danger'} dot>{r.is_active ? 'Active' : 'Deactivated'}</Badge> },
+              { key: 'signin', label: 'Sign-in', render: (r) => (r.sign_in_with.length ? providers(r.sign_in_with) : <span className="ad-muted">Password</span>) },
+              { key: 'assessments', label: 'Assessments', align: 'right', sortKey: 'n_assessments' },
+              { key: 'last_login', label: 'Last seen', sortKey: 'last_login', render: (r) => <span title={fmtDateTime(r.last_login)}>{fmtAgo(r.last_login)}</span> },
+              { key: 'joined', label: 'Joined', sortKey: 'date_joined', render: (r) => <span title={fmtDateTime(r.date_joined)}>{fmtAgo(r.date_joined)}</span> },
             ]}
           />
           {data && <Pagination page={data.page} pages={data.pages} count={data.count} onPage={setPage} />}
-        </>
+        </div>
       )}
+
+      {picked.size > 0 && (
+        <div className="ad-bulkbar" role="region" aria-label="Bulk actions">
+          <span className="ad-bulk-count">{picked.size} selected</span>
+          <span className="ad-bulk-sep" aria-hidden="true" />
+          {Object.entries(BULK).map(([action, b]) => (
+            <button key={action} type="button" className="ad-bulk-btn" disabled={busy} onClick={() => (b.confirm ? setBulk(action) : runBulk(action))}>
+              {b.label}
+            </button>
+          ))}
+          <button type="button" className="ad-bulk-btn is-icon" aria-label="Clear selection" onClick={() => setPicked(new Set())}>
+            <Icon name="x" size={15} />
+          </button>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={Boolean(bulk)}
+        title={`${BULK[bulk]?.label} ${picked.size} ${picked.size === 1 ? 'account' : 'accounts'}?`}
+        body={
+          <p>
+            {bulk === 'deactivate'
+              ? 'They’ll be signed out everywhere and can’t log in until reactivated. Their data is kept. Accounts you can’t change are skipped.'
+              : 'Every open session of these accounts ends now; they can sign in again.'}
+          </p>
+        }
+        confirmLabel={BULK[bulk]?.label}
+        busy={busy}
+        onCancel={() => setBulk(null)}
+        onConfirm={() => runBulk(bulk)}
+      />
+
       {selected !== null && (
         <UserDetail
           id={selected}

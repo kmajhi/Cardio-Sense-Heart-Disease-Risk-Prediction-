@@ -100,22 +100,26 @@ LOW_CONFIDENCE_MISSING = 3
 # a typo or a unit mix-up, so it's rejected rather than scored. The frontend's
 # fields.js has the same limits. Possible is not the same as covered by the
 # training data: see outside_training().
+# The accepted range per input: the same range the Prediction page's sliders show
+# (frontend/src/pages/Prediction/fields.js). Wide enough for real patients,
+# including the urgent values the clinical checks flag; anything beyond is
+# refused as a typo or a unit mix-up.
 LIMITS = {
-    "age": (18, 120),  # under 18 is refused separately, with its own message
-    "height_cm": (50, 250),
-    "weight_kg": (20, 400),
-    "bp_mmhg": (50, 300),
-    "rbs_mmol_l": (1, 50),
-    "total_cholesterol": (50, 600),
-    "hdl": (5, 150),
-    "ldl": (10, 500),
-    "triglycerides": (20, 3000),
-    "hemoglobin": (2, 25),
-    "creatinine": (0.1, 20),
-    "platelets": (5_000, 1_500_000),
-    "sodium": (100, 180),
-    "potassium": (1.5, 10),
-    "chloride": (60, 150),
+    "age": (18, 110),  # under 18 is refused separately, with its own message
+    "height_cm": (120, 210),
+    "weight_kg": (30, 200),
+    "bp_mmhg": (70, 250),
+    "rbs_mmol_l": (1.5, 35),
+    "total_cholesterol": (80, 400),
+    "hdl": (10, 120),
+    "ldl": (30, 300),
+    "triglycerides": (30, 1000),
+    "hemoglobin": (3, 20),
+    "creatinine": (0.2, 15),
+    "platelets": (20_000, 800_000),
+    "sodium": (110, 165),
+    "potassium": (1.5, 8),
+    "chloride": (75, 135),
 }
 MAX_TROPONIN_NG_ML = 500.0  # = 500,000 ng/L on the high-sensitivity assay
 # BMI outside this means the height or weight was mistyped (the extremes ever
