@@ -46,7 +46,9 @@ export async function request(path, { method = 'GET', body } = {}) {
     const fallback =
       res.status >= 500
         ? 'The Cardio Sense server had a problem or isn’t running. Try again in a moment.'
-        : `Request to ${path} failed with status ${res.status}`;
+        : res.status === 403
+          ? 'The server refused this request. Refresh the page and try again.'
+          : `Request to ${path} failed with status ${res.status}`;
     const err = new Error(detail || fallback);
     err.status = res.status; // callers branch on this, never on the message text
     // /auth/me/ answers 401 by design when signed out; anything else means the session ended.
