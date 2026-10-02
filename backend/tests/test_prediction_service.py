@@ -108,12 +108,14 @@ def test_features_match_the_trained_schema(trained, patient):
 @pytest.mark.parametrize("change, message", [
     ({"age": 16}, r"adults \(18 or over\) only"),
     ({"age": 0}, r"adults \(18 or over\) only"),
-    ({"age": 121}, "age must be between 18 and 120"),
-    ({"weight_kg": 401}, "weight_kg must be between 20 and 400"),
-    ({"height_cm": 260}, "height_cm must be between 50 and 250"),
-    ({"height_cm": 60, "weight_kg": 300}, "BMI of 833, which isn't possible"),
-    ({"height_cm": 240, "weight_kg": 20}, "BMI of 3, which isn't possible"),
-    ({"age": 1e9}, "age must be between 18 and 120"),
+    ({"age": 111}, "age must be between 18 and 110"),
+    ({"weight_kg": 201}, "weight_kg must be between 30 and 200"),
+    ({"weight_kg": 500}, "weight_kg must be between 30 and 200"),
+    ({"height_cm": 211}, "height_cm must be between 120 and 210"),
+    ({"height_cm": 210, "weight_kg": 30}, "BMI of 7, which isn't possible"),
+    ({"ldl": 301}, "ldl must be between 30 and 300"),
+    ({"triglycerides": 1001}, "triglycerides must be between 30 and 1000"),
+    ({"age": 1e9}, "age must be between 18 and 110"),
     ({"height_cm": 0}, "height_cm must be between"),
     ({"platelets": 270}, "platelets must be between"),  # sent in ×10³/µL instead of /µL
     ({"troponin_i": 900}, "500 or under"),
@@ -173,7 +175,7 @@ def test_every_model_input_has_a_ui_label(trained):
 # ---------- Beyond the training data ----------
 
 @pytest.mark.parametrize("change", [
-    {"age": 110}, {"age": 120}, {"weight_kg": 200, "height_cm": 190}, {"height_cm": 210, "weight_kg": 95},
+    {"age": 100}, {"age": 110}, {"weight_kg": 200, "height_cm": 190}, {"height_cm": 210, "weight_kg": 95},
     {"age": 100, "weight_kg": 130},
 ])
 def test_realistic_extremes_are_accepted_and_flagged(trained, patient, change):
@@ -195,7 +197,7 @@ def test_beyond_the_oldest_patient_the_estimate_levels_off(trained, patient):
     """A tree model can't extrapolate: past the training data it treats values like
     the most extreme one it saw. That's why they're flagged, not refused."""
     at_edge = predict({**patient, "age": 97})["probability"]
-    assert predict({**patient, "age": 115})["probability"] == pytest.approx(at_edge, abs=0.02)
+    assert predict({**patient, "age": 108})["probability"] == pytest.approx(at_edge, abs=0.02)
 
 
 # ---------- The Prediction page's three sample patients (frontend fields.js → PRESETS) ----------

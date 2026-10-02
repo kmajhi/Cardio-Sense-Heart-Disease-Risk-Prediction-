@@ -21,6 +21,8 @@ const COLUMNS = [
       ['How it works', '/about#a-how'],
       ['Model inputs', '/about#a-inputs'],
       ['How it was built', '/about#a-model'],
+      ['Privacy & trust', '/about#a-trust'],
+      ['FAQ', '/about#a-faq'],
     ],
   },
 ];

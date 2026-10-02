@@ -16,6 +16,7 @@ STAFF_ENDPOINTS = [
     ("get", "admin-assessments"), ("get", "admin-assessments-export"), ("get", "admin-model"),
     ("get", "admin-activity"), ("get", "admin-activity-export"), ("get", "admin-system"),
     ("get", "admin-maintenance"), ("get", "admin-backup"), ("get", "admin-settings"),
+    ("get", "admin-search"), ("get", "admin-notifications"), ("get", "admin-security"),
 ]
 
 
@@ -246,3 +247,74 @@ def test_announcement_validation_and_public_view(boss):
     public = APIClient().get(reverse("site")).json()
     assert public["announcement"] == "New model live" and public["maintenance_message"] == ""
     assert SiteSettings.load().updated_by == "boss@example.com"
+
+
+# ---------- Console extras: periods, bulk actions, search, notifications, security ----------
+
+def test_overview_periods_kpis_and_funnel(trained, boss, user, patient):
+    client_for(user).post(reverse("predict"), patient, format="json")
+    for days in (7, 30, 90):
+        body = boss.get(reverse("admin-overview"), {"days": days}).json()
+        assert len(body["series"]) == days and body["period"]["days"] == days
+    assert len(boss.get(reverse("admin-overview"), {"days": 12}).json()["series"]) == 30  # unknown → default
+    kpis = body["period"]["kpis"]
+    assert kpis["assessments"] == {"current": 1, "previous": 0}
+    assert kpis["signups"]["current"] == 2
+    funnel = {s["step"]: s["count"] for s in body["funnel"]}
+    assert funnel["Signed up"] == 1  # staff are left out
+    assert funnel["Ran a first assessment"] == 1 and funnel["Came back for another"] == 0
+    counts = [s["count"] for s in body["funnel"]]
+    assert counts == sorted(counts, reverse=True)  # every step is a subset of the one before
+
+
+def test_bulk_actions_respect_the_guards(boss, superuser, user, django_user_model):
+    other = django_user_model.objects.create_user(username="o@example.com", email="o@example.com", password="x-Pass-123")
+    res = boss.post(reverse("admin-users-bulk"), {"ids": [user.pk, other.pk, superuser.pk], "action": "deactivate"},
+                    format="json").json()
+    assert res["done"] == 2 and len(res["skipped"]) == 1  # not yourself
+    user.refresh_from_db()
+    superuser.refresh_from_db()
+    assert not user.is_active and superuser.is_active
+    assert ActivityEvent.objects.filter(kind="admin", summary__contains="in bulk").exists()
+    assert boss.post(reverse("admin-users-bulk"), {"ids": [user.pk], "action": "activate"}, format="json").json()["done"] == 1
+    assert boss.post(reverse("admin-users-bulk"), {"ids": [user.pk], "action": "explode"}, format="json").status_code == 400
+    assert boss.post(reverse("admin-users-bulk"), {"ids": [], "action": "sign_out"}, format="json").status_code == 400
+
+
+def test_bulk_needs_staff(user):
+    assert client_for(user).post(reverse("admin-users-bulk"), {"ids": [user.pk], "action": "activate"},
+                                 format="json").status_code == 403
+
+
+def test_search_finds_users_and_assessments(trained, boss, user, patient):
+    client_for(user).post(reverse("predict"), patient, format="json")
+    ref = Assessment.objects.get().reference
+    body = boss.get(reverse("admin-search"), {"q": "nadia"}).json()
+    assert [u["email"] for u in body["users"]] == ["nadia@example.com"]
+    assert body["assessments"][0]["id"] == ref
+    assert boss.get(reverse("admin-search"), {"q": ref}).json()["assessments"][0]["id"] == ref
+    assert boss.get(reverse("admin-search"), {"q": "n"}).json() == {"users": [], "assessments": []}
+
+
+def test_notifications_flag_failed_logins_and_site_switches(boss, user):
+    for _ in range(10):
+        APIClient().post(reverse("auth-login"), {"email": user.email, "password": "wrong"}, format="json")
+    SiteSettings.objects.update_or_create(pk=1, defaults={"maintenance_mode": True})
+    from django.core.cache import cache
+    cache.clear()
+    items = boss.get(reverse("admin-notifications")).json()["items"]
+    titles = [i["title"] for i in items]
+    assert any("10 failed logins" in t for t in titles)
+    assert "Maintenance mode is on" in titles
+    assert items[0]["level"] == "danger"  # most serious first
+    assert len({i["id"] for i in items}) == len(items)
+
+
+def test_security_groups_failed_logins(boss, user):
+    for _ in range(3):
+        APIClient().post(reverse("auth-login"), {"email": user.email, "password": "wrong"}, format="json")
+    body = boss.get(reverse("admin-security")).json()
+    assert body["summary"]["failed_24h"] == 3
+    assert body["by_email"][0] == {**body["by_email"][0], "email": user.email, "count": 3}
+    assert len(body["trend"]) == 14 and body["trend"][-1]["failed"] == 3
+    assert any(s["email"] == "boss@example.com" for s in body["sessions"])

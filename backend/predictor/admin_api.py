@@ -5,7 +5,7 @@ account's staff role is limited to superusers, nobody can lock themselves out,
 and the last active superuser can't be demoted, deactivated or deleted. Every
 change made here is written to the activity log as an "admin" event.
 
-    GET    /api/admin/overview/                   headline numbers, 30-day series, recent activity
+    GET    /api/admin/overview/                   ?days=7|30|90 headline numbers, KPI deltas, series, funnel
     GET    /api/admin/users/                      ?q &status=active|inactive &role=staff|user &page
     GET    /api/admin/users/export/               the same filters, as CSV
     GET    /api/admin/users/<id>/                 profile, assessments, sign-ins, sessions, activity
@@ -28,6 +28,10 @@ change made here is written to the activity log as an "admin" event.
     GET    /api/admin/maintenance/                what each task would clean up
     POST   /api/admin/maintenance/<task>/         run one task
     GET    /api/admin/backup/                     everything (no password hashes) as JSON
+    POST   /api/admin/users/bulk/                 { ids, action: activate|deactivate|sign_out }
+    GET    /api/admin/search/                     ?q → users and assessments (command palette)
+    GET    /api/admin/notifications/              alerts worked out from live data
+    GET    /api/admin/security/                   failed logins by day, address and account; sessions
     GET    /api/admin/settings/                   site switches
     PATCH  /api/admin/settings/
 """
@@ -50,7 +54,7 @@ from django.contrib.sessions.models import Session
 from django.core.cache import cache
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
-from django.db.models import Count, Q
+from django.db.models import Count, Max, Q
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.utils import timezone
@@ -148,11 +152,61 @@ def user_name(user):
 
 # ---------------------------------------------------------------- overview
 
+PERIODS = (7, 30, 90)
+ACTIVE_KINDS = ["login", "social_login", "prediction"]
+
+
+def period_kpis(days, today):
+    """Headline counts for the last `days` days and the `days` before them (for the deltas)."""
+    start = today - timedelta(days=days - 1)
+    prev_start = start - timedelta(days=days)
+
+    def window(qs, field, lo, hi):
+        return qs.filter(**{f"{field}__date__gte": lo, f"{field}__date__lte": hi})
+
+    def both(qs, field, distinct_user=False):
+        cur, prev = window(qs, field, start, today), window(qs, field, prev_start, start - timedelta(days=1))
+        if distinct_user:
+            return {"current": cur.values("user_id").distinct().count(),
+                    "previous": prev.values("user_id").distinct().count()}
+        return {"current": cur.count(), "previous": prev.count()}
+
+    active = ActivityEvent.objects.filter(user__isnull=False, kind__in=ACTIVE_KINDS)
+    return {
+        "signups": both(User.objects.all(), "date_joined"),
+        "assessments": both(Assessment.objects.all(), "created_at"),
+        "active_users": both(active, "created_at", distinct_user=True),
+        "high_risk": both(Assessment.objects.filter(risk_level="high"), "created_at"),
+        "failed_logins": both(ActivityEvent.objects.filter(kind="login_failed"), "created_at"),
+    }
+
+
+def activation_funnel():
+    """Each step is a subset of the one before: signed up → ran an assessment → came back for
+    another → of those, still active this week. Staff accounts are left out."""
+    users = User.objects.filter(is_staff=False).annotate(n=Count("assessments"))
+    week_ago = timezone.now() - timedelta(days=7)
+    active_ids = set(ActivityEvent.objects.filter(created_at__gte=week_ago, user__isnull=False, kind__in=ACTIVE_KINDS)
+                     .values_list("user_id", flat=True))
+    rows = list(users.values_list("pk", "n"))
+    return [
+        {"step": "Signed up", "count": len(rows)},
+        {"step": "Ran a first assessment", "count": sum(1 for _, n in rows if n >= 1)},
+        {"step": "Came back for another", "count": sum(1 for _, n in rows if n >= 2)},
+        {"step": "Still active this week", "count": sum(1 for pk, n in rows if n >= 2 and pk in active_ids)},
+    ]
+
+
 class OverviewView(StaffView):
     def get(self, request):
         now = timezone.now()
         today = timezone.localdate()
-        since30 = today - timedelta(days=29)
+        try:
+            span = int(request.query_params.get("days", 30))
+        except ValueError:
+            span = 30
+        span = span if span in PERIODS else 30
+        since = today - timedelta(days=span - 1)
         week_ago = now - timedelta(days=7)
         assessments = Assessment.objects.all()
 
@@ -161,21 +215,30 @@ class OverviewView(StaffView):
             risk_counts[row["risk_level"]] = row["n"]
         total = sum(risk_counts.values())
 
-        # 30-day series: sign-ups and predictions by band, one row per day.
-        days = [since30 + timedelta(days=i) for i in range(30)]
-        series = {d: {"date": d.isoformat(), "signups": 0, "low": 0, "moderate": 0, "high": 0} for d in days}
-        for row in (User.objects.filter(date_joined__date__gte=since30).annotate(day=TruncDate("date_joined"))
+        # Daily series over the period: sign-ups, predictions by band, active users, failed logins.
+        days = [since + timedelta(days=i) for i in range(span)]
+        series = {d: {"date": d.isoformat(), "signups": 0, "low": 0, "moderate": 0, "high": 0, "active": 0,
+                      "failed": 0} for d in days}
+        for row in (User.objects.filter(date_joined__date__gte=since).annotate(day=TruncDate("date_joined"))
                     .values("day").annotate(n=Count("id"))):
             if row["day"] in series:
                 series[row["day"]]["signups"] = row["n"]
-        for row in (assessments.filter(created_at__date__gte=since30).annotate(day=TruncDate("created_at"))
+        for row in (assessments.filter(created_at__date__gte=since).annotate(day=TruncDate("created_at"))
                     .values("day", "risk_level").annotate(n=Count("id"))):
             if row["day"] in series:
                 series[row["day"]][row["risk_level"]] = row["n"]
+        events = ActivityEvent.objects.filter(created_at__date__gte=since).annotate(day=TruncDate("created_at"))
+        for row in (events.filter(user__isnull=False, kind__in=ACTIVE_KINDS).values("day")
+                    .annotate(n=Count("user_id", distinct=True))):
+            if row["day"] in series:
+                series[row["day"]]["active"] = row["n"]
+        for row in events.filter(kind="login_failed").values("day").annotate(n=Count("id")):
+            if row["day"] in series:
+                series[row["day"]]["failed"] = row["n"]
 
-        # What most often raised recent estimates (positive top factors, last 30 days).
+        # What most often raised estimates over the period (positive top factors).
         raised = Counter()
-        for factors in assessments.filter(created_at__date__gte=since30).values_list("top_factors", flat=True):
+        for factors in assessments.filter(created_at__date__gte=since).values_list("top_factors", flat=True):
             for f in (factors or [])[:3]:
                 if f.get("contribution", 0) > 0:
                     raised[f["name"]] += 1
@@ -207,6 +270,8 @@ class OverviewView(StaffView):
                 "sessions_active": Session.objects.filter(expire_date__gt=now).count(),
             },
             "series": list(series.values()),
+            "period": {"days": span, "kpis": period_kpis(span, today)},
+            "funnel": activation_funnel(),
             "top_raising_factors": [{"name": n, "count": c} for n, c in raised.most_common(6)],
             "recent_activity": [activity_row(e) for e in ActivityEvent.objects.select_related("user")[:8]],
             "site": site_payload(site),
@@ -383,6 +448,205 @@ class UserSignOutView(StaffView):
         admin_log(request, f"Signed {user.email or user.username} out everywhere", target_user=user.pk,
                   sessions=len(sessions))
         return Response({"detail": f"Ended {len(sessions)} session(s)."})
+
+
+BULK_ACTIONS = {"activate", "deactivate", "sign_out"}
+BULK_LIMIT = 200
+
+
+class UsersBulkView(StaffView):
+    """POST { ids: [..], action: activate|deactivate|sign_out }. The same guards as one-at-a-time:
+    accounts the caller may not change are skipped and reported, never half-changed."""
+
+    def post(self, request):
+        data = request.data if isinstance(request.data, dict) else {}
+        action = data.get("action")
+        ids = data.get("ids")
+        if action not in BULK_ACTIONS:
+            return bad("Choose activate, deactivate or sign_out.")
+        if not isinstance(ids, list) or not ids or len(ids) > BULK_LIMIT:
+            return bad(f"Select between 1 and {BULK_LIMIT} accounts.")
+        try:
+            ids = {int(i) for i in ids}
+        except (TypeError, ValueError):
+            return bad("Account ids must be numbers.")
+
+        done, skipped = [], []
+        for user in User.objects.filter(pk__in=ids).order_by("pk"):
+            label = user.email or user.username
+            if action == "sign_out":
+                for s in user_sessions(user.pk):
+                    s.delete()
+                done.append(label)
+                continue
+            want_active = action == "activate"
+            if user.is_active == want_active:
+                continue
+            problem = guard_change(request, user, deactivate=not want_active)
+            if problem:
+                skipped.append({"email": label, "reason": problem})
+                continue
+            user.is_active = want_active
+            user.save(update_fields=["is_active"])
+            if not want_active:
+                for s in user_sessions(user.pk):
+                    s.delete()
+            done.append(label)
+
+        verb = {"activate": "Activated", "deactivate": "Deactivated", "sign_out": "Signed out"}[action]
+        if done:
+            admin_log(request, f"{verb} {len(done)} account(s) in bulk", action=action, accounts=done[:50])
+        detail = f"{verb} {len(done)} account(s)." + (f" Skipped {len(skipped)}." if skipped else "")
+        return Response({"detail": detail, "done": len(done), "skipped": skipped})
+
+
+# ---------------------------------------------------------------- search, notifications, security
+
+class SearchView(StaffView):
+    """GET ?q= → a few users and assessments, for the console's command palette."""
+
+    def get(self, request):
+        q = request.query_params.get("q", "").strip()
+        if len(q) < 2:
+            return Response({"users": [], "assessments": []})
+        users = (User.objects.filter(Q(email__icontains=q) | Q(first_name__icontains=q) | Q(username__icontains=q))
+                 .order_by("-date_joined")[:5])
+        ref = q.upper().removeprefix("A-")
+        cond = Q(user__email__icontains=q) | Q(user__first_name__icontains=q)
+        if ref.isdigit():
+            cond |= Q(pk=int(ref))
+        found = Assessment.objects.select_related("user").filter(cond).order_by("-created_at")[:5]
+        return Response({
+            "users": [{"id": u.pk, "name": user_name(u), "email": u.email, "is_staff": u.is_staff,
+                       "is_active": u.is_active} for u in users],
+            "assessments": [{"id": a.reference, "email": a.user.email if a.user else "", "risk_level": a.risk_level,
+                             "probability": a.probability, "created_at": iso(a.created_at)} for a in found],
+        })
+
+
+FAILED_LOGIN_ALERT = 10  # failed logins in 24 h before the console raises an alert
+IP_ALERT = 5             # failed logins from one address in 24 h
+
+
+class NotificationsView(StaffView):
+    """GET → alerts worth a staff member's attention, worked out from live data (nothing stored).
+    Each has a stable id so the browser can remember which ones were read."""
+
+    def get(self, request):
+        now = timezone.now()
+        day_ago = now - timedelta(hours=24)
+        items = []
+
+        def add(key, level, title, body, section, at=None):
+            items.append({"id": key, "level": level, "title": title, "body": body, "section": section,
+                          "at": iso(at or now)})
+
+        failed = ActivityEvent.objects.filter(kind="login_failed", created_at__gte=day_ago)
+        n_failed = failed.count()
+        if n_failed >= FAILED_LOGIN_ALERT:
+            add(f"failed-{now:%Y%m%d}", "danger", f"{n_failed} failed logins in 24 hours",
+                "More than usual: check Security for the addresses and accounts involved.", "security",
+                failed.first().created_at)
+        for row in (failed.exclude(ip__isnull=True).values("ip").annotate(n=Count("id"))
+                    .filter(n__gte=IP_ALERT).order_by("-n")[:3]):
+            add(f"ip-{row['ip']}-{now:%Y%m%d}", "warn", f"{row['n']} failed logins from {row['ip']}",
+                "One address is repeatedly failing to sign in.", "security")
+
+        site = SiteSettings.load()
+        if site.maintenance_mode:
+            add(f"maint-{iso(site.updated_at)}", "warn", "Maintenance mode is on",
+                "Only staff can use the app right now.", "site", site.updated_at)
+        if not site.registration_open:
+            add(f"reg-{iso(site.updated_at)}", "info", "Sign-ups are paused", "New accounts can't be created.",
+                "site", site.updated_at)
+        if not site.predictions_open:
+            add(f"pred-{iso(site.updated_at)}", "info", "Predictions are paused",
+                "Users can't run new estimates.", "site", site.updated_at)
+
+        for c in run_checks():
+            if c["status"] == "fail":
+                add(f"check-{c['name']}-{now:%Y%m%d}", "danger", f"{c['name']} check is failing", c["detail"], "system")
+
+        lowconf = Assessment.objects.filter(created_at__gte=now - timedelta(days=7))
+        n_recent = lowconf.count()
+        n_low = lowconf.filter(low_confidence=True).count()
+        if n_recent >= 5 and n_low / n_recent > 0.3:
+            add(f"lowconf-{now:%Y%W}", "warn", f"{round(n_low / n_recent * 100)}% low-confidence estimates this week",
+                "Many recent assessments were missing labs or out of range.", "assessments")
+
+        for u in User.objects.filter(date_joined__gte=day_ago).order_by("-date_joined")[:5]:
+            add(f"signup-{u.pk}", "ok", "New account", f"{u.email or u.username} signed up.", "users", u.date_joined)
+
+        stale = maintenance_counts()
+        if stale["clear_expired_sessions"] >= 50 or stale["purge_old_activity"]:
+            add(f"housekeeping-{now:%Y%m%d}", "info", "Housekeeping is due",
+                "Expired sessions or old activity can be cleaned up.", "maintenance")
+
+        order = {"danger": 0, "warn": 1, "info": 2, "ok": 3}
+        items.sort(key=lambda i: i["at"], reverse=True)  # newest first within each level
+        items.sort(key=lambda i: order[i["level"]])
+        return Response({"items": items, "generated_at": iso(now)})
+
+
+class SecurityView(StaffView):
+    """GET → failed-login trend, the addresses and accounts behind them, recent sign-ins and who's signed in."""
+
+    def get(self, request):
+        now = timezone.now()
+        today = timezone.localdate()
+        since = today - timedelta(days=13)
+        week_ago = now - timedelta(days=7)
+
+        trend = {since + timedelta(days=i): {"date": (since + timedelta(days=i)).isoformat(), "failed": 0,
+                                             "logins": 0} for i in range(14)}
+        for row in (ActivityEvent.objects.filter(created_at__date__gte=since,
+                                                 kind__in=["login_failed", "login", "social_login"])
+                    .annotate(day=TruncDate("created_at")).values("day", "kind").annotate(n=Count("id"))):
+            if row["day"] in trend:
+                trend[row["day"]]["failed" if row["kind"] == "login_failed" else "logins"] += row["n"]
+
+        failed = ActivityEvent.objects.filter(kind="login_failed", created_at__gte=week_ago)
+        by_ip = [{"ip": r["ip"], "count": r["n"], "accounts": r["accounts"], "last": iso(r["last"])}
+                 for r in failed.exclude(ip__isnull=True).values("ip")
+                 .annotate(n=Count("id"), accounts=Count("email", distinct=True), last=Max("created_at"))
+                 .order_by("-n")[:10]]
+        by_email = [{"email": r["email"] or "unknown", "count": r["n"], "last": iso(r["last"])}
+                    for r in failed.values("email").annotate(n=Count("id"), last=Max("created_at")).order_by("-n")[:10]]
+
+        # Active sessions per user (sessions don't store addresses: the last sign-in event does).
+        per_user = Counter()
+        for s in Session.objects.filter(expire_date__gt=now):
+            uid = s.get_decoded().get("_auth_user_id")
+            if uid:
+                per_user[str(uid)] += 1
+        users = {str(u.pk): u for u in User.objects.filter(pk__in=[int(k) for k in per_user if k.isdigit()])}
+        last_login = {}
+        for e in (ActivityEvent.objects.filter(kind__in=["login", "social_login"], user_id__in=list(users))
+                  .order_by("-created_at")):
+            last_login.setdefault(str(e.user_id), e)
+        sessions = sorted(
+            ({"user_id": u.pk, "name": user_name(u), "email": u.email, "is_staff": u.is_staff,
+              "sessions": per_user[k], "last_login": iso(u.last_login),
+              "ip": last_login[k].ip if k in last_login else None} for k, u in users.items()),
+            key=lambda r: r["last_login"] or "", reverse=True)
+
+        recent = ActivityEvent.objects.filter(kind__in=["login", "social_login", "login_failed"])[:15]
+        return Response({
+            "summary": {
+                "failed_24h": ActivityEvent.objects.filter(kind="login_failed",
+                                                           created_at__gte=now - timedelta(hours=24)).count(),
+                "failed_7d": failed.count(),
+                "suspicious_ips": sum(1 for r in by_ip if r["count"] >= IP_ALERT),
+                "sessions": sum(per_user.values()),
+                "signed_in_users": len(users),
+                "staff_without_password": User.objects.filter(is_staff=True, password__startswith="!").count(),
+            },
+            "trend": list(trend.values()),
+            "by_ip": by_ip,
+            "by_email": by_email,
+            "sessions": sessions,
+            "recent": [activity_row(e) for e in recent],
+        })
 
 
 # ---------------------------------------------------------------- assessments
@@ -635,66 +899,71 @@ def versions():
     return {k: (".".join(map(str, v)) if isinstance(v, tuple) else str(v)) for k, v in out.items()}
 
 
+def run_checks():
+    """The health checks behind System health (and its alerts), as [{ name, status, detail }]."""
+    checks = []
+    # Database
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        db = settings.DATABASES["default"]
+        size = os.path.getsize(db["NAME"]) if db["ENGINE"].endswith("sqlite3") and os.path.exists(str(db["NAME"])) else None
+        detail = f"{connection.vendor}" + (f", {size / 1024 / 1024:.1f} MB" if size is not None else "")
+        checks.append(check("Database", True, detail, warn=connection.vendor == "sqlite" and not settings.DEBUG))
+    except Exception as err:  # noqa: BLE001
+        checks.append(check("Database", False, str(err)[:200]))
+    # Migrations
+    try:
+        plan = MigrationExecutor(connection).migration_plan(MigrationExecutor(connection).loader.graph.leaf_nodes())
+        checks.append(check("Migrations", not plan, "all applied" if not plan else f"{len(plan)} pending"))
+    except Exception as err:  # noqa: BLE001
+        checks.append(check("Migrations", False, str(err)[:200]))
+    # Cache (throttling and site settings live here)
+    try:
+        cache.set("cardio:health", "ok", 10)
+        ok = cache.get("cardio:health") == "ok"
+        backend = settings.CACHES["default"]["BACKEND"].rsplit(".", 1)[-1]
+        checks.append(check("Cache", ok, backend, warn=backend == "LocMemCache" and not settings.DEBUG))
+    except Exception as err:  # noqa: BLE001
+        checks.append(check("Cache", False, str(err)[:200]))
+    # Model
+    loaded = prediction_service.load_model.cache_info().currsize > 0
+    checks.append(check("Prediction model", PIPELINE_PATH.exists(),
+                        ("loaded in memory" if loaded else "on disk, loads on first use")
+                        if PIPELINE_PATH.exists() else f"missing: {PIPELINE_PATH}", warn=not loaded))
+    # Email
+    # Every backend class is called EmailBackend; the module says which one it is.
+    kind = settings.EMAIL_BACKEND.rsplit(".", 2)[-2]
+    email_detail = {
+        "smtp": f"SMTP via {getattr(settings, 'EMAIL_HOST', '')}",
+        "console": "printed to the server console (no real mail is sent)",
+        "locmem": "kept in memory (tests)",
+    }.get(kind, kind)
+    checks.append(check("Email", True, email_detail, warn=kind != "smtp"))
+    # Sign-in providers
+    providers = {p: bool(c.get("client_id") and c.get("client_secret")) for p, c in settings.OAUTH_CLIENTS.items()}
+    configured = [("Google" if p == "gmail" else p.title()) for p, on in providers.items() if on]
+    checks.append(check("Google / X sign-in", True, ", ".join(configured) or "none configured",
+                        warn=not (providers.get("gmail") or providers.get("x"))))
+    # Security posture
+    checks.append(check("Debug mode", True, "on (development)" if settings.DEBUG else "off", warn=settings.DEBUG))
+    default_key = settings.SECRET_KEY == "dev-only-insecure-key"
+    checks.append(check("Secret key", True, "development key" if default_key else "set from the environment",
+                        warn=default_key))
+    # Disk
+    try:
+        usage = shutil.disk_usage(settings.BASE_DIR)
+        free_pct = usage.free / usage.total * 100
+        checks.append(check("Disk space", free_pct > 5, f"{usage.free / 1024 ** 3:.1f} GB free ({free_pct:.0f}%)",
+                            warn=free_pct < 15))
+    except OSError as err:
+        checks.append(check("Disk space", False, str(err)[:200]))
+    return checks
+
+
 class SystemView(StaffView):
     def get(self, request):
-        checks = []
-        # Database
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1")
-            db = settings.DATABASES["default"]
-            size = os.path.getsize(db["NAME"]) if db["ENGINE"].endswith("sqlite3") and os.path.exists(str(db["NAME"])) else None
-            detail = f"{connection.vendor}" + (f", {size / 1024 / 1024:.1f} MB" if size is not None else "")
-            checks.append(check("Database", True, detail, warn=connection.vendor == "sqlite" and not settings.DEBUG))
-        except Exception as err:  # noqa: BLE001
-            checks.append(check("Database", False, str(err)[:200]))
-        # Migrations
-        try:
-            plan = MigrationExecutor(connection).migration_plan(MigrationExecutor(connection).loader.graph.leaf_nodes())
-            checks.append(check("Migrations", not plan, "all applied" if not plan else f"{len(plan)} pending"))
-        except Exception as err:  # noqa: BLE001
-            checks.append(check("Migrations", False, str(err)[:200]))
-        # Cache (throttling and site settings live here)
-        try:
-            cache.set("cardio:health", "ok", 10)
-            ok = cache.get("cardio:health") == "ok"
-            backend = settings.CACHES["default"]["BACKEND"].rsplit(".", 1)[-1]
-            checks.append(check("Cache", ok, backend, warn=backend == "LocMemCache" and not settings.DEBUG))
-        except Exception as err:  # noqa: BLE001
-            checks.append(check("Cache", False, str(err)[:200]))
-        # Model
-        loaded = prediction_service.load_model.cache_info().currsize > 0
-        checks.append(check("Prediction model", PIPELINE_PATH.exists(),
-                            ("loaded in memory" if loaded else "on disk, loads on first use")
-                            if PIPELINE_PATH.exists() else f"missing: {PIPELINE_PATH}", warn=not loaded))
-        # Email
-        # Every backend class is called EmailBackend; the module says which one it is.
-        kind = settings.EMAIL_BACKEND.rsplit(".", 2)[-2]
-        email_detail = {
-            "smtp": f"SMTP via {getattr(settings, 'EMAIL_HOST', '')}",
-            "console": "printed to the server console (no real mail is sent)",
-            "locmem": "kept in memory (tests)",
-        }.get(kind, kind)
-        checks.append(check("Email", True, email_detail, warn=kind != "smtp"))
-        # Sign-in providers
-        providers = {p: bool(c.get("client_id") and c.get("client_secret")) for p, c in settings.OAUTH_CLIENTS.items()}
-        configured = [("Google" if p == "gmail" else p.title()) for p, on in providers.items() if on]
-        checks.append(check("Google / X sign-in", True, ", ".join(configured) or "none configured",
-                            warn=not (providers.get("gmail") or providers.get("x"))))
-        # Security posture
-        checks.append(check("Debug mode", True, "on (development)" if settings.DEBUG else "off", warn=settings.DEBUG))
-        default_key = settings.SECRET_KEY == "dev-only-insecure-key"
-        checks.append(check("Secret key", True, "development key" if default_key else "set from the environment",
-                            warn=default_key))
-        # Disk
-        try:
-            usage = shutil.disk_usage(settings.BASE_DIR)
-            free_pct = usage.free / usage.total * 100
-            checks.append(check("Disk space", free_pct > 5, f"{usage.free / 1024 ** 3:.1f} GB free ({free_pct:.0f}%)",
-                                warn=free_pct < 15))
-        except OSError as err:
-            checks.append(check("Disk space", False, str(err)[:200]))
-
+        checks = run_checks()
         branch, commit = git_commit()
         site = SiteSettings.load()
         return Response({

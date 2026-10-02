@@ -1,5 +1,5 @@
 import { admin } from '../../../api/adminApi';
-import { ErrorNote, Facts, Loading, PageHeader, Panel, Stat, StatusPill, fmtDateTime, fmtDuration, fmtNumber, useLoad } from '../ui';
+import { ErrorNote, Facts, Icon, Loading, PageHeader, Panel, Stat, StatusPill, fmtDateTime, fmtDuration, fmtNumber, useLoad } from '../ui';
 
 const VERDICT = { ok: 'All systems normal', warn: 'Running, with items to review', fail: 'Something is failing' };
 
@@ -20,14 +20,22 @@ export default function System() {
               Open Django admin ↗
             </a>
             <button type="button" className="ad-btn is-primary" onClick={reload} disabled={loading}>
+              <Icon name="refresh" size={15} />
               {loading ? 'Checking…' : 'Run checks again'}
             </button>
           </>
         }
       />
       <div className={`ad-verdict is-${data.status}`}>
-        <StatusPill status={data.status} />
-        <strong>{VERDICT[data.status]}</strong>
+        <span className={`ad-verdict-icon is-${data.status === 'fail' ? 'danger' : data.status}`}>
+          <Icon name={data.status === 'ok' ? 'check' : 'system'} size={20} />
+        </span>
+        <div>
+          <strong>{VERDICT[data.status]}</strong>
+          <span className="ad-muted">
+            {data.checks.filter((c) => c.status === 'ok').length} of {data.checks.length} checks passing · up {fmtDuration(data.uptime_seconds)}
+          </span>
+        </div>
       </div>
 
       <Panel title="Checks">

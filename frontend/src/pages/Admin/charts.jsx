@@ -89,10 +89,11 @@ function DailyColumns({ series, keys, colors, labels, height = 190 }) {
   const barW = Math.min(24, Math.max(4, slot * 0.62));
   const y = (v) => pad.top + innerH - (v / top) * innerH;
   const GAP = 2;
+  const labelEvery = Math.max(1, Math.ceil(series.length / 7));
 
   return (
     <div className="ad-chart-plot" ref={ref}>
-      <svg width={width} height={height} role="img" aria-label="Daily counts for the last 30 days">
+      <svg width={width} height={height} role="img" aria-label={`Daily counts for the last ${series.length} days`}>
         {values.map((v) => (
           <g key={v}>
             <line x1={pad.left} x2={width - pad.right} y1={y(v)} y2={y(v)} className="ad-grid" />
@@ -128,7 +129,7 @@ function DailyColumns({ series, keys, colors, labels, height = 190 }) {
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
               />
-              {(i % 5 === 0 || i === series.length - 1) && (
+              {(i % labelEvery === 0 || i === series.length - 1) && (
                 <text x={x + barW / 2} y={height - 8} className="ad-axis" textAnchor="middle">
                   {day(d.date)}
                 </text>
@@ -190,10 +191,55 @@ function SeriesTable({ series, keys, labels }) {
 
 const BANDS = ['low', 'moderate', 'high'];
 
+/** Any stacked daily series: keys = [{ key, label, color }]. */
+export function DailyChart({ title, series, keys, height }) {
+  const ks = keys.map((k) => k.key);
+  const colors = Object.fromEntries(keys.map((k) => [k.key, k.color]));
+  const labels = Object.fromEntries(keys.map((k) => [k.key, k.label]));
+  return (
+    <ChartFrame
+      title={title}
+      legend={keys.length > 1 ? <Legend items={keys.map((k) => ({ label: k.label, color: k.color }))} /> : null}
+      table={<SeriesTable series={series} keys={ks} labels={labels} />}
+    >
+      <DailyColumns series={series} keys={ks} colors={colors} labels={labels} height={height} />
+    </ChartFrame>
+  );
+}
+
+/** Steps of a funnel as horizontal bars, each with its share of the first step and the drop from the one before. */
+export function Funnel({ steps }) {
+  const first = steps[0]?.count || 0;
+  return (
+    <ol className="ad-funnel">
+      {steps.map((s, i) => {
+        const share = first ? s.count / first : 0;
+        const prev = i ? steps[i - 1].count : null;
+        const kept = prev ? s.count / prev : null;
+        return (
+          <li key={s.step}>
+            <div className="ad-funnel-label">
+              <span>{s.step}</span>
+              <strong>{s.count.toLocaleString()}</strong>
+            </div>
+            <div className="ad-funnel-track" aria-hidden="true">
+              <span style={{ width: `${Math.max(share * 100, s.count ? 2 : 0)}%` }} />
+            </div>
+            <div className="ad-funnel-meta">
+              <span>{first ? `${Math.round(share * 100)}% of sign-ups` : '—'}</span>
+              {kept !== null && <span>{`${Math.round(kept * 100)}% kept from the step before`}</span>}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 export function AssessmentsChart({ series }) {
   return (
     <ChartFrame
-      title="Assessments per day, by risk band"
+      title={`Assessments per day, by risk band`}
       legend={<Legend items={BANDS.map((k) => ({ label: RISK_LABELS[k], color: RISK_COLORS[k] }))} />}
       table={<SeriesTable series={series} keys={BANDS} labels={RISK_LABELS} />}
     >
