@@ -157,6 +157,8 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/
 # development that's the Vite server, which forwards /api here.
 if FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
+# A refused request gets a JSON reason (which origin), not Django's HTML page.
+CSRF_FAILURE_VIEW = "predictor.csrf.csrf_failure"
 # The public origin the browser uses for /api. Callback URLs registered with each
 # provider are OAUTH_REDIRECT_BASE + /api/connect/<provider>/callback/.
 OAUTH_REDIRECT_BASE = os.environ.get("OAUTH_REDIRECT_BASE", FRONTEND_URL).rstrip("/")

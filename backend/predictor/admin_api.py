@@ -945,6 +945,11 @@ def run_checks():
     configured = [("Google" if p == "gmail" else p.title()) for p, on in providers.items() if on]
     checks.append(check("Google / X sign-in", True, ", ".join(configured) or "none configured",
                         warn=not (providers.get("gmail") or providers.get("x"))))
+    # The site's address: the API only accepts the app's requests from it (CSRF),
+    # and OAuth and password-reset links lead back to it.
+    local_site = settings.FRONTEND_URL.startswith(("http://localhost", "http://127.0.0.1"))
+    checks.append(check("Site address", True, f"FRONTEND_URL = {settings.FRONTEND_URL}",
+                        warn=local_site and not settings.DEBUG))
     # Security posture
     checks.append(check("Debug mode", True, "on (development)" if settings.DEBUG else "off", warn=settings.DEBUG))
     default_key = settings.SECRET_KEY == "dev-only-insecure-key"
