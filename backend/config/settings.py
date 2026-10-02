@@ -24,7 +24,11 @@ def load_env_file(path):
             os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
 
 
-load_env_file(BASE_DIR / ".env")
+# Never on Render (it sets RENDER=true): a deployment takes its settings from the
+# dashboard only, so a development .env that reached the repository can't switch
+# the live site to DEBUG or override its keys.
+if not os.environ.get("RENDER"):
+    load_env_file(BASE_DIR / ".env")
 
 
 def env_bool(name, default):
