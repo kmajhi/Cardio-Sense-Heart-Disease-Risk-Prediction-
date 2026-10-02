@@ -156,7 +156,15 @@ function AppRoutes() {
         <Route path="/guidance" element={guard(<Guidance {...shared} />)} />
         <Route path="/reset-password" element={<ResetPassword {...shared} />} />
         {/* Admin console: staff only (it checks, and so does every API call). */}
-        <Route path="/console/*" element={<Console />} />
+        {/* Its own fallback: the console has a different shell, so don't flash the app's nav while it loads. */}
+        <Route
+          path="/console/*"
+          element={
+            <Suspense fallback={null}>
+              <Console />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>

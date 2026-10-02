@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { admin, download } from '../../../api/adminApi';
 import {
   Badge, ConfirmDialog, DataTable, Drawer, ErrorNote, Facts, Loading, PageHeader, Pagination, RiskBadge,
-  SearchBox, Select, Toolbar, fmtDateTime, fmtPct, useDebounced, useLoad, useToast,
+  Icon, SearchBox, Select, Skeleton, Toolbar, fmtDateTime, fmtNumber, fmtPct, useDebounced, useLoad, useToast,
 } from '../ui';
 
 // Payload keys → readable labels, in form order.
@@ -23,7 +23,7 @@ function showValue(key, value, unit) {
   return `${typeof value === 'number' ? value.toLocaleString() : value}${unit ? ` ${unit}` : ''}`;
 }
 
-function AssessmentDetail({ refId, onClose, onChanged }) {
+function AssessmentDetail({ refId, onClose, onChanged, openUser }) {
   const notify = useToast();
   const { data: a, error, loading, reload } = useLoad(() => admin.assessment(refId), [refId]);
   const [notes, setNotes] = useState(null);
@@ -110,7 +110,11 @@ function AssessmentDetail({ refId, onClose, onChanged }) {
           <Facts items={INPUTS.map(([k, label, unit]) => [label, showValue(k, a.inputs[k], k === 'troponin_i' ? (a.inputs.troponin_assay === 'high-sensitivity' ? 'ng/L' : 'ng/mL') : unit)])} />
 
           <h3 className="ad-h3">Model</h3>
-          <Facts items={[['Model', a.model_name || '—'], ['Trained', a.model_trained_at ? fmtDateTime(a.model_trained_at) : '—'], ['Account', a.user.email || 'none']]} />
+          <Facts items={[['Model', a.model_name || '—'], ['Trained', a.model_trained_at ? fmtDateTime(a.model_trained_at) : '—'], ['Account', a.user.id ? (
+                <button type="button" className="ad-link-btn" onClick={() => { onClose(); openUser?.(a.user.id); }}>
+                  {a.user.email}
+                </button>
+              ) : 'none']]} />
 
           <h3 className="ad-h3">Staff notes</h3>
           <p className="ad-muted">Visible to staff only, never to the user.</p>
@@ -135,7 +139,14 @@ function AssessmentDetail({ refId, onClose, onChanged }) {
   );
 }
 
-export default function Assessments({ initialRef, onOpened }) {
+const RISK_TABS = [
+  ['', 'All'],
+  ['high', 'High'],
+  ['moderate', 'Moderate'],
+  ['low', 'Low'],
+];
+
+export default function Assessments({ initialRef, onOpened, openUser }) {
   const notify = useToast();
   const [q, setQ] = useState('');
   const [risk, setRisk] = useState('');
@@ -162,16 +173,24 @@ export default function Assessments({ initialRef, onOpened }) {
     <>
       <PageHeader
         title="Assessments"
-        subtitle="Every prediction saved by users"
+        subtitle={data ? `${fmtNumber(data.count)} predictions saved by users` : 'Every prediction saved by users'}
         actions={
           <button type="button" className="ad-btn" onClick={() => download('/admin/assessments/export/', filters, 'assessments.csv').catch((e) => notify(e.message, 'error'))}>
+            <Icon name="download" size={15} />
             Export CSV
           </button>
         }
       />
+      <div className="ad-tabs" role="tablist" aria-label="Filter by risk band">
+        {RISK_TABS.map(([v, l]) => (
+          <button key={v} type="button" role="tab" aria-selected={risk === v} className={risk === v ? 'is-on' : undefined} onClick={() => filter(setRisk)(v)}>
+            {v && <span className={`ad-tab-dot is-risk-${v}`} aria-hidden="true" />}
+            {l}
+          </button>
+        ))}
+      </div>
       <Toolbar>
         <SearchBox value={q} onChange={filter(setQ)} placeholder="Search A-0012, email or notes" />
-        <Select label="Risk" value={risk} onChange={filter(setRisk)} options={[['', 'All'], ['low', 'Low'], ['moderate', 'Moderate'], ['high', 'High']]} />
         <Select label="Confidence" value={lowConf} onChange={filter(setLowConf)} options={[['', 'All'], ['1', 'Low confidence only']]} />
         <label className="ad-select">
           <span>From</span>
@@ -184,19 +203,30 @@ export default function Assessments({ initialRef, onOpened }) {
       </Toolbar>
       <ErrorNote error={error} onRetry={reload} />
       {loading && !data ? (
-        <Loading />
+        <Skeleton rows={1} />
       ) : (
-        <>
+        <div className="ad-card-table">
           <DataTable
             rows={data?.results}
             onRowClick={(r) => setSelected(r.id)}
             empty="No assessments match these filters."
             columns={[
-              { key: 'id', label: 'Ref', render: (r) => <strong>{r.id}</strong> },
+              { key: 'id', label: 'Ref', render: (r) => <strong className="ad-mono">{r.id}</strong> },
               { key: 'when', label: 'When', render: (r) => fmtDateTime(r.created_at) },
               { key: 'user', label: 'User', render: (r) => r.user.email || <span className="ad-muted">no account</span> },
               { key: 'patient', label: 'Patient', render: (r) => (r.age ? `${r.age} y · ${r.sex}` : '—') },
-              { key: 'probability', label: 'Estimate', align: 'right', render: (r) => fmtPct(r.probability) },
+              {
+                key: 'probability',
+                label: 'Estimate',
+                render: (r) => (
+                  <span className="ad-meter-cell">
+                    <span className="ad-meter" aria-hidden="true">
+                      <span className={`is-risk-${r.risk_level}`} style={{ width: `${Math.max(2, r.probability * 100)}%` }} />
+                    </span>
+                    {fmtPct(r.probability)}
+                  </span>
+                ),
+              },
               { key: 'risk', label: 'Band', render: (r) => <RiskBadge level={r.risk_level} /> },
               {
                 key: 'flags',
@@ -211,9 +241,9 @@ export default function Assessments({ initialRef, onOpened }) {
             ]}
           />
           {data && <Pagination page={data.page} pages={data.pages} count={data.count} onPage={setPage} />}
-        </>
+        </div>
       )}
-      {selected && <AssessmentDetail refId={selected} onClose={() => setSelected(null)} onChanged={reload} />}
+      {selected && <AssessmentDetail refId={selected} onClose={() => setSelected(null)} onChanged={reload} openUser={openUser} />}
     </>
   );
 }

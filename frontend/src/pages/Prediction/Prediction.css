@@ -163,17 +163,18 @@
   align-items: start;
 }
 
-/* Cards flow down two columns (masonry-like), so reading and tab
-   order stay top-to-bottom within each column. */
+/* One column of section cards, in the order a lab report is read; each card
+   lays its fields out in a two-column grid. */
 .pc-pr-inputs {
-  columns: 2 300px;
-  column-gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
 }
 
 .pc-pr-card {
-  break-inside: avoid;
-  margin-bottom: 20px;
-  padding: 22px;
+  scroll-margin-top: 90px;
+  padding: 24px;
   border: 1px solid var(--pc-card-edge);
   border-radius: 28px;
   background: var(--pc-card);
@@ -911,9 +912,6 @@
     margin-top: 24px;
   }
 
-  .pc-pr-inputs {
-    columns: 1;
-  }
 
   .pc-pr-card {
     padding: 18px;
@@ -981,4 +979,727 @@
 
 .pc-dash .pc-pr-missing-note strong {
   font-weight: 700;
+}
+
+/* ============================================================
+   Guided form (redesign): section bar, section heads, field grid,
+   (?) help, live level chips, unit pickers, banded slider tracks.
+   ============================================================ */
+
+/* ---------- Sample buttons: a dot in each band's colour ---------- */
+.pc-pr-presets .pc-filter::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  vertical-align: 1px;
+  background: currentColor;
+}
+
+.pc-pr-presets .pc-filter.is-low::before {
+  background: #1a9e70;
+}
+
+.pc-pr-presets .pc-filter.is-moderate::before {
+  background: #e3a008;
+}
+
+.pc-pr-presets .pc-filter.is-high::before {
+  background: #e0457b;
+}
+
+/* ---------- Restored-draft banner ---------- */
+.pc-pr-restored {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: -8px 0 18px;
+  padding: 10px 16px;
+  border: 1px solid rgba(104, 51, 228, 0.2);
+  border-radius: 14px;
+  background: rgba(239, 233, 253, 0.8);
+  color: var(--pc-ink-soft);
+  font-size: 13.5px;
+}
+
+.pc-pr-restored > span {
+  flex: 1;
+}
+
+.pc-pr-text-btn {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--pc-violet);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pc-pr-text-btn:hover:not(:disabled) {
+  background: rgba(104, 51, 228, 0.08);
+}
+
+.pc-pr-text-btn:disabled {
+  color: var(--pc-ink-faint);
+  cursor: default;
+}
+
+.pc-pr-text-btn:focus-visible {
+  outline: 2px solid var(--pc-violet);
+  outline-offset: 2px;
+}
+
+/* ---------- Section bar (sticky) ---------- */
+.pc-pr-nav {
+  position: sticky;
+  top: 10px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 14px 30px -20px rgba(58, 28, 150, 0.4);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.pc-pr-nav ol {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.pc-pr-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: var(--pc-ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pc-pr-nav a:hover {
+  background: rgba(104, 51, 228, 0.07);
+  color: var(--pc-ink);
+}
+
+.pc-pr-nav a.is-active {
+  background: var(--pc-ink);
+  color: #fff;
+}
+
+.pc-pr-nav-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #fdecc8;
+  color: var(--pc-warn-ink);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.pc-pr-nav a.is-active .pc-pr-nav-count {
+  background: #fcb71d;
+  color: #1c1633;
+}
+
+.pc-pr-nav-summary {
+  margin-left: auto;
+  color: var(--pc-success-ink);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pc-pr-nav-summary.has-flags {
+  color: var(--pc-warn-ink);
+}
+
+/* ---------- Section head ---------- */
+.pc-pr-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.pc-pr-card-head > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.pc-pr-sec-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--pc-lilac);
+  color: var(--pc-violet);
+}
+
+.pc-pr-card--marker .pc-pr-sec-icon {
+  background: #ffe4ea;
+  color: var(--pc-brand);
+}
+
+.pc-dash .pc-pr-card-head .pc-pr-card-title {
+  margin: 0;
+  color: var(--pc-ink);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.pc-pr-card-head .pc-pr-card-title::before {
+  display: none;
+}
+
+.pc-dash .pc-pr-card-hint {
+  margin-top: 2px;
+  color: var(--pc-ink-faint);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pc-pr-review {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fdf3dc;
+  color: var(--pc-warn-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ---------- Field grid ---------- */
+.pc-pr-fields--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px 28px;
+}
+
+.pc-pr-fields--history {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 28px;
+}
+
+.pc-pr-fields--history .pc-pr-field--inline {
+  padding: 10px 12px 10px 14px;
+  border: 1px solid var(--pc-line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* The (?) and chips flow inline after the label, so a long label wraps with its (?) beside the last word. */
+.pc-pr-label-row {
+  display: block;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.pc-pr-label-row > .pc-pr-label {
+  display: inline;
+}
+
+.pc-pr-label-row > .pc-help,
+.pc-pr-label-row > .pc-pr-chip {
+  margin-left: 6px;
+  vertical-align: -3px;
+}
+
+.pc-pr-label-row > .pc-pr-chip {
+  vertical-align: 1px;
+}
+
+.pc-pr-field > .pc-pr-label-row {
+  margin-bottom: 8px;
+}
+
+.pc-pr-field--inline > .pc-pr-label-row {
+  margin-bottom: 0;
+}
+
+.pc-pr-field-top {
+  align-items: center;
+}
+
+/* the editable value: a quiet box that reads as an input */
+.pc-pr-readout {
+  align-items: center;
+  flex-shrink: 0;
+  padding: 2px 4px 2px 2px;
+  border: 1px solid rgba(28, 22, 51, 0.12);
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pc-pr-readout:focus-within {
+  border-color: var(--pc-violet);
+  box-shadow: 0 0 0 3px rgba(104, 51, 228, 0.14);
+}
+
+.pc-pr-readout .pc-pr-num,
+.pc-pr-readout .pc-pr-num:hover,
+.pc-pr-readout .pc-pr-num:focus {
+  width: 5.5ch;
+  border-color: transparent;
+  background: transparent;
+  outline: none;
+}
+
+.pc-pr-unit-pick {
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(104, 51, 228, 0.08);
+  color: var(--pc-violet-deep);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pc-pr-unit-pick:focus-visible {
+  outline: 2px solid var(--pc-violet);
+}
+
+.pc-pr-field-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  margin: -2px 0 10px;
+}
+
+.pc-pr-field-meta .pc-pr-missing {
+  margin: 0 0 0 auto;
+}
+
+/* live level chip */
+.pc-pr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  animation: pc-pr-chip-in 0.25s var(--pc-ease) both;
+}
+
+@keyframes pc-pr-chip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+.pc-pr-chip-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pc-pr-chip.is-normal {
+  background: #e5f6ee;
+  color: var(--pc-success-ink);
+}
+
+.pc-pr-chip.is-elevated {
+  background: #fdf3dc;
+  color: var(--pc-warn-ink);
+}
+
+.pc-pr-chip.is-high {
+  background: #feeadf;
+  color: #a4410d;
+}
+
+.pc-pr-chip.is-urgent {
+  background: #fde7ef;
+  color: var(--pc-danger-ink);
+}
+
+/* banded slider track: the colours are the clinical levels */
+.pc-pr-range.has-bands {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--track);
+}
+
+.pc-pr-field.is-missing .pc-pr-range.has-bands {
+  filter: grayscale(1);
+}
+
+.pc-pr-scale {
+  gap: 8px;
+}
+
+.pc-pr-healthy {
+  overflow: hidden;
+  color: var(--pc-success-ink);
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* derived values: a row under the profile fields */
+.pc-dash .pc-pr-card > .pc-pr-derived {
+  margin-top: 22px;
+}
+
+.pc-pr-derived dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pc-pr-derived .pc-pr-derived-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+/* ---------- (?) help ---------- */
+.pc-help {
+  position: relative;
+  display: inline-flex;
+}
+
+.pc-help-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(104, 51, 228, 0.35);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--pc-violet);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+
+.pc-help-btn:hover,
+.pc-help-btn.is-open {
+  background: var(--pc-violet);
+  color: #fff;
+}
+
+.pc-help-btn:active {
+  transform: scale(0.92);
+}
+
+.pc-help-btn:focus-visible {
+  outline: 2px solid var(--pc-violet);
+  outline-offset: 2px;
+}
+
+.pc-help-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: -12px;
+  z-index: 40;
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  padding: 16px 16px 14px;
+  border: 1px solid rgba(28, 22, 51, 0.08);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 30px 60px -20px rgba(28, 22, 51, 0.35), 0 2px 6px rgba(28, 22, 51, 0.06);
+  color: var(--pc-ink);
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  animation: pc-help-in 0.18s var(--pc-ease) both;
+}
+
+.pc-help-panel::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 16px;
+  width: 12px;
+  height: 12px;
+  border-top: 1px solid rgba(28, 22, 51, 0.08);
+  border-left: 1px solid rgba(28, 22, 51, 0.08);
+  background: #fff;
+  transform: rotate(45deg);
+}
+
+@keyframes pc-help-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.pc-help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pc-help-head strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pc-help-close {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(28, 22, 51, 0.05);
+  color: var(--pc-ink-soft);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pc-help-close:hover {
+  background: rgba(28, 22, 51, 0.1);
+}
+
+.pc-help-text {
+  color: var(--pc-ink-soft);
+}
+
+.pc-help-block,
+.pc-help-levels {
+  display: grid;
+  gap: 3px;
+  color: var(--pc-ink-soft);
+}
+
+.pc-help-block b,
+.pc-help-levels > b {
+  color: var(--pc-ink);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pc-help-levels > b i {
+  color: var(--pc-ink-faint);
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pc-help-block.is-convert {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(104, 51, 228, 0.06);
+}
+
+.pc-help-table {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.pc-help-row {
+  display: grid;
+  grid-template-columns: 8px 86px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
+.pc-help-row.is-current {
+  background: rgba(104, 51, 228, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(104, 51, 228, 0.25);
+}
+
+.pc-help-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.pc-help-row.is-normal .pc-help-dot {
+  background: #1a9e70;
+}
+
+.pc-help-row.is-elevated .pc-help-dot {
+  background: #e3a008;
+}
+
+.pc-help-row.is-high .pc-help-dot {
+  background: #ef7a3c;
+}
+
+.pc-help-row.is-urgent .pc-help-dot {
+  background: #e0457b;
+}
+
+.pc-help-range {
+  color: var(--pc-ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-help-label {
+  color: var(--pc-ink-soft);
+}
+
+.pc-help-you {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--pc-violet);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.pc-help-note {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fdf3dc;
+  color: var(--pc-warn-ink);
+  font-size: 12.5px;
+}
+
+.pc-help-source {
+  color: var(--pc-ink-faint);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+/* ---------- Run shortcut hint ---------- */
+.pc-dash .pc-pr-shortcut {
+  margin-top: -4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11.5px;
+  text-align: center;
+}
+
+.pc-pr-shortcut kbd {
+  padding: 1px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 11px;
+}
+
+/* ---------- Responsive (guided form) ---------- */
+@media (max-width: 1240px) and (min-width: 1101px) {
+  .pc-pr-nav-summary {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .pc-pr-fields--grid,
+  .pc-pr-fields--history {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+
+  .pc-pr-fields--history {
+    gap: 10px;
+  }
+
+  .pc-pr-nav-summary {
+    display: none;
+  }
+
+  .pc-pr-nav {
+    top: 6px;
+  }
+
+  /* (?) becomes a bottom sheet */
+  .pc-help-panel {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: 78vh;
+    overflow-y: auto;
+    padding: 20px 18px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -20px 60px rgba(28, 22, 51, 0.35);
+    animation-name: pc-help-sheet;
+  }
+
+  .pc-help-panel::before {
+    display: none;
+  }
+}
+
+@keyframes pc-help-sheet {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-help-panel,
+  .pc-pr-chip {
+    animation: none;
+  }
+}
+
+/* "Go to the field" inside the blocked-run note. */
+.pc-pr-inline-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }

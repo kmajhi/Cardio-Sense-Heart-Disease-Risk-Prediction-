@@ -125,6 +125,8 @@ export default function ResultCard({
   saveNote,
   signedIn = true,
   blocked = '',
+  blockedTitle = 'No estimate for this patient. ',
+  onBlockedClick,
 }) {
   const level = data ? LEVELS[data.risk_level] : null;
   const loading = status === 'loading';
@@ -196,8 +198,16 @@ export default function ResultCard({
 
       {blocked && (
         <p id="pr-blocked" tabIndex={-1} className="pc-pr-missing-note is-low" role="alert">
-          <strong>No estimate for this patient. </strong>
+          <strong>{blockedTitle}</strong>
           {blocked}
+          {onBlockedClick && (
+            <>
+              {' '}
+              <button type="button" className="pc-pr-inline-link" onClick={onBlockedClick}>
+                Go to the field
+              </button>
+            </>
+          )}
         </p>
       )}
 
@@ -213,6 +223,11 @@ export default function ResultCard({
           →
         </span>
       </button>
+      {!loading && !blocked && signedIn && (
+        <p className="pc-pr-shortcut" aria-hidden="true">
+          or press <kbd>{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd> + <kbd>Enter</kbd>
+        </p>
+      )}
     </aside>
   );
 }
