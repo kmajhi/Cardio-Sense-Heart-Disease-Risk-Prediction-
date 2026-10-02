@@ -1,48 +1,128 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { USE_MOCK } from '../../api/mode';
+import { admin, download } from '../../api/adminApi';
 import { HeartMark } from '../../components/NavBar';
-import { ToastProvider } from './ui';
+import { Avatar, Icon, Kbd, ToastProvider, useStoredState, useToast } from './ui';
+import CommandPalette, { ShortcutsDialog } from './CommandPalette';
+import Inbox, { useNotifications } from './Inbox';
 import Overview from './sections/Overview';
 import Users from './sections/Users';
 import Assessments from './sections/Assessments';
 import Model from './sections/Model';
 import Activity from './sections/Activity';
+import Security from './sections/Security';
 import System from './sections/System';
 import Maintenance from './sections/Maintenance';
 import SiteControls from './sections/SiteControls';
 import './console.css';
 
-const Icon = ({ d }) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d={d} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
+// `keys` are the "g then letter" shortcuts.
 const SECTIONS = [
-  { id: 'overview', label: 'Overview', icon: 'M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 4v4h6V4z' },
-  { id: 'users', label: 'Users', icon: 'M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM21 19v-1a4 4 0 0 0-3-3.9M16 3.1a3.5 3.5 0 0 1 0 6.8' },
-  { id: 'assessments', label: 'Assessments', icon: 'M3 12h4l2-6 4 12 2-6h6' },
-  { id: 'model', label: 'Model', icon: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12 4 7.5' },
-  { id: 'activity', label: 'Activity log', icon: 'M4 6h16M4 12h16M4 18h10' },
-  { id: 'system', label: 'System health', icon: 'M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10Z' },
-  { id: 'maintenance', label: 'Maintenance', icon: 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z' },
-  { id: 'site', label: 'Site controls', icon: 'M4 7h10M18 7h2M4 17h4M12 17h8M14 4v6M8 14v6' },
+  { id: 'overview', label: 'Overview', icon: 'overview', group: 'Insights', keys: ['G', 'O'] },
+  { id: 'activity', label: 'Activity log', icon: 'activity', group: 'Insights', keys: ['G', 'L'] },
+  { id: 'users', label: 'Users', icon: 'users', group: 'Manage', keys: ['G', 'U'] },
+  { id: 'assessments', label: 'Assessments', icon: 'assessments', group: 'Manage', keys: ['G', 'A'] },
+  { id: 'security', label: 'Security', icon: 'security', group: 'Platform', keys: ['G', 'S'] },
+  { id: 'model', label: 'Model', icon: 'model', group: 'Platform', keys: ['G', 'M'] },
+  { id: 'system', label: 'System health', icon: 'system', group: 'Platform', keys: ['G', 'H'] },
+  { id: 'site', label: 'Site controls', icon: 'site', group: 'Settings', keys: ['G', 'C'] },
+  { id: 'maintenance', label: 'Maintenance', icon: 'maintenance', group: 'Settings', keys: ['G', 'X'] },
+];
+const GROUPS = ['Insights', 'Manage', 'Platform', 'Settings'];
+const ENV = typeof window !== 'undefined' && /^(localhost|127\.|\[::1\])/.test(window.location.hostname) ? 'Local' : 'Production';
+const THEMES = [
+  ['light', 'Light', 'sun'],
+  ['dark', 'Dark', 'moon'],
+  ['system', 'System', 'monitor'],
 ];
 
-/**
- * Cardio Sense admin console (/console/<section>). Staff only: the backend
- * checks every call (predictor/admin_api.py); this only decides what to show.
- */
-export default function Console() {
-  const { user, logout } = useAuth();
+/** 'light' | 'dark' for the stored choice, following the OS when it's 'system'. */
+function useResolvedTheme(choice) {
+  const query = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  const [osDark, setOsDark] = useState(Boolean(query?.matches));
+  useEffect(() => {
+    if (!query) return undefined;
+    const on = (e) => setOsDark(e.matches);
+    query.addEventListener('change', on);
+    return () => query.removeEventListener('change', on);
+  }, [query]);
+  return choice === 'system' ? (osDark ? 'dark' : 'light') : choice;
+}
+
+const typing = (el) => el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+
+function UserMenu({ user, theme, setTheme, onShortcuts, onLogout, collapsed }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = (e) => !ref.current?.contains(e.target) && setOpen(false);
+    const onKey = (e) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  return (
+    <div className="ad-pop-wrap ad-me" ref={ref}>
+      <button type="button" className="ad-me-btn" aria-expanded={open} aria-label="Account menu" onClick={() => setOpen((v) => !v)} title={collapsed ? user.name : undefined}>
+        <Avatar name={user.name} email={user.email} size={30} />
+        <span className="ad-me-text">
+          <strong>{user.name}</strong>
+          <span>{user.is_superuser ? 'Superuser' : 'Staff'}</span>
+        </span>
+        <span className="ad-me-chev" aria-hidden="true">⋯</span>
+      </button>
+      {open && (
+        <div className="ad-pop ad-menu" role="menu">
+          <div className="ad-menu-who">
+            <strong>{user.name}</strong>
+            <span>{user.email}</span>
+          </div>
+          <div className="ad-menu-label">Theme</div>
+          <div className="ad-theme-pick" role="radiogroup" aria-label="Theme">
+            {THEMES.map(([v, l, icon]) => (
+              <button key={v} type="button" role="radio" aria-checked={theme === v} className={theme === v ? 'is-on' : undefined} onClick={() => setTheme(v)}>
+                <Icon name={icon} size={15} />
+                {l}
+              </button>
+            ))}
+          </div>
+          <button type="button" role="menuitem" className="ad-menu-item" onClick={() => { setOpen(false); onShortcuts(); }}>
+            <Icon name="keyboard" size={16} /> Keyboard shortcuts <Kbd>?</Kbd>
+          </button>
+          <Link role="menuitem" className="ad-menu-item" to="/dashboard">
+            <Icon name="back" size={16} /> Back to the app
+          </Link>
+          <button type="button" role="menuitem" className="ad-menu-item is-danger" onClick={onLogout}>
+            <Icon name="logout" size={16} /> Log out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Shell({ user, logout }) {
+  const notify = useToast();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const section = pathname.split('/')[2] || 'overview';
   const current = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
-  const [openRef, setOpenRef] = useState(null); // an assessment to open (from a user's drawer)
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [openRef, setOpenRef] = useState(null); // an assessment to open
+  const [openUser, setOpenUser] = useState(null); // a user to open
+  const [menuOpen, setMenuOpen] = useState(false); // phone drawer
+  const [collapsed, setCollapsed] = useStoredState('cardio-admin:sidebar-collapsed', false);
+  const [themeChoice, setThemeChoice] = useStoredState('cardio-admin:theme', 'system');
+  const theme = useResolvedTheme(themeChoice);
+  const [palette, setPalette] = useState(false);
+  const [shortcuts, setShortcuts] = useState(false);
+  const notes = useNotifications();
+  const securityAlerts = notes.items.filter((n) => n.section === 'security' && !notes.read.has(n.id)).length;
 
   const go = useCallback(
     (id) => {
@@ -52,6 +132,198 @@ export default function Console() {
     [navigate],
   );
   const clearOpenRef = useCallback(() => setOpenRef(null), []);
+  const clearOpenUser = useCallback(() => setOpenUser(null), []);
+  const openAssessment = useCallback((ref) => { setOpenRef(ref); go('assessments'); }, [go]);
+  const openUserById = useCallback((id) => { setOpenUser(id); go('users'); }, [go]);
+  const toggleTheme = useCallback(() => setThemeChoice(theme === 'dark' ? 'light' : 'dark'), [theme, setThemeChoice]);
+
+  const actions = useMemo(
+    () => [
+      { id: 'theme', label: `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`, icon: theme === 'dark' ? 'sun' : 'moon', words: 'dark light mode appearance', keys: ['Shift', 'D'], run: toggleTheme },
+      { id: 'sidebar', label: collapsed ? 'Expand the sidebar' : 'Collapse the sidebar', icon: collapsed ? 'expand' : 'collapse', keys: ['['], run: () => setCollapsed((v) => !v) },
+      { id: 'check', label: 'Run the model health check', icon: 'model', words: 'test samples', run: () => admin.checkModel().then((r) => notify(r.ok ? 'Model check passed: every sample is in its band.' : 'Model check found samples out of band.', r.ok ? 'ok' : 'error')).catch((e) => notify(e.message, 'error')) },
+      { id: 'users-csv', label: 'Export all users as CSV', icon: 'download', words: 'download', run: () => download('/admin/users/export/', {}, 'users.csv').catch((e) => notify(e.message, 'error')) },
+      { id: 'assess-csv', label: 'Export all assessments as CSV', icon: 'download', words: 'download', run: () => download('/admin/assessments/export/', {}, 'assessments.csv').catch((e) => notify(e.message, 'error')) },
+      { id: 'backup', label: 'Download a full backup', icon: 'download', words: 'json export', run: () => download('/admin/backup/', {}, 'cardio-sense-backup.json').then(() => notify('Backup downloaded.')).catch((e) => notify(e.message, 'error')) },
+      { id: 'keys', label: 'Keyboard shortcuts', icon: 'keyboard', words: 'help hotkeys', keys: ['?'], run: () => setShortcuts(true) },
+      { id: 'app', label: 'Back to the app', icon: 'back', run: () => navigate('/dashboard') },
+    ],
+    [theme, collapsed, toggleTheme, setCollapsed, notify, navigate],
+  );
+
+  // Global shortcuts: Ctrl/⌘K, /, ?, [, Shift+D, and "g then letter".
+  useEffect(() => {
+    let leader = 0;
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPalette((v) => !v);
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey || typing(e.target) || document.querySelector('[aria-modal="true"]')) return;
+      if (e.key === '/') {
+        e.preventDefault();
+        setPalette(true);
+      } else if (e.key === '?') {
+        setShortcuts(true);
+      } else if (e.key === '[') {
+        setCollapsed((v) => !v);
+      } else if (e.key === 'D' && e.shiftKey) {
+        toggleTheme();
+      } else if (e.key.toLowerCase() === 'g') {
+        leader = Date.now();
+      } else if (Date.now() - leader < 1200) {
+        const target = SECTIONS.find((s) => s.keys[1].toLowerCase() === e.key.toLowerCase());
+        if (target) go(target.id);
+        leader = 0;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [go, setCollapsed, toggleTheme]);
+
+  useEffect(() => {
+    document.title = `${current.label} · Cardio Sense Admin`;
+    return () => {
+      document.title = 'Cardio Sense';
+    };
+  }, [current.label]);
+
+  let body;
+  switch (current.id) {
+    case 'users':
+      body = <Users openAssessment={openAssessment} initialUser={openUser} onOpened={clearOpenUser} />;
+      break;
+    case 'assessments':
+      body = <Assessments initialRef={openRef} onOpened={clearOpenRef} openUser={openUserById} />;
+      break;
+    case 'model':
+      body = <Model />;
+      break;
+    case 'activity':
+      body = <Activity openUser={openUserById} />;
+      break;
+    case 'security':
+      body = <Security openUser={openUserById} />;
+      break;
+    case 'system':
+      body = <System />;
+      break;
+    case 'maintenance':
+      body = <Maintenance />;
+      break;
+    case 'site':
+      body = <SiteControls onSaved={notes.reload} />;
+      break;
+    default:
+      body = <Overview go={go} openUser={openUserById} />;
+  }
+
+  const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
+  return (
+    <div className={`ad-shell${collapsed ? ' is-collapsed' : ''}`} data-theme={theme}>
+      <a href="#ad-main" className="ad-skip">Skip to content</a>
+      {menuOpen && <button type="button" className="ad-side-scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
+      <aside className={`ad-side${menuOpen ? ' is-open' : ''}`}>
+        <div className="ad-brand">
+          <span className="ad-brand-logo">
+            <HeartMark className="ad-brand-mark" />
+          </span>
+          <div className="ad-brand-text">
+            <strong>Cardio Sense</strong>
+            <span>
+              Admin <span className={`ad-env is-${ENV.toLowerCase()}`}>{ENV}</span>
+            </span>
+          </div>
+        </div>
+
+        <button type="button" className="ad-side-search" onClick={() => setPalette(true)} title={collapsed ? `Search (${mod} K)` : undefined}>
+          <Icon name="search" size={16} />
+          <span>Search…</span>
+          <span className="ad-side-search-keys">
+            <Kbd>{mod}</Kbd>
+            <Kbd>K</Kbd>
+          </span>
+        </button>
+
+        <nav aria-label="Admin sections" className="ad-side-nav">
+          {GROUPS.map((g) => (
+            <div key={g} className="ad-nav-group">
+              <p className="ad-nav-title">{g}</p>
+              <ul>
+                {SECTIONS.filter((s) => s.group === g).map((s) => (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      className={`ad-nav-item${s.id === current.id ? ' is-active' : ''}`}
+                      aria-current={s.id === current.id ? 'page' : undefined}
+                      onClick={() => go(s.id)}
+                      title={collapsed ? s.label : undefined}
+                    >
+                      <Icon name={s.icon} size={17} />
+                      <span className="ad-nav-label">{s.label}</span>
+                      {s.id === 'security' && securityAlerts > 0 && <span className="ad-nav-badge is-danger">{securityAlerts}</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        <div className="ad-side-foot">
+          <button type="button" className="ad-nav-item ad-collapse-btn" onClick={() => setCollapsed((v) => !v)} title={collapsed ? 'Expand sidebar ([)' : 'Collapse sidebar ([)'}>
+            <Icon name={collapsed ? 'expand' : 'collapse'} size={17} />
+            <span className="ad-nav-label">Collapse</span>
+          </button>
+          <UserMenu user={user} theme={themeChoice} setTheme={setThemeChoice} collapsed={collapsed} onShortcuts={() => setShortcuts(true)} onLogout={() => logout().then(() => navigate('/'))} />
+        </div>
+      </aside>
+
+      <div className="ad-main">
+        <header className="ad-top">
+          <button type="button" className="ad-icon-btn ad-menu-btn" aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
+            <Icon name="menu" size={18} />
+          </button>
+          <nav className="ad-crumb" aria-label="Breadcrumb">
+            <span>{current.group}</span>
+            <span aria-hidden="true" className="ad-crumb-sep">/</span>
+            <strong>{current.label}</strong>
+          </nav>
+          <div className="ad-top-actions">
+            <button type="button" className="ad-top-search" onClick={() => setPalette(true)}>
+              <Icon name="search" size={15} />
+              <span>Search or jump to…</span>
+              <Kbd>{mod} K</Kbd>
+            </button>
+            <button type="button" className="ad-icon-btn" aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`} title="Theme (Shift D)" onClick={toggleTheme}>
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+            </button>
+            <Inbox notes={notes} onGo={go} />
+            <button type="button" className="ad-icon-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={() => setShortcuts(true)}>
+              <Icon name="keyboard" size={18} />
+            </button>
+          </div>
+        </header>
+        {USE_MOCK && <div className="ad-callout is-warn ad-mock-note">The console needs the Cardio Sense server: it doesn’t work in demo mode.</div>}
+        <main className="ad-content" id="ad-main" key={current.id} tabIndex={-1}>
+          {body}
+        </main>
+      </div>
+
+      <CommandPalette open={palette} onClose={() => setPalette(false)} sections={SECTIONS} actions={actions} onSection={go} onUser={openUserById} onAssessment={openAssessment} />
+      <ShortcutsDialog open={shortcuts} onClose={() => setShortcuts(false)} sections={SECTIONS} />
+    </div>
+  );
+}
+
+/**
+ * Cardio Sense admin console (/console/<section>). Staff only: the backend
+ * checks every call (predictor/admin_api.py); this only decides what to show.
+ */
+export default function Console() {
+  const { user, logout } = useAuth();
+  const { pathname } = useLocation();
 
   if (user === undefined) return null;
   if (!user) return <Navigate to="/" replace state={{ from: { pathname } }} />;
@@ -66,92 +338,9 @@ export default function Console() {
       </div>
     );
   }
-
-  let body;
-  switch (current.id) {
-    case 'users':
-      body = <Users openAssessment={(ref) => { setOpenRef(ref); go('assessments'); }} />;
-      break;
-    case 'assessments':
-      body = <Assessments initialRef={openRef} onOpened={clearOpenRef} />;
-      break;
-    case 'model':
-      body = <Model />;
-      break;
-    case 'activity':
-      body = <Activity />;
-      break;
-    case 'system':
-      body = <System />;
-      break;
-    case 'maintenance':
-      body = <Maintenance />;
-      break;
-    case 'site':
-      body = <SiteControls />;
-      break;
-    default:
-      body = <Overview go={go} />;
-  }
-
   return (
     <ToastProvider>
-      <div className="ad-shell">
-        <aside className={`ad-side${menuOpen ? ' is-open' : ''}`}>
-          <div className="ad-brand">
-            <HeartMark className="ad-brand-mark" />
-            <div>
-              <strong>Cardio Sense</strong>
-              <span>Admin console</span>
-            </div>
-          </div>
-          <nav aria-label="Admin sections">
-            <ul>
-              {SECTIONS.map((s) => (
-                <li key={s.id}>
-                  <button type="button" className={`ad-nav-item${s.id === current.id ? ' is-active' : ''}`} aria-current={s.id === current.id ? 'page' : undefined} onClick={() => go(s.id)}>
-                    <Icon d={s.icon} />
-                    {s.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <div className="ad-side-foot">
-            <Link to="/dashboard" className="ad-nav-item">
-              <Icon d="M15 18l-6-6 6-6" />
-              Back to the app
-            </Link>
-          </div>
-        </aside>
-
-        <div className="ad-main">
-          <header className="ad-top">
-            <button type="button" className="ad-icon-btn ad-menu-btn" aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
-              ☰
-            </button>
-            <span className="ad-crumb">
-              Admin <span aria-hidden="true">/</span> <strong>{current.label}</strong>
-            </span>
-            <div className="ad-top-user">
-              <span className="ad-avatar" aria-hidden="true">
-                {(user.name || user.email).slice(0, 1).toUpperCase()}
-              </span>
-              <div>
-                <strong>{user.name}</strong>
-                <span>{user.is_superuser ? 'Superuser' : 'Staff'}</span>
-              </div>
-              <button type="button" className="ad-btn is-small" onClick={() => logout().then(() => navigate('/'))}>
-                Log out
-              </button>
-            </div>
-          </header>
-          {USE_MOCK && <div className="ad-callout is-warn">The console needs the Cardio Sense server: it doesn’t work in demo mode.</div>}
-          <main className="ad-content" key={current.id}>
-            {body}
-          </main>
-        </div>
-      </div>
+      <Shell user={user} logout={logout} />
     </ToastProvider>
   );
 }

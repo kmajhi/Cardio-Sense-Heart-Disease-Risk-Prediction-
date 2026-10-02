@@ -9,7 +9,7 @@ const qs = (params = {}) => {
 };
 
 export const admin = {
-  overview: () => request('/admin/overview/'),
+  overview: (days = 30) => request(`/admin/overview/${qs({ days })}`),
 
   users: (params) => request(`/admin/users/${qs(params)}`),
   user: (id) => request(`/admin/users/${id}/`),
@@ -17,6 +17,11 @@ export const admin = {
   deleteUser: (id) => request(`/admin/users/${id}/`, { method: 'DELETE' }),
   sendReset: (id) => request(`/admin/users/${id}/send-reset/`, { method: 'POST' }),
   signOutUser: (id) => request(`/admin/users/${id}/sign-out/`, { method: 'POST' }),
+  bulkUsers: (ids, action) => request('/admin/users/bulk/', { method: 'POST', body: { ids, action } }),
+
+  search: (q) => request(`/admin/search/${qs({ q })}`),
+  notifications: () => request('/admin/notifications/'),
+  security: () => request('/admin/security/'),
 
   assessments: (params) => request(`/admin/assessments/${qs(params)}`),
   assessment: (ref) => request(`/admin/assessments/${ref}/`),

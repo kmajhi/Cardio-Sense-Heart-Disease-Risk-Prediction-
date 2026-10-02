@@ -6,7 +6,7 @@ import { TROPONIN_ASSAYS } from '../fields';
  * High-sensitivity reports ng/L, so the same number means very different
  * things. Switching assay clears the value instead of reinterpreting it.
  */
-export default function TroponinField({ assay, value, onAssayChange, onValueChange, error }) {
+export default function TroponinField({ assay, value, onAssayChange, onValueChange, error, help, status }) {
   const current = TROPONIN_ASSAYS[assay];
   const showError = Boolean(error);
 
@@ -21,9 +21,18 @@ export default function TroponinField({ assay, value, onAssayChange, onValueChan
       />
 
       <div className="pc-pr-field">
-        <label className="pc-pr-label" htmlFor="pr-troponin">
-          Troponin-I result
-        </label>
+        <span className="pc-pr-label-row">
+          <label className="pc-pr-label" htmlFor="pr-troponin">
+            Troponin-I result
+          </label>
+          {help}
+          {status?.band && !error && (
+            <span className={`pc-pr-chip is-${status.level}`}>
+              <span aria-hidden="true" className="pc-pr-chip-dot" />
+              {status.band}
+            </span>
+          )}
+        </span>
         <div className={`pc-pr-unit-input${showError ? ' is-invalid' : ''}`}>
           <input
             id="pr-troponin"

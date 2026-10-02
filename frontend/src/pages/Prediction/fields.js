@@ -1,14 +1,14 @@
 // Inputs for the Northern Bangladesh model (see ml/notebooks and ml/training/data.py).
-// Three ranges per field:
-//   min/max  the slider: the values patients commonly have.
-//   limit    what's physiologically possible for an adult; typed values may go
-//            this far. Beyond it is a typo or a unit mix-up, and is refused
-//            (the backend's LIMITS in prediction_service.py match).
+// Two ranges per field:
+//   min/max  the accepted range, shown on the slider. Typed values outside it
+//            are refused with a message, and the model can't run until they're
+//            fixed (the backend's LIMITS in prediction_service.py match).
+//            `limit` repeats it; only age differs (see below).
 //   train    what the training data covered (ml/artifacts/model_metadata.json).
 //            Outside it the value is still used, but the model treats it like
 //            the nearest value it saw, so the result is flagged low confidence.
-// Age can be typed below 18 so a child's age gets a clear explanation instead
-// of a silent refusal: the model only estimates adults (ADULT_AGE).
+// Age can be typed below 18 (limit [1, 110]) so a child's age gets a clear
+// explanation instead of a plain refusal: the model only estimates adults (ADULT_AGE).
 //
 // `optional` labs can be marked "Not measured": they're sent as null, the model
 // imputes them, and the result names them (the backend's OPTIONAL_FIELDS).
@@ -46,45 +46,57 @@ export const maxHRFrom = (age, sex) => (sex === 'F' ? 206 - 0.88 * age : 208 - 0
 
 export const maxHRFormula = (sex) => (sex === 'F' ? '206 − 0.88 × age' : '208 − 0.7 × age');
 
+// Other units a lab report may use. The model always gets the field's own unit;
+// these only change what's shown and typed (SliderField converts).
+const MG_DL_CHOL = [{ unit: 'mg/dL', factor: 1, step: 1 }, { unit: 'mmol/L', factor: 1 / 38.67, step: 0.01 }];
+const MG_DL_TG = [{ unit: 'mg/dL', factor: 1, step: 1 }, { unit: 'mmol/L', factor: 1 / 88.57, step: 0.01 }];
+
 export const SECTIONS = [
   {
     id: 'profile',
     title: 'Patient profile',
+    hint: 'Who the estimate is for',
     fields: [
       // Under-18 records were excluded from the modeling population.
-      { key: 'age', label: 'Age', unit: 'yrs', min: 18, max: 110, step: 1, limit: [1, 120], train: [18, 97], adultFrom: 18 },
-      { key: 'height', label: 'Height', unit: 'cm', min: 120, max: 210, step: 1, limit: [50, 250], train: [141, 186] },
-      { key: 'weight', label: 'Weight', unit: 'kg', min: 30, max: 200, step: 0.5, limit: [20, 400], train: [38, 101] },
+      { key: 'age', label: 'Age', unit: 'yrs', min: 18, max: 110, step: 1, limit: [1, 110], train: [18, 97], adultFrom: 18 },
+      { key: 'height', label: 'Height', unit: 'cm', min: 120, max: 210, step: 1, limit: [120, 210], train: [141, 186] },
+      { key: 'weight', label: 'Weight', unit: 'kg', min: 30, max: 200, step: 0.5, limit: [30, 200], train: [38, 101] },
     ],
   },
   {
     id: 'vitals',
     title: 'Blood pressure & glucose',
+    hint: 'A seated reading and a random (non-fasting) sugar',
     fields: [
-      { key: 'bp', label: 'Systolic blood pressure', unit: 'mmHg', min: 70, max: 220, step: 1, limit: [50, 300], train: [70, 220] },
-      { key: 'rbs', label: 'Random blood sugar', unit: 'mmol/L', min: 3, max: 32, step: 0.1, limit: [1, 50], train: [3.16, 21.3], optional: true },
+      { key: 'bp', label: 'Systolic blood pressure', unit: 'mmHg', min: 70, max: 250, step: 1, limit: [70, 250], train: [70, 220] },
+      { key: 'rbs', label: 'Random blood sugar', unit: 'mmol/L', min: 1.5, max: 35, step: 0.1, limit: [1.5, 35], train: [3.16, 21.3], optional: true,
+        units: [{ unit: 'mmol/L', factor: 1, step: 0.1 }, { unit: 'mg/dL', factor: 18, step: 1 }] },
     ],
   },
   {
     id: 'lipids',
     title: 'Lipid profile',
+    hint: 'From a cholesterol test (lipid panel)',
     fields: [
-      { key: 'totalCholesterol', label: 'Total cholesterol', unit: 'mg/dL', min: 100, max: 320, step: 1, limit: [50, 600], train: [120, 294] },
-      { key: 'hdl', label: 'HDL', unit: 'mg/dL', min: 15, max: 90, step: 1, limit: [5, 150], train: [20, 80] },
-      { key: 'ldl', label: 'LDL', unit: 'mg/dL', min: 40, max: 240, step: 1, limit: [10, 500], train: [48, 226] },
-      { key: 'triglycerides', label: 'Triglycerides', unit: 'mg/dL', min: 40, max: 450, step: 1, limit: [20, 3000], train: [50, 400] },
+      { key: 'totalCholesterol', label: 'Total cholesterol', unit: 'mg/dL', min: 80, max: 400, step: 1, limit: [80, 400], train: [120, 294], units: MG_DL_CHOL },
+      { key: 'hdl', label: 'HDL', unit: 'mg/dL', min: 10, max: 120, step: 1, limit: [10, 120], train: [20, 80], units: MG_DL_CHOL },
+      { key: 'ldl', label: 'LDL', unit: 'mg/dL', min: 30, max: 300, step: 1, limit: [30, 300], train: [48, 226], units: MG_DL_CHOL },
+      { key: 'triglycerides', label: 'Triglycerides', unit: 'mg/dL', min: 30, max: 1000, step: 1, limit: [30, 1000], train: [50, 400], units: MG_DL_TG },
     ],
   },
   {
     id: 'blood',
     title: 'Blood panel',
+    hint: 'Blood count, kidney function and electrolytes. Mark any you don’t have as “Not measured”.',
     fields: [
-      { key: 'hemoglobin', label: 'Hemoglobin', unit: 'g/dL', min: 3, max: 18, step: 0.1, limit: [2, 25], train: [2.6, 17.6], optional: true },
-      { key: 'creatinine', label: 'Creatinine', unit: 'mg/dL', min: 0.3, max: 10, step: 0.1, limit: [0.1, 20], train: [0.4, 9.5], optional: true },
-      { key: 'platelets', label: 'Platelets', unit: '×10³/µL', min: 100, max: 600, step: 1, limit: [5, 1500], train: [100, 540], optional: true },
-      { key: 'sodium', label: 'Sodium', unit: 'mmol/L', min: 110, max: 150, step: 0.1, limit: [100, 180], train: [112.5, 149.4], optional: true },
-      { key: 'potassium', label: 'Potassium', unit: 'mmol/L', min: 2, max: 7, step: 0.1, limit: [1.5, 10], train: [2.3, 6.9], optional: true },
-      { key: 'chloride', label: 'Chloride', unit: 'mmol/L', min: 75, max: 135, step: 0.1, limit: [60, 150], train: [78, 131.1], optional: true },
+      { key: 'hemoglobin', label: 'Hemoglobin', unit: 'g/dL', min: 3, max: 20, step: 0.1, limit: [3, 20], train: [2.6, 17.6], optional: true,
+        units: [{ unit: 'g/dL', factor: 1, step: 0.1 }, { unit: 'g/L', factor: 10, step: 1 }] },
+      { key: 'creatinine', label: 'Creatinine', unit: 'mg/dL', min: 0.2, max: 15, step: 0.1, limit: [0.2, 15], train: [0.4, 9.5], optional: true,
+        units: [{ unit: 'mg/dL', factor: 1, step: 0.1 }, { unit: 'µmol/L', factor: 88.4, step: 1 }] },
+      { key: 'platelets', label: 'Platelets', unit: '×10³/µL', min: 20, max: 800, step: 1, limit: [20, 800], train: [100, 540], optional: true },
+      { key: 'sodium', label: 'Sodium', unit: 'mmol/L', min: 110, max: 165, step: 0.1, limit: [110, 165], train: [112.5, 149.4], optional: true },
+      { key: 'potassium', label: 'Potassium', unit: 'mmol/L', min: 1.5, max: 8, step: 0.1, limit: [1.5, 8], train: [2.3, 6.9], optional: true },
+      { key: 'chloride', label: 'Chloride', unit: 'mmol/L', min: 75, max: 135, step: 0.1, limit: [75, 135], train: [78, 131.1], optional: true },
     ],
   },
 ];
