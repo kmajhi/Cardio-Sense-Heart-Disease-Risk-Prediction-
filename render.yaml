@@ -14,8 +14,10 @@
 # account, the sign-in providers' app keys and the email settings. See
 # "Deploying on Render" in README.md.
 #
-# If your services have other names, change the three URLs that mention
-# cardio-sense.onrender.com / cardio-sense-api.onrender.com to match.
+# Render gave the site the address https://cardio-sense-ro4n.onrender.com
+# (the plain name was taken by another app). The API must be told this exact
+# address (FRONTEND_URL below): it only accepts the app's requests from it,
+# and OAuth and password-reset links lead back to it.
 
 services:
   - type: web
@@ -81,9 +83,9 @@ services:
           property: connectionString
       # The site the API sends people back to (OAuth, password-reset links).
       - key: FRONTEND_URL
-        value: https://cardio-sense.onrender.com
+        value: https://cardio-sense-ro4n.onrender.com
       - key: OAUTH_REDIRECT_BASE
-        value: https://cardio-sense.onrender.com
+        value: https://cardio-sense-ro4n.onrender.com
       # ---- Set in the dashboard, never in this file ----
       # The admin account, created on the first deploy (manage.py ensure_admin).
       # Later deploys never reset its password; change it in the app.
@@ -94,7 +96,7 @@ services:
       - key: ADMIN_NAME
         sync: false
       # Sign-in and account linking: each provider's app keys. Register the
-      # callback https://cardio-sense.onrender.com/api/connect/<gmail|x|facebook|linkedin>/callback/
+      # callback https://cardio-sense-ro4n.onrender.com/api/connect/<gmail|x|facebook|linkedin>/callback/
       # in that provider's console. A provider left empty shows as "not set up".
       - key: GOOGLE_CLIENT_ID
         sync: false
