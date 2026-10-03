@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { linkProps } from './link';
 import NotificationsMenu from '../notifications/NotificationsMenu';
 import NavWeather from './NavWeather';
@@ -16,6 +17,34 @@ const GUEST_ITEMS = [
   { label: 'Prediction', to: '/prediction' },
   { label: 'About', to: '/about' },
 ];
+
+/**
+ * On narrow screens the links scroll sideways. Says which ends have links
+ * hidden past them ({ start, end }), so the nav can fade that edge as a cue,
+ * and scrolls the current page's link into view.
+ */
+function useScrollCue(activePath) {
+  const ref = useRef(null);
+  const [more, setMore] = useState({ start: false, end: false });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      setMore({ start: el.scrollLeft > 2, end: el.scrollLeft < max - 2 });
+    };
+    el.querySelector('[aria-current="page"]')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    ro?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro?.disconnect();
+    };
+  }, [activePath]);
+  return [ref, more];
+}
 
 const initials = (name = '') =>
   name
@@ -52,6 +81,7 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
   // Staff also get the admin console.
   const isStaff = Boolean(auth?.user?.is_staff);
   const items = signedIn ? (isStaff ? [...NAV_ITEMS, { label: 'Admin', to: '/console' }] : NAV_ITEMS) : GUEST_ITEMS;
+  const [scrollRef, more] = useScrollCue(activePath);
 
   const authButton = (mode, label, className) =>
     onAuth ? (
@@ -72,7 +102,11 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
         Cardio Sense
       </L>
 
-      <nav aria-label="Main" className="pc-nav-scroll">
+      <nav
+        aria-label="Main"
+        ref={scrollRef}
+        className={`pc-nav-scroll${more.start ? ' has-more-start' : ''}${more.end ? ' has-more-end' : ''}`}
+      >
         <ul className="pc-nav-links">
           {items.map((item) => (
             <li key={item.to}>

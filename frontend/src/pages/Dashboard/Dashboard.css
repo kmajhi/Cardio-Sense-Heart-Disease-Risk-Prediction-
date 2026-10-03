@@ -1606,6 +1606,30 @@
   .pc-nav-links {
     width: max-content;
   }
+
+  /* Links hidden past an edge: fade that edge so the strip reads as scrollable. */
+  .pc-nav-scroll.has-more-end {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 44px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 44px), transparent);
+  }
+
+  .pc-nav-scroll.has-more-start {
+    -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 44px), transparent);
+    mask-image: linear-gradient(to left, #000 calc(100% - 44px), transparent);
+  }
+
+  .pc-nav-scroll.has-more-start.has-more-end {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+  }
+}
+
+/* Phones: slimmer pills, so more of the links fit before any scrolling. */
+@media (max-width: 480px) {
+  .pc-nav-link {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 760px) {

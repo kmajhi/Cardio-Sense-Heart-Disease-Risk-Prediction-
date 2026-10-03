@@ -14,8 +14,7 @@ const RING = 2 * Math.PI * 42;
 function Gauge({ probability, stroke }) {
   const has = typeof probability === 'number';
   // Never show a flat 0% or 100%: a model estimate is never certain.
-  const pct = has ? Math.round(probability * 100) : null;
-  const shown = pct === null ? '—' : pct < 1 ? '<1' : pct > 99 ? '>99' : pct;
+  const shown = has ? pctText(probability) : '—';
 
   return (
     <div className="pc-pr-gauge">
