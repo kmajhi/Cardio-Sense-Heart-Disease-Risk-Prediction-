@@ -70,13 +70,22 @@ services:
       python manage.py migrate --noinput &&
       python manage.py createcachetable &&
       python manage.py ensure_admin
-    startCommand: cd backend && gunicorn config.wsgi --workers 2 --timeout 120
+    # One worker process with threads: each process holds the model, SHAP and
+    # pandas (~370 MB measured), so two processes overflowed the free plan's
+    # 512 MB and Render restarted the service. Threads share one copy.
+    # The first prediction after a start builds the explainer (~20-40 s on the
+    # free CPU), hence the long timeout.
+    startCommand: cd backend && gunicorn config.wsgi --workers 1 --threads 4 --timeout 180
     healthCheckPath: /api/connect/
     envVars:
       - key: PYTHON_VERSION
         value: "3.14.6"
       - key: DJANGO_SECRET_KEY
         generateValue: true
+      # Fewer glibc memory arenas: keeps the threaded worker's memory from
+      # fragmenting upwards over time (a common fix for 512 MB instances).
+      - key: MALLOC_ARENA_MAX
+        value: "2"
       - key: DATABASE_URL
         fromDatabase:
           name: cardio-sense-db
