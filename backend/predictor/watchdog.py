@@ -37,6 +37,16 @@ def check_slow_requests() -> int:
         frame = frames.get(tid)
         stack = "".join(traceback.format_stack(frame)[-25:]) if frame else "(thread gone)\n"
         log.warning("Slow request: %s %s still running after %.0f s. Stack:\n%s", method, path, now - started, stack)
+    if slow:
+        # Every other thread too, to show who holds whatever the request waits on.
+        names = {t.ident: t.name for t in threading.enumerate()}
+        slow_ids = {tid for tid, _ in slow}
+        others = [
+            f"--- {names.get(tid, tid)}\n" + "".join(traceback.format_stack(frame)[-12:])
+            for tid, frame in frames.items()
+            if tid not in slow_ids and tid != threading.get_ident()
+        ]
+        log.warning("Other threads while a request was slow:\n%s", "\n".join(others))
     return len(slow)
 
 
