@@ -1725,3 +1725,84 @@
   text-underline-offset: 2px;
   cursor: pointer;
 }
+
+/* ---------- Phones (≤760px): a Run bar within reach, thumb-sized controls ---------- */
+
+@media (max-width: 760px) {
+  /* Room under the last section for the bar. */
+  .pc-predict .pc-pr-main {
+    padding-bottom: 84px;
+  }
+
+  .pc-pr-runbar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 90;
+    padding: 18px clamp(16px, 4.4vw, 64px) max(14px, env(safe-area-inset-bottom));
+    background: linear-gradient(to top, rgba(250, 248, 255, 0.97) 62%, rgba(250, 248, 255, 0));
+    animation: pc-pr-runbar-in 0.2s ease-out;
+  }
+
+  .pc-pr-runbar .pc-pr-run {
+    min-height: 56px;
+    font-size: 16px;
+  }
+
+  @keyframes pc-pr-runbar-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+
+  /* The (?) stays small to the eye, but its tap area is 40 × 40. */
+  .pc-help-btn {
+    position: relative;
+  }
+
+  .pc-help-btn::after {
+    content: '';
+    position: absolute;
+    inset: -11px;
+  }
+
+  .pc-pr-presets .pc-filter,
+  .pc-pr-nav a {
+    min-height: 40px;
+  }
+
+  .pc-pr-seg-btn {
+    min-height: 42px;
+    font-size: 14px;
+  }
+
+  .pc-pr-scale {
+    font-size: 12px;
+  }
+
+  /* The number beside each slider: tall enough to tap and type in. */
+  .pc-pr-num {
+    min-height: 40px;
+  }
+}
+
+/* Touch screens have no Ctrl + Enter. */
+@media (hover: none) and (pointer: coarse) {
+  .pc-pr-shortcut {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-pr-runbar {
+    animation: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .pc-pr-result {
+    scroll-margin-top: 12px;
+  }
+}
