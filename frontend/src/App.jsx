@@ -1,17 +1,19 @@
-import { Suspense, forwardRef, lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, forwardRef, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Home from './pages/Home/Home';
+import ErrorBoundary, { lazyPage } from './components/ErrorBoundary';
 
 // Every page but the homepage is downloaded the first time it's opened, so the
-// first load only fetches what it shows.
-const Dashboard = lazy(() => import('./pages/Dashboard/Dashboard'));
-const Prediction = lazy(() => import('./pages/Prediction/Prediction'));
-const History = lazy(() => import('./pages/History/History'));
-const About = lazy(() => import('./pages/About/About'));
-const Profile = lazy(() => import('./pages/Profile/Profile'));
-const Guidance = lazy(() => import('./pages/Guidance/Guidance'));
-const ResetPassword = lazy(() => import('./pages/ResetPassword/ResetPassword'));
-const Console = lazy(() => import('./pages/Admin/Console'));
+// first load only fetches what it shows. lazyPage reloads once onto the new
+// version if a redeploy has replaced the page's files (components/ErrorBoundary.jsx).
+const Dashboard = lazyPage(() => import('./pages/Dashboard/Dashboard'));
+const Prediction = lazyPage(() => import('./pages/Prediction/Prediction'));
+const History = lazyPage(() => import('./pages/History/History'));
+const About = lazyPage(() => import('./pages/About/About'));
+const Profile = lazyPage(() => import('./pages/Profile/Profile'));
+const Guidance = lazyPage(() => import('./pages/Guidance/Guidance'));
+const ResetPassword = lazyPage(() => import('./pages/ResetPassword/ResetPassword'));
+const Console = lazyPage(() => import('./pages/Admin/Console'));
 import DemoBanner from './components/DemoBanner';
 import SiteBanner from './components/SiteBanner';
 import { AuthProvider, RequireAuth, useAuth } from './auth/AuthContext';
@@ -132,6 +134,8 @@ function AppRoutes() {
       <SiteBanner />
       <DemoBanner />
       <ScrollToTop />
+      {/* A page that fails to draw shows what happened and a way out, never a blank screen. */}
+      <ErrorBoundary resetKey={pathname}>
       <Suspense fallback={<LoadingShell {...shared} />}>
       <Routes>
         <Route path="/" element={<LandingRoute {...shared} />} />
@@ -168,6 +172,7 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>
+      </ErrorBoundary>
     </NotificationsProvider>
   );
 }
