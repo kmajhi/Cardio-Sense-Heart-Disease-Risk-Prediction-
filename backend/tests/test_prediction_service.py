@@ -1,3 +1,4 @@
+import threading
 import math
 
 import numpy as np
@@ -269,3 +270,18 @@ def test_fast_forest_matches_sklearn(trained, patient):
             assert np.allclose(forest.predict_proba(rows), RandomForestClassifier.predict_proba(forest, rows), atol=1e-12)
             checked += 1
     assert checked or not isinstance(model, RandomForestClassifier)
+
+
+def test_a_loaded_model_never_waits_for_the_load_lock(trained):
+    """On Render predictions hung for good at `with _load_lock` after the model
+    had loaded. Once loaded, load_model() must not touch the lock at all."""
+    prediction_service.load_model()  # loaded
+    assert prediction_service._load_lock.acquire(timeout=1)  # someone holds the lock...
+    try:
+        done = []
+        worker = threading.Thread(target=lambda: done.append(prediction_service.load_model()))
+        worker.start()
+        worker.join(5)
+        assert done, "load_model() blocked on the lock although the model was already loaded"
+    finally:
+        prediction_service._load_lock.release()

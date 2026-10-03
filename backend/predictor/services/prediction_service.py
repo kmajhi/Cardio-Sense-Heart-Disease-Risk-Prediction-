@@ -37,6 +37,7 @@ the source data, so they're always recomputed here.
 from __future__ import annotations
 
 import json
+import logging
 import math
 import threading
 from functools import lru_cache
@@ -160,6 +161,8 @@ class PredictionInputError(ValueError):
     """The request can't be turned into a valid model input."""
 
 
+log = logging.getLogger(__name__)
+
 _load_lock = threading.Lock()
 
 
@@ -209,12 +212,28 @@ def _load_model():
     return pipeline, metadata
 
 
+_LOAD_WAIT_SECONDS = 120
+
+
 def load_model():
-    """(pipeline, metadata), loaded once per process. The lock makes concurrent
-    first requests (gunicorn threads) wait for one load instead of each loading
-    a copy: the deployment has 512 MB, and a second copy would overflow it."""
-    with _load_lock:
+    """(pipeline, metadata), loaded once per process.
+
+    Once loaded (the startup warm-up does it), it's returned straight from the
+    cache without touching the lock. On Render, predictions hung for good waiting
+    on this lock although the warm-up had finished (the watchdog logged them stuck
+    at `with _load_lock`), so the lock now only guards the first load, and even
+    then a request waits at most _LOAD_WAIT_SECONDS. The lock makes concurrent
+    first requests wait for one load instead of each loading a copy: the
+    deployment has 512 MB, and a second copy would overflow it."""
+    if _load_model.cache_info().currsize:
         return _load_model()
+    if not _load_lock.acquire(timeout=_LOAD_WAIT_SECONDS):
+        log.error("Waited %s s for the model load lock; loading without it", _LOAD_WAIT_SECONDS)
+        return _load_model()
+    try:
+        return _load_model()
+    finally:
+        _load_lock.release()
 
 
 load_model.cache_info = _load_model.cache_info
