@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { linkProps } from './link';
 import NotificationsMenu from '../notifications/NotificationsMenu';
 import NavWeather from './NavWeather';
@@ -46,6 +47,58 @@ function useScrollCue(activePath) {
   return [ref, more];
 }
 
+/**
+ * Phones (≤760px): the nav collapses to logo · bell · avatar · menu button,
+ * and the button opens a full-screen menu. Open state, Escape, scroll lock and
+ * focus handling live here; NavBar.css-style rules are in Dashboard.css.
+ */
+function useMobileMenu(activePath) {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef(null);
+  const panelRef = useRef(null);
+
+  // A new page closes it.
+  useEffect(() => setOpen(false), [activePath]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const root = document.documentElement;
+    const before = root.style.overflow;
+    root.style.overflow = 'hidden'; // the page underneath stays put
+    panelRef.current?.querySelector('[data-autofocus]')?.focus();
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+      if (e.key !== 'Tab' || !panelRef.current) return;
+      // Keep keyboard focus inside the menu while it's open.
+      const items = [...panelRef.current.querySelectorAll('a[href], button:not([disabled])')];
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    // Back on a wide screen (rotating a tablet): the menu has no place there.
+    const wide = window.matchMedia?.('(min-width: 761px)');
+    const onWide = (e) => e.matches && setOpen(false);
+    window.addEventListener('keydown', onKey);
+    wide?.addEventListener?.('change', onWide);
+    const button = buttonRef.current;
+    return () => {
+      root.style.overflow = before;
+      window.removeEventListener('keydown', onKey);
+      wide?.removeEventListener?.('change', onWide);
+      button?.focus({ preventScroll: true });
+    };
+  }, [open]);
+
+  return { open, setOpen, buttonRef, panelRef };
+}
+
 const initials = (name = '') =>
   name
     .split(' ')
@@ -82,6 +135,9 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
   const isStaff = Boolean(auth?.user?.is_staff);
   const items = signedIn ? (isStaff ? [...NAV_ITEMS, { label: 'Admin', to: '/console' }] : NAV_ITEMS) : GUEST_ITEMS;
   const [scrollRef, more] = useScrollCue(activePath);
+  const menu = useMobileMenu(activePath);
+  const menuId = useId();
+  const close = () => menu.setOpen(false);
 
   const authButton = (mode, label, className) =>
     onAuth ? (
@@ -143,7 +199,7 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
               {user?.photo?.startsWith?.('data:image/jpeg;base64,') ? <img src={user.photo} alt="" /> : initials(user?.name)}
             </L>
             {auth?.user && (
-              <button type="button" className="pc-icon-btn" aria-label="Log out" title="Log out" onClick={auth.logout}>
+              <button type="button" className="pc-icon-btn pc-nav-logout" aria-label="Log out" title="Log out" onClick={auth.logout}>
                 <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10" />
                 </svg>
@@ -151,7 +207,89 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
             )}
           </>
         )}
+        <button
+          ref={menu.buttonRef}
+          type="button"
+          className="pc-icon-btn pc-menu-btn"
+          aria-label="Open menu"
+          aria-expanded={menu.open}
+          aria-controls={menuId}
+          onClick={() => menu.setOpen(true)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
       </div>
+
+      {menu.open && createPortal(
+        <div id={menuId} ref={menu.panelRef} className="pc-menu" role="dialog" aria-modal="true" aria-label="Menu">
+          <div className="pc-menu-head">
+            <L {...linkProps(L, signedIn ? '/dashboard' : '/')} className="pc-logo" onClick={close}>
+              <HeartMark />
+              Cardio Sense
+            </L>
+            <button type="button" className="pc-icon-btn" aria-label="Close menu" onClick={close} data-autofocus>
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
+            </button>
+          </div>
+
+          <nav aria-label="Main" className="pc-menu-nav">
+            <ul>
+              {[...items, ...(signedIn ? [{ label: 'Guidance', to: '/guidance' }, { label: 'Profile', to: '/profile' }] : [])].map(
+                (item, i) => (
+                  <li key={item.to} style={{ '--i': i }}>
+                    <L
+                      {...linkProps(L, item.to)}
+                      className="pc-menu-link"
+                      aria-current={activePath === item.to ? 'page' : undefined}
+                      onClick={close}
+                    >
+                      {item.label}
+                      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m9 6 6 6-6 6" />
+                      </svg>
+                    </L>
+                  </li>
+                ),
+              )}
+            </ul>
+          </nav>
+
+          <div className="pc-menu-foot">
+            {!signedIn ? (
+              <div className="pc-menu-auth">
+                {onAuth ? (
+                  <>
+                    <button type="button" className="pc-nav-auth" onClick={() => { close(); onAuth('login'); }}>Log in</button>
+                    <button type="button" className="pc-nav-auth pc-nav-auth--solid" onClick={() => { close(); onAuth('register'); }}>Register</button>
+                  </>
+                ) : (
+                  <>
+                    <L {...linkProps(L, '/')} {...(L === 'a' ? {} : { state: { auth: 'login' } })} className="pc-nav-auth" onClick={close}>Log in</L>
+                    <L {...linkProps(L, '/')} {...(L === 'a' ? {} : { state: { auth: 'register' } })} className="pc-nav-auth pc-nav-auth--solid" onClick={close}>Register</L>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+                <NavWeather />
+                {auth?.user && (
+                  <button type="button" className="pc-menu-logout" onClick={() => { close(); auth.logout(); }}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10" />
+                    </svg>
+                    Log out
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>,
+        document.body,
+      )}
     </header>
   );
 }

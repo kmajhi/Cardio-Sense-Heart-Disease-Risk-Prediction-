@@ -61,6 +61,10 @@ export default function LabTable({ records }) {
                 <th scope="row">
                   {test.label}
                   {test.troponin && now && <span className="pc-h-assay">{TROPONIN[now.assay].name} assay</span>}
+                  {/* Phones: the Status column is hidden (display: none, so screen readers skip it too); the status sits under the name instead. */}
+                  <span className={`pc-h-status pc-h-status-inline is-${st}`}>
+                    {STATUS_TEXT[st]}
+                  </span>
                 </th>
                 <td className="is-num">
                   <b>{fmt(now)}</b> <span className="pc-h-unit">{now?.unit}</span>
