@@ -12,6 +12,7 @@ import {
   DISCLAIMER,
   FACTS,
   FAQ,
+  GET_NUMBERS,
   HERO,
   INPUTS,
   INPUT_GROUPS,
@@ -55,6 +56,7 @@ const PATHS = {
   measure: 'M4 16a8 8 0 1 1 16 0M12 16l4-5',
   yesno: 'M7 8h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8ZM17 12h.01',
   derived: 'M5 19 19 5M7 5h4M9 3v4M13 17h4',
+  flask: 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 14h9',
   marker: 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3',
 };
 
@@ -278,6 +280,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
             ['a-mission', 'Mission'],
             ['a-how', 'How it works'],
             ['a-platform', 'Platform'],
+            ['a-tests', 'Tests you need'],
             ['a-inputs', 'Inputs'],
             ['a-model', 'The science'],
             ['a-trust', 'Privacy'],
@@ -400,6 +403,75 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
                 </ul>
               </li>
             ))}
+          </Reveal>
+        </section>
+
+        {/* ---------- Get your numbers ---------- */}
+        <section className="pc-a-section pc-a-tests" aria-labelledby="a-tests">
+          <SectionHead
+            id="a-tests"
+            center
+            eyebrow="Before you start · Bangladesh"
+            title="Which tests do I need?"
+            text={GET_NUMBERS.intro}
+          />
+          <Reveal as="p" className="pc-a-tests-min">
+            <Icon name="check" size={16} /> {GET_NUMBERS.minimum}
+          </Reveal>
+          <Reveal as="ol" className="pc-a-steps">
+            {GET_NUMBERS.steps.map((s, i) => (
+              <li key={s.n} style={{ '--i': i }}>
+                <span className="pc-a-step-n" aria-hidden="true">
+                  {s.n}
+                </span>
+                <h3>{s.title}</h3>
+                <p className="pc-a-step-where">{s.where}</p>
+                {s.items.length > 0 ? (
+                  <ul>
+                    {s.items.map((it) => (
+                      <li key={it.name}>
+                        <strong>{it.name}</strong>
+                        <span>{it.detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="pc-a-step-ask">
+                    Ask for: <strong>{GET_NUMBERS.askFor}</strong>
+                  </p>
+                )}
+              </li>
+            ))}
+          </Reveal>
+          <Reveal as="ul" className="pc-a-labs" aria-label="Tests to ask the lab for">
+            {GET_NUMBERS.tests.map((t, i) => (
+              <li key={t.ask} className={t.required ? 'is-required' : ''} style={{ '--i': i }}>
+                <header>
+                  <span className="pc-a-icon">
+                    <Icon name="flask" size={18} />
+                  </span>
+                  <h3>{t.ask}</h3>
+                  <span className="pc-a-lab-tag">{t.required ? 'Required' : 'Optional'}</span>
+                </header>
+                <dl>
+                  <dt>Fills in</dt>
+                  <dd>{t.fields}</dd>
+                  <dt>Before the test</dt>
+                  <dd>{t.prep}</dd>
+                  <dt>On your report</dt>
+                  <dd>{t.report}</dd>
+                </dl>
+              </li>
+            ))}
+          </Reveal>
+          <Reveal className="pc-a-tests-foot">
+            <p className="pc-a-tests-warn" role="note">
+              <Icon name="warn" size={18} /> {GET_NUMBERS.safety}
+            </p>
+            <p className="pc-a-tests-note">{GET_NUMBERS.note}</p>
+            <L {...linkProps(L, '/prediction')} className="pc-a-btn">
+              I have my report: enter it <span className="pc-hero-cta-arrow" aria-hidden="true">→</span>
+            </L>
           </Reveal>
         </section>
 

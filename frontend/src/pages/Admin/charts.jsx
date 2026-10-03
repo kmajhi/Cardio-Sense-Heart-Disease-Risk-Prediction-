@@ -5,6 +5,7 @@
 // Marks: columns ≤ 24px, 4px rounded tops, square at the baseline, 2px surface
 // gaps between stacked segments; hairline solid grid; hover tooltip per column.
 import { useEffect, useRef, useState } from 'react';
+import { labelStep } from './labels';
 
 export const RISK_COLORS = { low: '#1a9e70', moderate: '#c98500', high: '#e0457b' };
 const RISK_LABELS = { low: 'Low', moderate: 'Moderate', high: 'High' };
@@ -89,7 +90,7 @@ function DailyColumns({ series, keys, colors, labels, height = 190 }) {
   const barW = Math.min(24, Math.max(4, slot * 0.62));
   const y = (v) => pad.top + innerH - (v / top) * innerH;
   const GAP = 2;
-  const labelEvery = Math.max(1, Math.ceil(series.length / 7));
+  const labelEvery = labelStep(series.length, innerW);
 
   return (
     <div className="cx-chart-plot" ref={ref}>
@@ -129,7 +130,7 @@ function DailyColumns({ series, keys, colors, labels, height = 190 }) {
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
               />
-              {(i % labelEvery === 0 || i === series.length - 1) && (
+              {(series.length - 1 - i) % labelEvery === 0 && (
                 <text x={x + barW / 2} y={height - 8} className="cx-axis" textAnchor="middle">
                   {day(d.date)}
                 </text>

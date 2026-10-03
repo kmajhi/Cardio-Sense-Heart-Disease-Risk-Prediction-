@@ -19,6 +19,7 @@ const COLUMNS = [
     links: [
       ['About', '/about'],
       ['How it works', '/about#a-how'],
+      ['Which tests do I need?', '/about#a-tests'],
       ['Model inputs', '/about#a-inputs'],
       ['How it was built', '/about#a-model'],
       ['Privacy & trust', '/about#a-trust'],

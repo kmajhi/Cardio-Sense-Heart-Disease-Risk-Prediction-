@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { admin } from '../../../api/adminApi';
+import { describeBands } from '../labels';
 import { Badge, DataTable, ErrorNote, Facts, Loading, PageHeader, Panel, RiskBadge, Stat, fmtBytes, fmtDateTime, fmtPct, useLoad, useToast } from '../ui';
 
 const num = (v, d = 3) => (v === undefined || v === null || v === '' ? '—' : Number(v).toFixed(d));
@@ -171,7 +172,7 @@ export default function Model() {
               ['Why', m.deployment_exclusion_reason],
               ['Inputs', `${(m.raw_input_features ?? []).length} features`],
               ['scikit-learn', m.sklearn_version],
-              ['Risk bands', data.risk_bands.map((b) => `${b.level} < ${Math.round(b.below * 100)}%`).join(' · ')],
+              ['Risk bands', describeBands(data.risk_bands)],
               ['Confusion matrix', metrics.test_confusion_matrix ? Object.entries(metrics.test_confusion_matrix).map(([k, v]) => `${k.toUpperCase()} ${v}`).join(' · ') : '—'],
             ]}
           />

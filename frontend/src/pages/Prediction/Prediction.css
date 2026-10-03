@@ -100,6 +100,28 @@
   line-height: 1.5;
 }
 
+.pc-dash .pc-pr-guide {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 14px;
+  border: 1px solid var(--pc-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--pc-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.pc-dash .pc-pr-guide:hover,
+.pc-dash .pc-pr-guide:focus-visible {
+  border-color: var(--pc-violet);
+  color: var(--pc-violet);
+}
+
 .pc-pr-presets {
   display: flex;
   flex-wrap: wrap;
