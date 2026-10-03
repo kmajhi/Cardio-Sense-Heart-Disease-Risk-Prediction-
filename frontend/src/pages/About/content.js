@@ -149,6 +149,115 @@ export const AUDIENCES = [
   },
 ];
 
+// ---------- Get your numbers (for people in Bangladesh) ----------
+// What someone needs before they can run a prediction, and where to get it.
+// Required/optional matches the backend's REQUIRED_FIELDS / OPTIONAL_FIELDS.
+
+export const GET_NUMBERS = {
+  intro:
+    'Cardio Sense is built on hospital records from Bangladesh, and its units match the way Bangladeshi ' +
+    'lab reports are written. You need a recent blood-pressure reading and one blood test; the other labs ' +
+    'make the estimate more reliable but can be left as “Not measured”.',
+  minimum: 'Minimum to get an estimate: height, weight, blood pressure and a Lipid profile.',
+  steps: [
+    {
+      n: 1,
+      title: 'Measure yourself',
+      where: 'At home, a pharmacy or a community clinic. Free or nearly free.',
+      items: [
+        { name: 'Height and weight', detail: 'Without shoes. BMI is calculated for you.' },
+        {
+          name: 'Blood pressure (systolic)',
+          detail:
+            'The top number of a reading, e.g. 130 in 130/85. Sit and rest 5 minutes first. A digital BP machine at home, ' +
+            'a pharmacy, or a nurse at a clinic can do it.',
+        },
+        {
+          name: 'Your medical history',
+          detail:
+            'Four yes/no questions: family history of heart disease, diagnosed high blood pressure, diagnosed diabetes, ' +
+            'and past chest pain. Ask your doctor or check old prescriptions if unsure.',
+        },
+      ],
+    },
+    {
+      n: 2,
+      title: 'Get a blood test',
+      where:
+        'Any diagnostic centre or hospital lab: a private diagnostic centre, a district or medical college hospital, ' +
+        'or an upazila health complex. One blood sample covers every test below.',
+      items: [],
+    },
+    {
+      n: 3,
+      title: 'Enter your report',
+      where: 'Open Prediction and copy the numbers from your report.',
+      items: [
+        {
+          name: 'Use the (?) beside each field',
+          detail: 'It shows what the value is called on a report, its healthy range, and how to convert units.',
+        },
+        {
+          name: 'Missing a test?',
+          detail: 'Tick “Not measured” for any optional lab. The estimate is still made and says what was left out.',
+        },
+      ],
+    },
+  ],
+  // What to ask the lab for, as Bangladeshi reports name them.
+  tests: [
+    {
+      ask: 'Lipid profile',
+      required: true,
+      fields: 'Total cholesterol, HDL, LDL, Triglycerides',
+      prep: 'Fast 10–12 hours before (water is fine). Go in the morning.',
+      report: 'Usually reported in mg/dL, which is what the app uses. If yours says mmol/L, switch the unit beside the value.',
+    },
+    {
+      ask: 'Blood glucose (random) — RBS',
+      required: false,
+      fields: 'Random blood sugar',
+      prep: 'No fasting: taken any time after eating. A home glucometer reading also works.',
+      report:
+        'Reported in mmol/L in Bangladesh. If you gave blood fasting, the lab reports fasting sugar (FBS) instead, which ' +
+        'is a different test: leave this “Not measured” or use a glucometer later.',
+    },
+    {
+      ask: 'CBC (complete blood count)',
+      required: false,
+      fields: 'Hemoglobin (Hb), Platelets',
+      prep: 'No preparation needed.',
+      report: 'Platelets are often written per cumm, e.g. 2,50,000 /cumm: enter 250.',
+    },
+    {
+      ask: 'Serum creatinine',
+      required: false,
+      fields: 'Creatinine (kidney function)',
+      prep: 'No preparation needed.',
+      report: 'In mg/dL. If your report gives µmol/L, switch the unit beside the value.',
+    },
+    {
+      ask: 'Serum electrolytes',
+      required: false,
+      fields: 'Sodium (Na⁺), Potassium (K⁺), Chloride (Cl⁻)',
+      prep: 'No preparation needed.',
+      report: 'In mmol/L, as the app uses.',
+    },
+    {
+      ask: 'Troponin I',
+      required: false,
+      fields: 'Troponin-I (heart muscle marker)',
+      prep: 'Only if a doctor has ordered it, usually for chest pain. Not needed for a routine check.',
+      report: 'Note whether it says ng/mL or ng/L: the app asks which assay it was.',
+    },
+  ],
+  askFor: 'Lipid profile (fasting), RBS, CBC, Serum creatinine, Serum electrolytes',
+  safety:
+    'Chest pain, pressure or breathlessness right now is an emergency: call 999 or go to the nearest hospital. ' +
+    'Do not wait for a test or an estimate.',
+  note: 'Prices and names vary between centres: show this list at the counter and ask for these tests by name.',
+};
+
 // ---------- Inputs ----------
 
 export const INPUT_GROUPS = ['All', 'Profile', 'History', 'Vitals', 'Lipids', 'Blood panel', 'Cardiac marker'];
