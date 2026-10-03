@@ -12,7 +12,7 @@ function EventDetail({ event, onClose, openUser }) {
   const detail = Object.entries(event.detail ?? {});
   return (
     <Drawer open onClose={onClose} title={event.kind_label} subtitle={fmtDateTime(event.created_at)}>
-      <p className="ad-event-summary">{event.summary}</p>
+      <p className="cx-event-summary">{event.summary}</p>
       <Facts
         items={[
           ['When', `${fmtDateTime(event.created_at)} (${fmtAgo(event.created_at)})`],
@@ -20,22 +20,22 @@ function EventDetail({ event, onClose, openUser }) {
           [
             'Account',
             event.user_id ? (
-              <button type="button" className="ad-link-btn" onClick={() => { onClose(); openUser(event.user_id); }}>
+              <button type="button" className="cx-link-btn" onClick={() => { onClose(); openUser(event.user_id); }}>
                 {event.email}
               </button>
             ) : (
               event.email || '—'
             ),
           ],
-          ['IP address', event.ip ? <span className="ad-mono">{event.ip}</span> : '—'],
-          ['Event id', <span key="i" className="ad-mono">#{event.id}</span>],
+          ['IP address', event.ip ? <span className="cx-mono">{event.ip}</span> : '—'],
+          ['Event id', <span key="i" className="cx-mono">#{event.id}</span>],
         ]}
       />
-      <h3 className="ad-h3">Details</h3>
+      <h3 className="cx-h3">Details</h3>
       {detail.length ? (
-        <pre className="ad-code">{JSON.stringify(event.detail, null, 2)}</pre>
+        <pre className="cx-code">{JSON.stringify(event.detail, null, 2)}</pre>
       ) : (
-        <p className="ad-muted">No extra details were recorded.</p>
+        <p className="cx-muted">No extra details were recorded.</p>
       )}
     </Drawer>
   );
@@ -73,11 +73,11 @@ export default function Activity({ openUser }) {
         subtitle="Audit trail of sign-ups, logins, predictions and every admin action. Kept 180 days."
         actions={
           <>
-            <button type="button" className={`ad-btn${live ? ' is-live' : ''}`} aria-pressed={live} onClick={() => setLive((v) => !v)}>
-              {live ? <span className="ad-live-dot" aria-hidden="true" /> : <Icon name="play" size={14} />}
+            <button type="button" className={`cx-btn${live ? ' is-live' : ''}`} aria-pressed={live} onClick={() => setLive((v) => !v)}>
+              {live ? <span className="cx-live-dot" aria-hidden="true" /> : <Icon name="play" size={14} />}
               {live ? 'Live' : 'Go live'}
             </button>
-            <button type="button" className="ad-btn" onClick={() => download('/admin/activity/export/', filters, 'activity.csv').catch((e) => notify(e.message, 'error'))}>
+            <button type="button" className="cx-btn" onClick={() => download('/admin/activity/export/', filters, 'activity.csv').catch((e) => notify(e.message, 'error'))}>
               <Icon name="download" size={15} />
               Export CSV
             </button>
@@ -87,11 +87,11 @@ export default function Activity({ openUser }) {
       <Toolbar>
         <SearchBox value={q} onChange={filter(setQ)} placeholder="Search email, text or IP" />
         <Select label="Type" value={kind} onChange={filter(setKind)} options={[['', 'All'], ...(data?.kinds ?? []).map((k) => [k.value, k.label])]} />
-        <label className="ad-select">
+        <label className="cx-select">
           <span>From</span>
           <input type="date" value={dateFrom} onChange={(e) => filter(setDateFrom)(e.target.value)} />
         </label>
-        <label className="ad-select">
+        <label className="cx-select">
           <span>To</span>
           <input type="date" value={dateTo} onChange={(e) => filter(setDateTo)(e.target.value)} />
         </label>
@@ -100,8 +100,8 @@ export default function Activity({ openUser }) {
       {loading && !data ? (
         <Skeleton rows={1} />
       ) : (
-        <div className="ad-card-table">
-          {live && <div className="ad-live-bar">Streaming new events every {LIVE_MS / 1000} seconds · {fmtNumber(data?.count)} in total</div>}
+        <div className="cx-card-table">
+          {live && <div className="cx-live-bar">Streaming new events every {LIVE_MS / 1000} seconds · {fmtNumber(data?.count)} in total</div>}
           <DataTable
             rows={data?.results}
             onRowClick={setOpen}
@@ -110,8 +110,8 @@ export default function Activity({ openUser }) {
               { key: 'time', label: 'When', render: (r) => <span title={fmtDateTime(r.created_at)}>{fmtAgo(r.created_at)}</span>, width: '120px' },
               { key: 'kind', label: 'Type', render: (r) => <Badge tone={TONE[r.kind] ?? 'neutral'} dot>{r.kind_label}</Badge>, width: '170px' },
               { key: 'summary', label: 'What happened' },
-              { key: 'email', label: 'Account', render: (r) => r.email || <span className="ad-muted">—</span> },
-              { key: 'ip', label: 'IP', render: (r) => <span className="ad-mono">{r.ip || '—'}</span> },
+              { key: 'email', label: 'Account', render: (r) => r.email || <span className="cx-muted">—</span> },
+              { key: 'ip', label: 'IP', render: (r) => <span className="cx-mono">{r.ip || '—'}</span> },
             ]}
           />
           {data && <Pagination page={data.page} pages={data.pages} count={data.count} onPage={setPage} />}

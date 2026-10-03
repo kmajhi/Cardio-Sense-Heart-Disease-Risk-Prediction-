@@ -158,10 +158,10 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={notify}>
       {children}
-      <div className="ad-toasts" role="status" aria-live="polite">
+      <div className="cx-toasts" role="status" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`ad-toast is-${t.tone}`}>
-            <span className="ad-toast-dot" aria-hidden="true" />
+          <div key={t.id} className={`cx-toast is-${t.tone}`}>
+            <span className="cx-toast-dot" aria-hidden="true" />
             {t.text}
           </div>
         ))}
@@ -174,26 +174,26 @@ export function ToastProvider({ children }) {
 
 export function PageHeader({ title, subtitle, actions }) {
   return (
-    <header className="ad-page-head">
+    <header className="cx-page-head">
       <div>
         <h1>{title}</h1>
         {subtitle && <p>{subtitle}</p>}
       </div>
-      {actions && <div className="ad-page-actions">{actions}</div>}
+      {actions && <div className="cx-page-actions">{actions}</div>}
     </header>
   );
 }
 
 export function Panel({ title, subtitle, actions, children, className = '' }) {
   return (
-    <section className={`ad-panel ${className}`}>
+    <section className={`cx-panel ${className}`}>
       {(title || actions) && (
-        <header className="ad-panel-head">
+        <header className="cx-panel-head">
           <div>
             {title && <h2>{title}</h2>}
             {subtitle && <p>{subtitle}</p>}
           </div>
-          {actions && <div className="ad-panel-actions">{actions}</div>}
+          {actions && <div className="cx-panel-actions">{actions}</div>}
         </header>
       )}
       {children}
@@ -203,10 +203,10 @@ export function Panel({ title, subtitle, actions, children, className = '' }) {
 
 export function Stat({ label, value, hint, tone }) {
   return (
-    <div className={`ad-stat${tone ? ` is-${tone}` : ''}`}>
-      <span className="ad-stat-label">{label}</span>
-      <span className="ad-stat-value">{value}</span>
-      {hint && <span className="ad-stat-hint">{hint}</span>}
+    <div className={`cx-stat${tone ? ` is-${tone}` : ''}`}>
+      <span className="cx-stat-label">{label}</span>
+      <span className="cx-stat-value">{value}</span>
+      {hint && <span className="cx-stat-hint">{hint}</span>}
     </div>
   );
 }
@@ -215,14 +215,14 @@ export function Stat({ label, value, hint, tone }) {
 export function Delta({ current, previous, goodWhen = 'up' }) {
   if (previous === undefined || previous === null) return null;
   if (!previous) {
-    return current ? <span className="ad-delta is-flat">new</span> : <span className="ad-delta is-flat">—</span>;
+    return current ? <span className="cx-delta is-flat">new</span> : <span className="cx-delta is-flat">—</span>;
   }
   const pct = ((current - previous) / previous) * 100;
-  if (Math.abs(pct) < 0.5) return <span className="ad-delta is-flat">0%</span>;
+  if (Math.abs(pct) < 0.5) return <span className="cx-delta is-flat">0%</span>;
   const up = pct > 0;
   const good = goodWhen === 'neutral' ? null : up === (goodWhen === 'up');
   return (
-    <span className={`ad-delta ${good === null ? 'is-flat' : good ? 'is-good' : 'is-bad'}`} title={`Previous period: ${previous.toLocaleString()}`}>
+    <span className={`cx-delta ${good === null ? 'is-flat' : good ? 'is-good' : 'is-bad'}`} title={`Previous period: ${previous.toLocaleString()}`}>
       {up ? '↑' : '↓'} {Math.round(Math.abs(pct)).toLocaleString()}%
     </span>
   );
@@ -230,16 +230,16 @@ export function Delta({ current, previous, goodWhen = 'up' }) {
 
 /** A tiny trend line with a soft fill; CSS sets its size. */
 export function Sparkline({ values = [], tone = 'violet' }) {
-  if (values.length < 2) return <span className="ad-spark is-empty" aria-hidden="true" />;
+  if (values.length < 2) return <span className="cx-spark is-empty" aria-hidden="true" />;
   const w = 120;
   const h = 32;
   const max = Math.max(1, ...values);
   const pts = values.map((v, i) => [(i / (values.length - 1)) * w, h - 2 - (v / max) * (h - 4)]);
   const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
   return (
-    <svg className={`ad-spark is-${tone}`} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" aria-hidden="true">
-      <path className="ad-spark-fill" d={`${line} L${w},${h} L0,${h} Z`} />
-      <path className="ad-spark-line" d={line} vectorEffect="non-scaling-stroke" />
+    <svg className={`cx-spark is-${tone}`} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" aria-hidden="true">
+      <path className="cx-spark-fill" d={`${line} L${w},${h} L0,${h} Z`} />
+      <path className="cx-spark-line" d={line} vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
@@ -248,21 +248,21 @@ export function Sparkline({ values = [], tone = 'violet' }) {
 export function KpiCard({ label, icon, value, current, previous, goodWhen, spark, tone = 'violet', hint, onClick }) {
   const Tag = onClick ? 'button' : 'div';
   return (
-    <Tag type={onClick ? 'button' : undefined} className={`ad-kpi${onClick ? ' is-clickable' : ''}`} onClick={onClick}>
-      <span className="ad-kpi-head">
+    <Tag type={onClick ? 'button' : undefined} className={`cx-kpi${onClick ? ' is-clickable' : ''}`} onClick={onClick}>
+      <span className="cx-kpi-head">
         {icon && (
-          <span className={`ad-kpi-icon is-${tone}`}>
+          <span className={`cx-kpi-icon is-${tone}`}>
             <Icon name={icon} size={15} />
           </span>
         )}
-        <span className="ad-kpi-label">{label}</span>
+        <span className="cx-kpi-label">{label}</span>
       </span>
-      <span className="ad-kpi-row">
-        <span className="ad-kpi-value">{value}</span>
+      <span className="cx-kpi-row">
+        <span className="cx-kpi-value">{value}</span>
         <Delta current={current} previous={previous} goodWhen={goodWhen} />
       </span>
       <Sparkline values={spark} tone={tone} />
-      {hint && <span className="ad-kpi-hint">{hint}</span>}
+      {hint && <span className="cx-kpi-hint">{hint}</span>}
     </Tag>
   );
 }
@@ -282,18 +282,18 @@ export function Avatar({ name, email, size = 32 }) {
   let hash = 0;
   for (const ch of email || label) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
   return (
-    <span className={`ad-avatar is-${AVATAR_TONES[hash % AVATAR_TONES.length]}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }} aria-hidden="true">
+    <span className={`cx-avatar is-${AVATAR_TONES[hash % AVATAR_TONES.length]}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }} aria-hidden="true">
       {initials}
     </span>
   );
 }
 
-export const Kbd = ({ children }) => <kbd className="ad-kbd">{children}</kbd>;
+export const Kbd = ({ children }) => <kbd className="cx-kbd">{children}</kbd>;
 
 /** Mutually exclusive choices in one pill (period pickers, view switches). */
 export function Segmented({ value, onChange, options, label }) {
   return (
-    <div className="ad-seg" role="radiogroup" aria-label={label}>
+    <div className="cx-seg" role="radiogroup" aria-label={label}>
       {options.map(([v, l]) => (
         <button key={v} type="button" role="radio" aria-checked={value === v} className={value === v ? 'is-on' : undefined} onClick={() => onChange(v)}>
           {l}
@@ -306,28 +306,28 @@ export function Segmented({ value, onChange, options, label }) {
 /** Placeholder blocks while a page loads, shaped roughly like what's coming. */
 export function Skeleton({ rows = 2, kpis = 0 }) {
   return (
-    <div className="ad-skeleton" role="status" aria-label="Loading">
+    <div className="cx-skeleton" role="status" aria-label="Loading">
       {kpis > 0 && (
-        <div className="ad-kpis">
+        <div className="cx-kpis">
           {Array.from({ length: kpis }, (_, i) => (
-            <span key={i} className="ad-skel ad-skel-kpi" />
+            <span key={i} className="cx-skel cx-skel-kpi" />
           ))}
         </div>
       )}
       {Array.from({ length: rows }, (_, i) => (
-        <span key={i} className="ad-skel ad-skel-block" />
+        <span key={i} className="cx-skel cx-skel-block" />
       ))}
     </div>
   );
 }
 
 const RISK_LABEL = { low: 'Low', moderate: 'Moderate', high: 'High' };
-export const RiskBadge = ({ level }) => <span className={`ad-badge is-risk-${level}`}>{RISK_LABEL[level] ?? level}</span>;
+export const RiskBadge = ({ level }) => <span className={`cx-badge is-risk-${level}`}>{RISK_LABEL[level] ?? level}</span>;
 
 export function Badge({ tone = 'neutral', children, title, dot }) {
   return (
-    <span className={`ad-badge is-${tone}`} title={title}>
-      {dot && <span className="ad-badge-dot" aria-hidden="true" />}
+    <span className={`cx-badge is-${tone}`} title={title}>
+      {dot && <span className="cx-badge-dot" aria-hidden="true" />}
       {children}
     </span>
   );
@@ -336,8 +336,8 @@ export function Badge({ tone = 'neutral', children, title, dot }) {
 const STATUS_TEXT = { ok: 'OK', warn: 'Attention', fail: 'Failing' };
 export function StatusPill({ status }) {
   return (
-    <span className={`ad-status is-${status}`}>
-      <span className="ad-status-dot" aria-hidden="true" />
+    <span className={`cx-status is-${status}`}>
+      <span className="cx-status-dot" aria-hidden="true" />
       {STATUS_TEXT[status] ?? status}
     </span>
   );
@@ -345,8 +345,8 @@ export function StatusPill({ status }) {
 
 export function Loading({ label = 'Loading…' }) {
   return (
-    <div className="ad-loading" role="status">
-      <span className="ad-spinner" aria-hidden="true" />
+    <div className="cx-loading" role="status">
+      <span className="cx-spinner" aria-hidden="true" />
       {label}
     </div>
   );
@@ -355,10 +355,10 @@ export function Loading({ label = 'Loading…' }) {
 export function ErrorNote({ error, onRetry }) {
   if (!error) return null;
   return (
-    <div className="ad-error" role="alert">
+    <div className="cx-error" role="alert">
       <span>{error}</span>
       {onRetry && (
-        <button type="button" className="ad-btn is-small" onClick={onRetry}>
+        <button type="button" className="cx-btn is-small" onClick={onRetry}>
           Try again
         </button>
       )}
@@ -368,8 +368,8 @@ export function ErrorNote({ error, onRetry }) {
 
 export function Empty({ children, icon = 'search' }) {
   return (
-    <div className="ad-empty">
-      <span className="ad-empty-icon">
+    <div className="cx-empty">
+      <span className="cx-empty-icon">
         <Icon name={icon} size={20} />
       </span>
       <span>{children}</span>
@@ -410,13 +410,13 @@ export function DataTable({ columns, rows, onRowClick, rowKey = (r) => r.id, emp
   };
 
   return (
-    <div className="ad-table-wrap">
-      <table className="ad-table">
+    <div className="cx-table-wrap">
+      <table className="cx-table">
         <thead>
           <tr>
             {selectable && (
-              <th className="ad-check-col">
-                <input ref={headRef} type="checkbox" className="ad-checkbox" aria-label="Select all on this page" checked={keys.length > 0 && nOn === keys.length} onChange={toggleAll} />
+              <th className="cx-check-col">
+                <input ref={headRef} type="checkbox" className="cx-checkbox" aria-label="Select all on this page" checked={keys.length > 0 && nOn === keys.length} onChange={toggleAll} />
               </th>
             )}
             {columns.map((c) => {
@@ -425,7 +425,7 @@ export function DataTable({ columns, rows, onRowClick, rowKey = (r) => r.id, emp
               return (
                 <th key={c.key} style={{ width: c.width, textAlign: c.align }} aria-sort={active ? (desc ? 'descending' : 'ascending') : undefined}>
                   {c.sortKey && onSort ? (
-                    <button type="button" className={`ad-th-sort${active ? ' is-on' : ''}`} onClick={() => onSort(active && desc ? c.sortKey : `-${c.sortKey}`)}>
+                    <button type="button" className={`cx-th-sort${active ? ' is-on' : ''}`} onClick={() => onSort(active && desc ? c.sortKey : `-${c.sortKey}`)}>
                       {c.label}
                       <span aria-hidden="true">{active ? (desc ? '↓' : '↑') : '↕'}</span>
                     </button>
@@ -460,8 +460,8 @@ export function DataTable({ columns, rows, onRowClick, rowKey = (r) => r.id, emp
                 tabIndex={onRowClick ? 0 : undefined}
               >
                 {selectable && (
-                  <td className="ad-check-col" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" className="ad-checkbox" aria-label="Select row" disabled={!isSelectable(r)} checked={on} onChange={() => toggle(k)} />
+                  <td className="cx-check-col" onClick={(e) => e.stopPropagation()}>
+                    <input type="checkbox" className="cx-checkbox" aria-label="Select row" disabled={!isSelectable(r)} checked={on} onChange={() => toggle(k)} />
                   </td>
                 )}
                 {columns.map((c) => (
@@ -481,15 +481,15 @@ export function DataTable({ columns, rows, onRowClick, rowKey = (r) => r.id, emp
 export function Pagination({ page, pages, count, onPage }) {
   if (!count) return null;
   return (
-    <nav className="ad-pager" aria-label="Pages">
+    <nav className="cx-pager" aria-label="Pages">
       <span>
         {fmtNumber(count)} {count === 1 ? 'item' : 'items'} · page {page} of {pages}
       </span>
       <div>
-        <button type="button" className="ad-btn is-small" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+        <button type="button" className="cx-btn is-small" disabled={page <= 1} onClick={() => onPage(page - 1)}>
           ← Previous
         </button>
-        <button type="button" className="ad-btn is-small" disabled={page >= pages} onClick={() => onPage(page + 1)}>
+        <button type="button" className="cx-btn is-small" disabled={page >= pages} onClick={() => onPage(page + 1)}>
           Next →
         </button>
       </div>
@@ -498,17 +498,17 @@ export function Pagination({ page, pages, count, onPage }) {
 }
 
 export function Toolbar({ children }) {
-  return <div className="ad-toolbar">{children}</div>;
+  return <div className="cx-toolbar">{children}</div>;
 }
 
 export function SearchBox({ value, onChange, placeholder }) {
   return (
-    <label className="ad-search">
+    <label className="cx-search">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
         <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
-      <span className="ad-sr">Search</span>
+      <span className="cx-sr">Search</span>
       <input type="search" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
     </label>
   );
@@ -516,7 +516,7 @@ export function SearchBox({ value, onChange, placeholder }) {
 
 export function Select({ label, value, onChange, options }) {
   return (
-    <label className="ad-select">
+    <label className="cx-select">
       <span>{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map(([v, l]) => (
@@ -547,20 +547,20 @@ export function Drawer({ open, title, subtitle, onClose, children, footer }) {
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="ad-drawer-layer">
-      <button type="button" className="ad-drawer-scrim" aria-label="Close" tabIndex={-1} onClick={onClose} />
-      <aside className="ad-drawer" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref}>
-        <header className="ad-drawer-head">
+    <div className="cx-drawer-layer">
+      <button type="button" className="cx-drawer-scrim" aria-label="Close" tabIndex={-1} onClick={onClose} />
+      <aside className="cx-drawer" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref}>
+        <header className="cx-drawer-head">
           <div>
             <h2>{title}</h2>
             {subtitle && <p>{subtitle}</p>}
           </div>
-          <button type="button" className="ad-icon-btn" aria-label="Close" onClick={onClose}>
+          <button type="button" className="cx-icon-btn" aria-label="Close" onClick={onClose}>
             ✕
           </button>
         </header>
-        <div className="ad-drawer-body">{children}</div>
-        {footer && <footer className="ad-drawer-foot">{footer}</footer>}
+        <div className="cx-drawer-body">{children}</div>
+        {footer && <footer className="cx-drawer-foot">{footer}</footer>}
       </aside>
     </div>
   );
@@ -579,24 +579,24 @@ export function ConfirmDialog({ open, title, body, confirmLabel = 'Confirm', ton
   if (!open) return null;
   const ready = !confirmText || typed === confirmText;
   return (
-    <div className="ad-modal-layer">
-      <button type="button" className="ad-drawer-scrim" aria-label="Cancel" tabIndex={-1} onClick={onCancel} />
-      <div className="ad-modal" role="alertdialog" aria-modal="true" aria-labelledby="ad-confirm-title">
-        <h2 id="ad-confirm-title">{title}</h2>
-        <div className="ad-modal-body">{body}</div>
+    <div className="cx-modal-layer">
+      <button type="button" className="cx-drawer-scrim" aria-label="Cancel" tabIndex={-1} onClick={onCancel} />
+      <div className="cx-modal" role="alertdialog" aria-modal="true" aria-labelledby="cx-confirm-title">
+        <h2 id="cx-confirm-title">{title}</h2>
+        <div className="cx-modal-body">{body}</div>
         {confirmText && (
-          <label className="ad-field">
+          <label className="cx-field">
             <span>
               Type <strong>{confirmText}</strong> to confirm
             </span>
             <input value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus />
           </label>
         )}
-        <div className="ad-modal-actions">
-          <button type="button" className="ad-btn" onClick={onCancel}>
+        <div className="cx-modal-actions">
+          <button type="button" className="cx-btn" onClick={onCancel}>
             Cancel
           </button>
-          <button type="button" className={`ad-btn is-${tone}`} disabled={!ready || busy} onClick={onConfirm}>
+          <button type="button" className={`cx-btn is-${tone}`} disabled={!ready || busy} onClick={onConfirm}>
             {busy ? 'Working…' : confirmLabel}
           </button>
         </div>
@@ -607,14 +607,14 @@ export function ConfirmDialog({ open, title, body, confirmLabel = 'Confirm', ton
 
 export function Toggle({ checked, onChange, label, hint, disabled }) {
   return (
-    <label className={`ad-toggle${disabled ? ' is-disabled' : ''}`}>
-      <span className="ad-toggle-text">
-        <span className="ad-toggle-label">{label}</span>
-        {hint && <span className="ad-toggle-hint">{hint}</span>}
+    <label className={`cx-toggle${disabled ? ' is-disabled' : ''}`}>
+      <span className="cx-toggle-text">
+        <span className="cx-toggle-label">{label}</span>
+        {hint && <span className="cx-toggle-hint">{hint}</span>}
       </span>
       <input type="checkbox" role="switch" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
-      <span className="ad-toggle-track" aria-hidden="true">
-        <span className="ad-toggle-thumb" />
+      <span className="cx-toggle-track" aria-hidden="true">
+        <span className="cx-toggle-thumb" />
       </span>
     </label>
   );
@@ -623,7 +623,7 @@ export function Toggle({ checked, onChange, label, hint, disabled }) {
 /** Key/value list for detail views. */
 export function Facts({ items }) {
   return (
-    <dl className="ad-facts">
+    <dl className="cx-facts">
       {items
         .filter(Boolean)
         .map(([k, v]) => (

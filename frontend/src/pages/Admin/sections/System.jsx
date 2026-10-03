@@ -16,54 +16,54 @@ export default function System() {
         subtitle={`Server time ${fmtDateTime(data.server_time)} (${data.timezone}) · up ${fmtDuration(data.uptime_seconds)}`}
         actions={
           <>
-            <a className="ad-btn" href={data.django_admin_url} target="_blank" rel="noreferrer">
+            <a className="cx-btn" href={data.django_admin_url} target="_blank" rel="noreferrer">
               Open Django admin ↗
             </a>
-            <button type="button" className="ad-btn is-primary" onClick={reload} disabled={loading}>
+            <button type="button" className="cx-btn is-primary" onClick={reload} disabled={loading}>
               <Icon name="refresh" size={15} />
               {loading ? 'Checking…' : 'Run checks again'}
             </button>
           </>
         }
       />
-      <div className={`ad-verdict is-${data.status}`}>
-        <span className={`ad-verdict-icon is-${data.status === 'fail' ? 'danger' : data.status}`}>
+      <div className={`cx-verdict is-${data.status}`}>
+        <span className={`cx-verdict-icon is-${data.status === 'fail' ? 'danger' : data.status}`}>
           <Icon name={data.status === 'ok' ? 'check' : 'system'} size={20} />
         </span>
         <div>
           <strong>{VERDICT[data.status]}</strong>
-          <span className="ad-muted">
+          <span className="cx-muted">
             {data.checks.filter((c) => c.status === 'ok').length} of {data.checks.length} checks passing · up {fmtDuration(data.uptime_seconds)}
           </span>
         </div>
       </div>
 
       <Panel title="Checks">
-        <ul className="ad-checks">
+        <ul className="cx-checks">
           {data.checks.map((ch) => (
             <li key={ch.name}>
               <StatusPill status={ch.status} />
-              <span className="ad-check-name">{ch.name}</span>
-              <span className="ad-muted">{ch.detail}</span>
+              <span className="cx-check-name">{ch.name}</span>
+              <span className="cx-muted">{ch.detail}</span>
             </li>
           ))}
         </ul>
       </Panel>
 
-      <div className="ad-stats">
+      <div className="cx-stats">
         <Stat label="Users" value={fmtNumber(c.users)} />
         <Stat label="Assessments" value={fmtNumber(c.assessments)} />
         <Stat label="Activity events" value={fmtNumber(c.activity_events)} />
         <Stat label="Sessions" value={fmtNumber(c.sessions)} hint={`${fmtNumber(c.profiles)} profiles · ${fmtNumber(c.link_events)} link events`} />
       </div>
 
-      <div className="ad-grid-2">
+      <div className="cx-grid-2">
         <Panel title="Versions">
           <Facts
             items={[
               ...Object.entries(data.versions).map(([k, v]) => [k, v]),
               ['Branch', data.build.branch || '—'],
-              ['Commit', data.build.commit ? <span className="ad-mono">{data.build.commit}</span> : '—'],
+              ['Commit', data.build.commit ? <span className="cx-mono">{data.build.commit}</span> : '—'],
             ]}
           />
         </Panel>

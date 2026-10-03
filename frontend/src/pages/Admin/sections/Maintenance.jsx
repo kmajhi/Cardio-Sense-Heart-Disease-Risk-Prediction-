@@ -45,18 +45,18 @@ export default function Maintenance() {
         <Loading />
       ) : (
         <Panel title="Tasks">
-          <ul className="ad-tasks">
+          <ul className="cx-tasks">
             {data?.map((t) => (
               <li key={t.task}>
                 <div>
                   <strong>{t.label}</strong>
-                  <span className="ad-muted">
+                  <span className="cx-muted">
                     {t.pending === null ? 'Runs instantly' : t.pending === 0 ? 'Nothing to clean up' : `${fmtNumber(t.pending)} to clean up`}
                   </span>
                 </div>
                 <button
                   type="button"
-                  className={`ad-btn${DESTRUCTIVE.has(t.task) ? ' is-danger-soft' : ''}`}
+                  className={`cx-btn${DESTRUCTIVE.has(t.task) ? ' is-danger-soft' : ''}`}
                   disabled={Boolean(running) || t.pending === 0}
                   onClick={() => (DESTRUCTIVE.has(t.task) ? setConfirm(t) : run(t.task))}
                 >
@@ -69,11 +69,11 @@ export default function Maintenance() {
       )}
 
       <Panel title="Backup" subtitle="Every account, profile and assessment as one JSON file. Password hashes are never included.">
-        <div className="ad-actions-row">
-          <button type="button" className="ad-btn is-primary" onClick={backup} disabled={backingUp}>
+        <div className="cx-actions-row">
+          <button type="button" className="cx-btn is-primary" onClick={backup} disabled={backingUp}>
             {backingUp ? 'Preparing…' : 'Download full backup'}
           </button>
-          <span className="ad-muted">It contains health data: store it encrypted and delete it when no longer needed.</span>
+          <span className="cx-muted">It contains health data: store it encrypted and delete it when no longer needed.</span>
         </div>
       </Panel>
 

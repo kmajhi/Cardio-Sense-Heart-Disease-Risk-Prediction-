@@ -68,23 +68,23 @@ function UserMenu({ user, theme, setTheme, onShortcuts, onLogout, collapsed }) {
     };
   }, [open]);
   return (
-    <div className="ad-pop-wrap ad-me" ref={ref}>
-      <button type="button" className="ad-me-btn" aria-expanded={open} aria-label="Account menu" onClick={() => setOpen((v) => !v)} title={collapsed ? user.name : undefined}>
+    <div className="cx-pop-wrap cx-me" ref={ref}>
+      <button type="button" className="cx-me-btn" aria-expanded={open} aria-label="Account menu" onClick={() => setOpen((v) => !v)} title={collapsed ? user.name : undefined}>
         <Avatar name={user.name} email={user.email} size={30} />
-        <span className="ad-me-text">
+        <span className="cx-me-text">
           <strong>{user.name}</strong>
           <span>{user.is_superuser ? 'Superuser' : 'Staff'}</span>
         </span>
-        <span className="ad-me-chev" aria-hidden="true">⋯</span>
+        <span className="cx-me-chev" aria-hidden="true">⋯</span>
       </button>
       {open && (
-        <div className="ad-pop ad-menu" role="menu">
-          <div className="ad-menu-who">
+        <div className="cx-pop cx-menu" role="menu">
+          <div className="cx-menu-who">
             <strong>{user.name}</strong>
             <span>{user.email}</span>
           </div>
-          <div className="ad-menu-label">Theme</div>
-          <div className="ad-theme-pick" role="radiogroup" aria-label="Theme">
+          <div className="cx-menu-label">Theme</div>
+          <div className="cx-theme-pick" role="radiogroup" aria-label="Theme">
             {THEMES.map(([v, l, icon]) => (
               <button key={v} type="button" role="radio" aria-checked={theme === v} className={theme === v ? 'is-on' : undefined} onClick={() => setTheme(v)}>
                 <Icon name={icon} size={15} />
@@ -92,13 +92,13 @@ function UserMenu({ user, theme, setTheme, onShortcuts, onLogout, collapsed }) {
               </button>
             ))}
           </div>
-          <button type="button" role="menuitem" className="ad-menu-item" onClick={() => { setOpen(false); onShortcuts(); }}>
+          <button type="button" role="menuitem" className="cx-menu-item" onClick={() => { setOpen(false); onShortcuts(); }}>
             <Icon name="keyboard" size={16} /> Keyboard shortcuts <Kbd>?</Kbd>
           </button>
-          <Link role="menuitem" className="ad-menu-item" to="/dashboard">
+          <Link role="menuitem" className="cx-menu-item" to="/dashboard">
             <Icon name="back" size={16} /> Back to the app
           </Link>
-          <button type="button" role="menuitem" className="ad-menu-item is-danger" onClick={onLogout}>
+          <button type="button" role="menuitem" className="cx-menu-item is-danger" onClick={onLogout}>
             <Icon name="logout" size={16} /> Log out
           </button>
         </div>
@@ -221,48 +221,48 @@ function Shell({ user, logout }) {
 
   const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
   return (
-    <div className={`ad-shell${collapsed ? ' is-collapsed' : ''}`} data-theme={theme}>
-      <a href="#ad-main" className="ad-skip">Skip to content</a>
-      {menuOpen && <button type="button" className="ad-side-scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
-      <aside className={`ad-side${menuOpen ? ' is-open' : ''}`}>
-        <div className="ad-brand">
-          <span className="ad-brand-logo">
-            <HeartMark className="ad-brand-mark" />
+    <div className={`cx-shell${collapsed ? ' is-collapsed' : ''}`} data-theme={theme}>
+      <a href="#cx-main" className="cx-skip">Skip to content</a>
+      {menuOpen && <button type="button" className="cx-side-scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
+      <aside className={`cx-side${menuOpen ? ' is-open' : ''}`}>
+        <div className="cx-brand">
+          <span className="cx-brand-logo">
+            <HeartMark className="cx-brand-mark" />
           </span>
-          <div className="ad-brand-text">
+          <div className="cx-brand-text">
             <strong>Cardio Sense</strong>
             <span>
-              Admin <span className={`ad-env is-${ENV.toLowerCase()}`}>{ENV}</span>
+              Admin <span className={`cx-env is-${ENV.toLowerCase()}`}>{ENV}</span>
             </span>
           </div>
         </div>
 
-        <button type="button" className="ad-side-search" onClick={() => setPalette(true)} title={collapsed ? `Search (${mod} K)` : undefined}>
+        <button type="button" className="cx-side-search" onClick={() => setPalette(true)} title={collapsed ? `Search (${mod} K)` : undefined}>
           <Icon name="search" size={16} />
           <span>Search…</span>
-          <span className="ad-side-search-keys">
+          <span className="cx-side-search-keys">
             <Kbd>{mod}</Kbd>
             <Kbd>K</Kbd>
           </span>
         </button>
 
-        <nav aria-label="Admin sections" className="ad-side-nav">
+        <nav aria-label="Admin sections" className="cx-side-nav">
           {GROUPS.map((g) => (
-            <div key={g} className="ad-nav-group">
-              <p className="ad-nav-title">{g}</p>
+            <div key={g} className="cx-nav-group">
+              <p className="cx-nav-title">{g}</p>
               <ul>
                 {SECTIONS.filter((s) => s.group === g).map((s) => (
                   <li key={s.id}>
                     <button
                       type="button"
-                      className={`ad-nav-item${s.id === current.id ? ' is-active' : ''}`}
+                      className={`cx-nav-item${s.id === current.id ? ' is-active' : ''}`}
                       aria-current={s.id === current.id ? 'page' : undefined}
                       onClick={() => go(s.id)}
                       title={collapsed ? s.label : undefined}
                     >
                       <Icon name={s.icon} size={17} />
-                      <span className="ad-nav-label">{s.label}</span>
-                      {s.id === 'security' && securityAlerts > 0 && <span className="ad-nav-badge is-danger">{securityAlerts}</span>}
+                      <span className="cx-nav-label">{s.label}</span>
+                      {s.id === 'security' && securityAlerts > 0 && <span className="cx-nav-badge is-danger">{securityAlerts}</span>}
                     </button>
                   </li>
                 ))}
@@ -271,42 +271,42 @@ function Shell({ user, logout }) {
           ))}
         </nav>
 
-        <div className="ad-side-foot">
-          <button type="button" className="ad-nav-item ad-collapse-btn" onClick={() => setCollapsed((v) => !v)} title={collapsed ? 'Expand sidebar ([)' : 'Collapse sidebar ([)'}>
+        <div className="cx-side-foot">
+          <button type="button" className="cx-nav-item cx-collapse-btn" onClick={() => setCollapsed((v) => !v)} title={collapsed ? 'Expand sidebar ([)' : 'Collapse sidebar ([)'}>
             <Icon name={collapsed ? 'expand' : 'collapse'} size={17} />
-            <span className="ad-nav-label">Collapse</span>
+            <span className="cx-nav-label">Collapse</span>
           </button>
           <UserMenu user={user} theme={themeChoice} setTheme={setThemeChoice} collapsed={collapsed} onShortcuts={() => setShortcuts(true)} onLogout={() => logout().then(() => navigate('/'))} />
         </div>
       </aside>
 
-      <div className="ad-main">
-        <header className="ad-top">
-          <button type="button" className="ad-icon-btn ad-menu-btn" aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
+      <div className="cx-main">
+        <header className="cx-top">
+          <button type="button" className="cx-icon-btn cx-menu-btn" aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
             <Icon name="menu" size={18} />
           </button>
-          <nav className="ad-crumb" aria-label="Breadcrumb">
+          <nav className="cx-crumb" aria-label="Breadcrumb">
             <span>{current.group}</span>
-            <span aria-hidden="true" className="ad-crumb-sep">/</span>
+            <span aria-hidden="true" className="cx-crumb-sep">/</span>
             <strong>{current.label}</strong>
           </nav>
-          <div className="ad-top-actions">
-            <button type="button" className="ad-top-search" onClick={() => setPalette(true)}>
+          <div className="cx-top-actions">
+            <button type="button" className="cx-top-search" onClick={() => setPalette(true)}>
               <Icon name="search" size={15} />
               <span>Search or jump to…</span>
               <Kbd>{mod} K</Kbd>
             </button>
-            <button type="button" className="ad-icon-btn" aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`} title="Theme (Shift D)" onClick={toggleTheme}>
+            <button type="button" className="cx-icon-btn" aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`} title="Theme (Shift D)" onClick={toggleTheme}>
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
             </button>
             <Inbox notes={notes} onGo={go} />
-            <button type="button" className="ad-icon-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={() => setShortcuts(true)}>
+            <button type="button" className="cx-icon-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={() => setShortcuts(true)}>
               <Icon name="keyboard" size={18} />
             </button>
           </div>
         </header>
-        {USE_MOCK && <div className="ad-callout is-warn ad-mock-note">The console needs the Cardio Sense server: it doesn’t work in demo mode.</div>}
-        <main className="ad-content" id="ad-main" key={current.id} tabIndex={-1}>
+        {USE_MOCK && <div className="cx-callout is-warn cx-mock-note">The console needs the Cardio Sense server: it doesn’t work in demo mode.</div>}
+        <main className="cx-content" id="cx-main" key={current.id} tabIndex={-1}>
           {body}
         </main>
       </div>
@@ -329,10 +329,10 @@ export default function Console() {
   if (!user) return <Navigate to="/" replace state={{ from: { pathname } }} />;
   if (!user.is_staff) {
     return (
-      <div className="ad-denied">
+      <div className="cx-denied">
         <h1>Staff only</h1>
         <p>The admin console is for Cardio Sense staff. Ask an administrator for access.</p>
-        <Link to="/dashboard" className="ad-btn is-primary">
+        <Link to="/dashboard" className="cx-btn is-primary">
           Back to the app
         </Link>
       </div>
