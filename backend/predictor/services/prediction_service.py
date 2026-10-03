@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import json
 import math
+import threading
 from functools import lru_cache
 
 import joblib
@@ -157,8 +158,11 @@ class PredictionInputError(ValueError):
     """The request can't be turned into a valid model input."""
 
 
+_load_lock = threading.Lock()
+
+
 @lru_cache(maxsize=1)
-def load_model():
+def _load_model():
     if not PIPELINE_PATH.exists():
         raise FileNotFoundError(
             f"No trained model at {PIPELINE_PATH}. Train one from ml/ "
@@ -168,6 +172,18 @@ def load_model():
     with open(METADATA_PATH, encoding="utf-8") as f:
         metadata = json.load(f)
     return pipeline, metadata
+
+
+def load_model():
+    """(pipeline, metadata), loaded once per process. The lock makes concurrent
+    first requests (gunicorn threads) wait for one load instead of each loading
+    a copy: the deployment has 512 MB, and a second copy would overflow it."""
+    with _load_lock:
+        return _load_model()
+
+
+load_model.cache_info = _load_model.cache_info
+load_model.cache_clear = _load_model.cache_clear
 
 
 def _number(payload, key):

@@ -60,8 +60,11 @@ def raw_feature(transformed_name: str, raw_columns: list[str]) -> str:
     return max(matches, key=len) if matches else name
 
 
+_explainer_lock = threading.Lock()
+
+
 @lru_cache(maxsize=4)
-def _explainer(pipeline):
+def _build_explainer(pipeline):
     clf = pipeline.named_steps["model"]
     if isinstance(clf, (RandomForestClassifier, DecisionTreeClassifier)):
         # Tree SHAP on a sklearn classifier explains predict_proba directly.
@@ -70,6 +73,16 @@ def _explainer(pipeline):
     # permutation SHAP against the k-means background.
     background = joblib.load(SHAP_BACKGROUND_PATH)
     return shap.Explainer(lambda z: clf.predict_proba(z)[:, 1], background), "generic"
+
+
+def _explainer(pipeline):
+    """Built once per model; concurrent first requests wait for that one build."""
+    with _explainer_lock:
+        return _build_explainer(pipeline)
+
+
+_explainer.cache_info = _build_explainer.cache_info
+_explainer.cache_clear = _build_explainer.cache_clear
 
 
 # Permutation SHAP draws from numpy's global RNG (shap only seeds it once, at
