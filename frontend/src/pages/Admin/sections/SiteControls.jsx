@@ -38,7 +38,7 @@ export default function SiteControls({ onSaved }) {
       <PageHeader title="Site controls" subtitle={data.updated_by ? `Last changed by ${data.updated_by}, ${fmtDateTime(data.updated_at)}` : 'Switches that apply to every visitor'} />
 
       <Panel title="Availability" subtitle="Changes apply immediately (within about 10 seconds).">
-        <div className="ad-toggles">
+        <div className="cx-toggles">
           <Toggle
             label="Maintenance mode"
             hint="Only staff can use the app. Everyone else sees the maintenance message."
@@ -64,38 +64,38 @@ export default function SiteControls({ onSaved }) {
       </Panel>
 
       <Panel title="Messages">
-        <label className="ad-field">
+        <label className="cx-field">
           <span>Announcement banner (empty = no banner)</span>
           <input value={draft.announcement} maxLength={300} onChange={(e) => set('announcement')(e.target.value)} placeholder="e.g. A new model version is live from 1 October." />
         </label>
-        <div className="ad-segment" role="radiogroup" aria-label="Banner style">
+        <div className="cx-segment" role="radiogroup" aria-label="Banner style">
           {[
             ['info', 'Information'],
             ['warning', 'Warning'],
             ['critical', 'Critical'],
           ].map(([v, l]) => (
-            <label key={v} className={`ad-segment-item is-${v}${draft.announcement_level === v ? ' is-on' : ''}`}>
+            <label key={v} className={`cx-segment-item is-${v}${draft.announcement_level === v ? ' is-on' : ''}`}>
               <input type="radio" name="level" value={v} checked={draft.announcement_level === v} onChange={() => set('announcement_level')(v)} />
               {l}
             </label>
           ))}
         </div>
-        {draft.announcement && <div className={`ad-banner-preview is-${draft.announcement_level}`}>{draft.announcement}</div>}
-        <label className="ad-field">
+        {draft.announcement && <div className={`cx-banner-preview is-${draft.announcement_level}`}>{draft.announcement}</div>}
+        <label className="cx-field">
           <span>Maintenance message</span>
           <input value={draft.maintenance_message} maxLength={300} onChange={(e) => set('maintenance_message')(e.target.value)} />
         </label>
-        <div className="ad-actions-row">
+        <div className="cx-actions-row">
           <button
             type="button"
-            className="ad-btn is-primary"
+            className="cx-btn is-primary"
             disabled={saving || !textChanged}
             onClick={() => save({ announcement: draft.announcement, announcement_level: draft.announcement_level, maintenance_message: draft.maintenance_message })}
           >
             {saving ? 'Saving…' : 'Save messages'}
           </button>
           {textChanged && (
-            <button type="button" className="ad-btn" onClick={() => setDraft(data)}>
+            <button type="button" className="cx-btn" onClick={() => setDraft(data)}>
               Discard changes
             </button>
           )}

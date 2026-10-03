@@ -34,7 +34,7 @@ export default function Security({ openUser }) {
       title="Security"
       subtitle="Sign-in attempts, suspicious addresses and who is signed in right now"
       actions={
-        <button type="button" className="ad-btn" onClick={reload} disabled={loading}>
+        <button type="button" className="cx-btn" onClick={reload} disabled={loading}>
           <Icon name="refresh" size={15} />
           {loading ? 'Refreshing…' : 'Refresh'}
         </button>
@@ -49,15 +49,15 @@ export default function Security({ openUser }) {
   return (
     <>
       {header}
-      <div className={`ad-verdict is-${posture === 'danger' ? 'fail' : posture}`}>
-        <span className={`ad-verdict-icon is-${posture}`}>
+      <div className={`cx-verdict is-${posture === 'danger' ? 'fail' : posture}`}>
+        <span className={`cx-verdict-icon is-${posture}`}>
           <Icon name="security" size={20} />
         </span>
         <div>
           <strong>
             {posture === 'danger' ? 'Unusual sign-in activity' : posture === 'warn' ? 'Some failed sign-ins today' : 'No sign-in problems'}
           </strong>
-          <span className="ad-muted">
+          <span className="cx-muted">
             {posture === 'danger'
               ? 'One or more addresses keep failing to sign in. Review them below and consider deactivating targeted accounts.'
               : 'Failed logins are counted per address and account; 5 or more from one address in a week is flagged.'}
@@ -65,7 +65,7 @@ export default function Security({ openUser }) {
         </div>
       </div>
 
-      <div className="ad-kpis">
+      <div className="cx-kpis">
         <KpiCard label="Failed logins · 24 h" icon="security" tone={s.failed_24h >= 10 ? 'rose' : 'slate'} value={fmtNumber(s.failed_24h)} spark={data.trend.map((d) => d.failed)} hint={`${fmtNumber(s.failed_7d)} in the last 7 days`} />
         <KpiCard label="Suspicious addresses" icon="globe" tone={s.suspicious_ips ? 'rose' : 'teal'} value={fmtNumber(s.suspicious_ips)} hint={`${IP_ALERT}+ failures in 7 days`} />
         <KpiCard label="Open sessions" icon="users" tone="blue" value={fmtNumber(s.sessions)} spark={data.trend.map((d) => d.logins)} hint={`${s.signed_in_users} people signed in`} />
@@ -84,14 +84,14 @@ export default function Security({ openUser }) {
         />
       </Panel>
 
-      <div className="ad-grid-2">
+      <div className="cx-grid-2">
         <Panel title="Failed logins by address" subtitle="Last 7 days">
           <DataTable
             rows={data.by_ip}
             rowKey={(r) => r.ip}
             empty="No failed logins this week."
             columns={[
-              { key: 'ip', label: 'Address', render: (r) => <span className="ad-mono">{r.ip}</span> },
+              { key: 'ip', label: 'Address', render: (r) => <span className="cx-mono">{r.ip}</span> },
               { key: 'count', label: 'Failures', align: 'right', render: (r) => (r.count >= IP_ALERT ? <Badge tone="danger">{r.count}</Badge> : r.count) },
               { key: 'accounts', label: 'Accounts tried', align: 'right' },
               { key: 'last', label: 'Last attempt', render: (r) => <span title={fmtDateTime(r.last)}>{fmtAgo(r.last)}</span> },
@@ -112,7 +112,7 @@ export default function Security({ openUser }) {
         </Panel>
       </div>
 
-      <div className="ad-grid-2">
+      <div className="cx-grid-2">
         <Panel title="Signed in now" subtitle="Accounts with an open session">
           <DataTable
             rows={data.sessions}
@@ -124,19 +124,19 @@ export default function Security({ openUser }) {
                 key: 'user',
                 label: 'User',
                 render: (r) => (
-                  <div className="ad-user-cell">
+                  <div className="cx-user-cell">
                     <Avatar name={r.name} email={r.email} size={28} />
-                    <div className="ad-cell-main">
+                    <div className="cx-cell-main">
                       <strong>
                         {r.name} {r.is_staff && <Badge tone="violet">Staff</Badge>}
                       </strong>
-                      <span className="ad-muted">{r.email}</span>
+                      <span className="cx-muted">{r.email}</span>
                     </div>
                   </div>
                 ),
               },
               { key: 'sessions', label: 'Sessions', align: 'right' },
-              { key: 'ip', label: 'Last address', render: (r) => <span className="ad-mono">{r.ip || '—'}</span> },
+              { key: 'ip', label: 'Last address', render: (r) => <span className="cx-mono">{r.ip || '—'}</span> },
               { key: 'last', label: 'Signed in', render: (r) => fmtAgo(r.last_login) },
               {
                 key: 'end',
@@ -145,7 +145,7 @@ export default function Security({ openUser }) {
                 render: (r) => (
                   <button
                     type="button"
-                    className="ad-btn is-small"
+                    className="cx-btn is-small"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSignOut(r);

@@ -42,13 +42,13 @@ function UserDetail({ id, onClose, onChanged, openAssessment }) {
       footer={
         u && (
           <>
-            <button type="button" className="ad-btn" disabled={busy || !u.is_active || !u.email} onClick={() => act(() => admin.sendReset(u.id), 'Reset link sent.')}>
+            <button type="button" className="cx-btn" disabled={busy || !u.is_active || !u.email} onClick={() => act(() => admin.sendReset(u.id), 'Reset link sent.')}>
               Send password reset
             </button>
-            <button type="button" className="ad-btn" disabled={busy || !u.sessions} onClick={() => act(() => admin.signOutUser(u.id), 'Signed out.')}>
+            <button type="button" className="cx-btn" disabled={busy || !u.sessions} onClick={() => act(() => admin.signOutUser(u.id), 'Signed out.')}>
               Sign out everywhere
             </button>
-            <button type="button" className="ad-btn is-danger" disabled={busy || isMe} onClick={() => setConfirm('delete')}>
+            <button type="button" className="cx-btn is-danger" disabled={busy || isMe} onClick={() => setConfirm('delete')}>
               Delete account
             </button>
           </>
@@ -59,20 +59,20 @@ function UserDetail({ id, onClose, onChanged, openAssessment }) {
       <ErrorNote error={error} onRetry={reload} />
       {u && (
         <>
-          <div className="ad-profile-card">
+          <div className="cx-profile-card">
             <Avatar name={u.name} email={u.email} size={52} />
             <div>
               <strong>{u.name}</strong>
-              <span className="ad-muted">{u.email || 'no email'}</span>
-              <span className="ad-muted">Member since {fmtDateTime(u.date_joined)}</span>
+              <span className="cx-muted">{u.email || 'no email'}</span>
+              <span className="cx-muted">Member since {fmtDateTime(u.date_joined)}</span>
             </div>
           </div>
-          <div className="ad-mini-stats">
+          <div className="cx-mini-stats">
             <div><span>Assessments</span><strong>{u.assessments}</strong></div>
             <div><span>Sessions</span><strong>{u.sessions}</strong></div>
             <div><span>Last seen</span><strong>{fmtAgo(u.last_login)}</strong></div>
           </div>
-          <div className="ad-chips">
+          <div className="cx-chips">
             <Badge tone={u.is_active ? 'ok' : 'danger'}>{u.is_active ? 'Active' : 'Deactivated'}</Badge>
             {u.is_superuser && <Badge tone="violet">Superuser</Badge>}
             {u.is_staff && !u.is_superuser && <Badge tone="violet">Staff</Badge>}
@@ -81,7 +81,7 @@ function UserDetail({ id, onClose, onChanged, openAssessment }) {
             {isMe && <Badge>You</Badge>}
           </div>
 
-          <h3 className="ad-h3">Account</h3>
+          <h3 className="cx-h3">Account</h3>
           <Facts
             items={[
               ['Joined', fmtDateTime(u.date_joined)],
@@ -93,48 +93,48 @@ function UserDetail({ id, onClose, onChanged, openAssessment }) {
           />
 
           <form
-            className="ad-inline-form"
+            className="cx-inline-form"
             onSubmit={(e) => {
               e.preventDefault();
               act(() => admin.updateUser(u.id, { name: name ?? u.name }), 'Name saved.');
             }}
           >
-            <label className="ad-field">
+            <label className="cx-field">
               <span>Display name</span>
               <input value={name ?? u.name} maxLength={80} onChange={(e) => setName(e.target.value)} />
             </label>
-            <button type="submit" className="ad-btn is-small" disabled={busy || (name ?? u.name) === u.name}>
+            <button type="submit" className="cx-btn is-small" disabled={busy || (name ?? u.name) === u.name}>
               Save
             </button>
           </form>
 
-          <h3 className="ad-h3">Access</h3>
-          <div className="ad-actions-row">
+          <h3 className="cx-h3">Access</h3>
+          <div className="cx-actions-row">
             {u.is_active ? (
-              <button type="button" className="ad-btn" disabled={busy || isMe} onClick={() => setConfirm('deactivate')}>
+              <button type="button" className="cx-btn" disabled={busy || isMe} onClick={() => setConfirm('deactivate')}>
                 Deactivate
               </button>
             ) : (
-              <button type="button" className="ad-btn" disabled={busy} onClick={() => act(() => admin.updateUser(u.id, { is_active: true }), 'Account activated.')}>
+              <button type="button" className="cx-btn" disabled={busy} onClick={() => act(() => admin.updateUser(u.id, { is_active: true }), 'Account activated.')}>
                 Activate
               </button>
             )}
             {me?.is_superuser &&
               (u.is_staff ? (
-                <button type="button" className="ad-btn" disabled={busy || isMe} onClick={() => setConfirm('staff-off')}>
+                <button type="button" className="cx-btn" disabled={busy || isMe} onClick={() => setConfirm('staff-off')}>
                   Remove staff access
                 </button>
               ) : (
-                <button type="button" className="ad-btn" disabled={busy} onClick={() => act(() => admin.updateUser(u.id, { is_staff: true }), 'Staff access granted.')}>
+                <button type="button" className="cx-btn" disabled={busy} onClick={() => act(() => admin.updateUser(u.id, { is_staff: true }), 'Staff access granted.')}>
                   Make staff
                 </button>
               ))}
           </div>
-          {isMe && <p className="ad-muted">You can’t deactivate, demote or delete your own account.</p>}
+          {isMe && <p className="cx-muted">You can’t deactivate, demote or delete your own account.</p>}
 
           {u.profile && (
             <>
-              <h3 className="ad-h3">Profile</h3>
+              <h3 className="cx-h3">Profile</h3>
               <Facts
                 items={[
                   ['Name on profile', u.profile.full_name],
@@ -147,25 +147,25 @@ function UserDetail({ id, onClose, onChanged, openAssessment }) {
             </>
           )}
 
-          <h3 className="ad-h3">Recent assessments</h3>
+          <h3 className="cx-h3">Recent assessments</h3>
           {u.assessments_recent.length ? (
-            <ul className="ad-mini-list">
+            <ul className="cx-mini-list">
               {u.assessments_recent.map((a) => (
                 <li key={a.id}>
-                  <button type="button" className="ad-link-btn" onClick={() => openAssessment(a.id)}>
+                  <button type="button" className="cx-link-btn" onClick={() => openAssessment(a.id)}>
                     {a.id}
                   </button>
-                  <span className="ad-muted">{fmtDateTime(a.created_at)}</span>
+                  <span className="cx-muted">{fmtDateTime(a.created_at)}</span>
                   <span>{fmtPct(a.probability)}</span>
                   <RiskBadge level={a.risk_level} />
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="ad-muted">No assessments.</p>
+            <p className="cx-muted">No assessments.</p>
           )}
 
-          <h3 className="ad-h3">Activity</h3>
+          <h3 className="cx-h3">Activity</h3>
           <ActivityList events={u.activity} />
         </>
       )}
@@ -272,7 +272,7 @@ export default function Users({ openAssessment, initialUser, onOpened }) {
         actions={
           <button
             type="button"
-            className="ad-btn"
+            className="cx-btn"
             onClick={() => download('/admin/users/export/', { q: search, status, role }, 'users.csv').catch((e) => notify(e.message, 'error'))}
           >
             <Icon name="download" size={15} />
@@ -280,7 +280,7 @@ export default function Users({ openAssessment, initialUser, onOpened }) {
           </button>
         }
       />
-      <div className="ad-tabs" role="tablist" aria-label="Filter users">
+      <div className="cx-tabs" role="tablist" aria-label="Filter users">
         {TABS.map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'is-on' : undefined} onClick={() => { filter(setTab)(id); setPicked(new Set()); }}>
             {label}
@@ -300,7 +300,7 @@ export default function Users({ openAssessment, initialUser, onOpened }) {
       {loading && !data ? (
         <Skeleton rows={1} />
       ) : (
-        <div className="ad-card-table">
+        <div className="cx-card-table">
           <DataTable
             rows={data?.results}
             onRowClick={(r) => setSelected(r.id)}
@@ -316,11 +316,11 @@ export default function Users({ openAssessment, initialUser, onOpened }) {
                 label: 'User',
                 sortKey: 'email',
                 render: (r) => (
-                  <div className="ad-user-cell">
+                  <div className="cx-user-cell">
                     <Avatar name={r.name} email={r.email} size={32} />
-                    <div className="ad-cell-main">
+                    <div className="cx-cell-main">
                       <strong>{r.name}</strong>
-                      <span className="ad-muted">{r.email}</span>
+                      <span className="cx-muted">{r.email}</span>
                     </div>
                   </div>
                 ),
@@ -328,10 +328,10 @@ export default function Users({ openAssessment, initialUser, onOpened }) {
               {
                 key: 'role',
                 label: 'Role',
-                render: (r) => (r.is_superuser ? <Badge tone="violet">Superuser</Badge> : r.is_staff ? <Badge tone="violet">Staff</Badge> : <span className="ad-muted">User</span>),
+                render: (r) => (r.is_superuser ? <Badge tone="violet">Superuser</Badge> : r.is_staff ? <Badge tone="violet">Staff</Badge> : <span className="cx-muted">User</span>),
               },
               { key: 'status', label: 'Status', render: (r) => <Badge tone={r.is_active ? 'ok' : 'danger'} dot>{r.is_active ? 'Active' : 'Deactivated'}</Badge> },
-              { key: 'signin', label: 'Sign-in', render: (r) => (r.sign_in_with.length ? providers(r.sign_in_with) : <span className="ad-muted">Password</span>) },
+              { key: 'signin', label: 'Sign-in', render: (r) => (r.sign_in_with.length ? providers(r.sign_in_with) : <span className="cx-muted">Password</span>) },
               { key: 'assessments', label: 'Assessments', align: 'right', sortKey: 'n_assessments' },
               { key: 'last_login', label: 'Last seen', sortKey: 'last_login', render: (r) => <span title={fmtDateTime(r.last_login)}>{fmtAgo(r.last_login)}</span> },
               { key: 'joined', label: 'Joined', sortKey: 'date_joined', render: (r) => <span title={fmtDateTime(r.date_joined)}>{fmtAgo(r.date_joined)}</span> },
@@ -342,15 +342,15 @@ export default function Users({ openAssessment, initialUser, onOpened }) {
       )}
 
       {picked.size > 0 && (
-        <div className="ad-bulkbar" role="region" aria-label="Bulk actions">
-          <span className="ad-bulk-count">{picked.size} selected</span>
-          <span className="ad-bulk-sep" aria-hidden="true" />
+        <div className="cx-bulkbar" role="region" aria-label="Bulk actions">
+          <span className="cx-bulk-count">{picked.size} selected</span>
+          <span className="cx-bulk-sep" aria-hidden="true" />
           {Object.entries(BULK).map(([action, b]) => (
-            <button key={action} type="button" className="ad-bulk-btn" disabled={busy} onClick={() => (b.confirm ? setBulk(action) : runBulk(action))}>
+            <button key={action} type="button" className="cx-bulk-btn" disabled={busy} onClick={() => (b.confirm ? setBulk(action) : runBulk(action))}>
               {b.label}
             </button>
           ))}
-          <button type="button" className="ad-bulk-btn is-icon" aria-label="Clear selection" onClick={() => setPicked(new Set())}>
+          <button type="button" className="cx-bulk-btn is-icon" aria-label="Clear selection" onClick={() => setPicked(new Set())}>
             <Icon name="x" size={15} />
           </button>
         </div>

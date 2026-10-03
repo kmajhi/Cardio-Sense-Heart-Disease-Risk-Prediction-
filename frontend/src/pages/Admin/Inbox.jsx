@@ -45,10 +45,10 @@ export default function Inbox({ notes, onGo }) {
   }, [open]);
 
   return (
-    <div className="ad-pop-wrap" ref={ref}>
+    <div className="cx-pop-wrap" ref={ref}>
       <button
         type="button"
-        className="ad-icon-btn"
+        className="cx-icon-btn"
         aria-label={`Notifications${notes.unread ? `, ${notes.unread} unread` : ''}`}
         aria-expanded={open}
         onClick={() => {
@@ -57,18 +57,18 @@ export default function Inbox({ notes, onGo }) {
         }}
       >
         <Icon name="bell" size={18} />
-        {notes.unread > 0 && <span className="ad-dot-count">{notes.unread > 9 ? '9+' : notes.unread}</span>}
+        {notes.unread > 0 && <span className="cx-dot-count">{notes.unread > 9 ? '9+' : notes.unread}</span>}
       </button>
       {open && (
-        <div className="ad-pop ad-inbox" role="dialog" aria-label="Notifications">
+        <div className="cx-pop cx-inbox" role="dialog" aria-label="Notifications">
           <header>
             <strong>Notifications</strong>
-            <button type="button" className="ad-link-btn" disabled={!notes.unread} onClick={notes.markAllRead}>
+            <button type="button" className="cx-link-btn" disabled={!notes.unread} onClick={notes.markAllRead}>
               Mark all as read
             </button>
           </header>
           {notes.items.length === 0 ? (
-            <div className="ad-inbox-empty">
+            <div className="cx-inbox-empty">
               <Icon name="check" size={22} />
               <p>All clear. Nothing needs your attention.</p>
             </div>
@@ -80,22 +80,22 @@ export default function Inbox({ notes, onGo }) {
                   <li key={n.id}>
                     <button
                       type="button"
-                      className={`ad-inbox-item${unread ? ' is-unread' : ''}`}
+                      className={`cx-inbox-item${unread ? ' is-unread' : ''}`}
                       onClick={() => {
                         notes.markRead(n.id);
                         setOpen(false);
                         onGo(n.section);
                       }}
                     >
-                      <span className={`ad-inbox-icon is-${n.level}`}>
+                      <span className={`cx-inbox-icon is-${n.level}`}>
                         <Icon name={LEVEL_ICON[n.level]} size={15} />
                       </span>
-                      <span className="ad-inbox-text">
+                      <span className="cx-inbox-text">
                         <strong>{n.title}</strong>
                         <span>{n.body}</span>
                         <time dateTime={n.at}>{fmtAgo(n.at)}</time>
                       </span>
-                      {unread && <span className="ad-unread-dot" aria-label="Unread" />}
+                      {unread && <span className="cx-unread-dot" aria-label="Unread" />}
                     </button>
                   </li>
                 );
