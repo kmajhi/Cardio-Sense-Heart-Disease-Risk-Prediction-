@@ -90,4 +90,16 @@
     grid-template-columns: 1fr;
     margin-top: 48px;
   }
+
+  /* Thumb-sized rows: each link gets a 40px tap area. */
+  .pc-footer-nav div {
+    gap: 0;
+  }
+
+  .pc-footer-nav a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    font-size: 15px;
+  }
 }
