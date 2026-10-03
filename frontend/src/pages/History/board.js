@@ -23,9 +23,13 @@ export const STATUS = {
 // Never a flat 0% or 100%: a model estimate is never certain (same as the
 // Prediction page's gauge). pct is kept inside 1–99 for charts; pctText adds
 // the "<" or ">" for anything that was clamped.
+// Judged on the unrounded value, like clinical/risk.js pctText: 0.65% is "<1".
 const rawPct = (record) => Math.round(record.result.probability * 100);
 export const pct = (record) => Math.min(99, Math.max(1, rawPct(record)));
-export const approx = (record) => (rawPct(record) > 99 ? '>' : rawPct(record) < 1 ? '<' : '');
+export const approx = (record) => {
+  const p = record.result.probability;
+  return p > 0.99 ? '>' : p < 0.01 ? '<' : '';
+};
 export const pctText = (record) => `${approx(record)}${pct(record)}`;
 
 /** Every test in one record with its reading and status. */

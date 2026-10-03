@@ -98,11 +98,13 @@ function ProfileRoute(props) {
 }
 
 // "/" is the homepage, the way into the app. Anyone already signed in when
-// they arrive goes to the Dashboard; someone signing in here stays until the
-// page's loader sends them on.
-function LandingRoute(props) {
+// they arrive goes to the Dashboard; someone signing in here stays until Home
+// sends them on (to the page they were headed for, e.g. back to Prediction).
+// `arrivedSignedIn` is owned by AppRoutes: signing in re-keys everything under
+// NotificationsProvider, and a ref kept here would forget the visitor arrived
+// signed out and bounce them to the Dashboard.
+function LandingRoute({ arrivedSignedIn, ...props }) {
   const { user } = useAuth();
-  const arrivedSignedIn = useRef(undefined);
   if (arrivedSignedIn.current === undefined && user !== undefined) arrivedSignedIn.current = Boolean(user);
   if (user === undefined) return null; // still checking the session
   if (arrivedSignedIn.current && user) return <Navigate to="/dashboard" replace />;
@@ -125,6 +127,11 @@ function AppRoutes() {
     }
     getProfile().then(setProfile).catch(() => {});
   }, [signedIn]);
+  // Whether the visitor was already signed in when they reached "/" (see LandingRoute).
+  const arrivedSignedIn = useRef(undefined);
+  useEffect(() => {
+    if (pathname !== '/') arrivedSignedIn.current = undefined;
+  }, [pathname]);
   const user = { name: profile?.full_name || account?.name || 'Demo User', photo: profile?.photo };
   const shared = { LinkComponent: TransitionLink, activePath: pathname, user };
 
@@ -138,7 +145,7 @@ function AppRoutes() {
       <ErrorBoundary resetKey={pathname}>
       <Suspense fallback={<LoadingShell {...shared} />}>
       <Routes>
-        <Route path="/" element={<LandingRoute {...shared} />} />
+        <Route path="/" element={<LandingRoute {...shared} arrivedSignedIn={arrivedSignedIn} />} />
         <Route path="/dashboard" element={guard(<DashboardRoute {...shared} />)} />
         {/* Anyone can look; running a prediction needs an account. */}
         <Route

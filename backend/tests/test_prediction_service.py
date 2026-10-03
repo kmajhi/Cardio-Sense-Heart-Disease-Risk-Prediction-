@@ -141,15 +141,36 @@ def test_invalid_input_is_rejected(trained, patient, change, message):
 def test_shap_contributions_add_up_to_the_prediction(trained, patient):
     pipeline, _ = trained
     features = build_features(patient)
-    values, _ = explainability_service.shap_values(pipeline, features)
-    explainer, kind = explainability_service._explainer(pipeline)
+    returned, base, values, _ = explainability_service.explain(pipeline, features)
     probability = pipeline.predict_proba(features)[0, 1]
-    if kind == "tree":
-        base = float(np.asarray(explainer.expected_value).reshape(-1)[-1])
-    else:
-        x = pipeline.named_steps["preprocess"].transform(features)
-        base = float(explainability_service._seeded(explainer, x).base_values[0])
+    assert returned == pytest.approx(probability, abs=1e-9)
     assert base + values.sum() == pytest.approx(probability, abs=1e-6)
+
+
+def test_fast_permutation_shap_matches_shap(trained, patient):
+    """The one-call permutation SHAP gives shap's own numbers (QA BUG-02 speed-up)."""
+    import shap
+
+    pipeline, _ = trained
+    explainer, kind = explainability_service._explainer(pipeline)
+    if kind == "tree":
+        pytest.skip("the deployed model type is explained with Tree SHAP")
+    clf = pipeline.named_steps["model"]
+    f = lambda z: clf.predict_proba(z)[:, 1]  # noqa: E731
+    state = np.random.get_state()
+    reference_explainer = shap.Explainer(f, explainer)  # (creating it reseeds numpy)
+    np.random.set_state(state)
+    for change in ({}, {"age": 70, "ldl": 220}, {"bp_mmhg": 180, "diabetes": 1}):
+        x = pipeline.named_steps["preprocess"].transform(build_features({**patient, **change}))
+        state = np.random.get_state()
+        np.random.seed(0)
+        try:
+            reference = reference_explainer(x, max_evals=max(2 * x.shape[1] + 1, 100), silent=True)
+        finally:
+            np.random.set_state(state)
+        _, base, values, _ = explainability_service.explain(pipeline, build_features({**patient, **change}))
+        assert np.allclose(values, np.asarray(reference.values)[0], atol=1e-9)
+        assert base == pytest.approx(float(reference.base_values[0]), abs=1e-9)
 
 
 def test_explanations_are_repeatable(trained, patient):

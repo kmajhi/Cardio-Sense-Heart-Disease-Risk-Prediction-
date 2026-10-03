@@ -321,13 +321,15 @@ def predict(payload: dict, top_n: int = 5) -> dict:
     """The /api/predict/ response for one patient."""
     pipeline, _ = load_model()
     features = build_features(payload)
-    probability = float(pipeline.predict_proba(features)[0, 1])
+    # One pass gives both the probability and its explanation (they share the
+    # model call that dominates the cost; see explainability_service).
+    probability, _, values, names = explainability_service.explain(pipeline, features)
     missing = missing_fields(payload)
     beyond = outside_training(features)
     return {
         "probability": round(probability, 4),
         "risk_level": risk_level(probability),
-        "top_factors": explainability_service.top_factors(pipeline, features, top_n=top_n),
+        "top_factors": explainability_service.group_factors(values, names, list(features.columns), top_n),
         "missing_fields": missing,
         "outside_training": beyond,
         "low_confidence": len(missing) >= LOW_CONFIDENCE_MISSING or bool(beyond),

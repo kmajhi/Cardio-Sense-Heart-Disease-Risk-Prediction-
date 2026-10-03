@@ -548,7 +548,7 @@
   padding: 2px 9px;
   border-radius: 999px;
   background: rgba(28, 22, 51, 0.05);
-  color: var(--pc-ink-faint);
+  color: var(--pc-ink-soft); /* ink-faint fails WCAG AA contrast at 11.5px */
   font-size: 11.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -1469,6 +1469,205 @@ a.pc-bento-inner:hover .pc-bento-go svg {
   color: var(--pc-mint);
 }
 
+/* ---------- Get your numbers ---------- */
+
+.pc-dash .pc-a-tests-min {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 22px auto 0;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: #e5f6ee;
+  color: var(--pc-success-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.pc-a-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 36px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-a-steps > li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 28px;
+  border: 1px solid var(--pc-line);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pc-a-step-n {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--pc-violet);
+  color: #fff;
+  font-weight: 700;
+}
+
+.pc-a-steps h3 {
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.pc-dash .pc-a-step-where {
+  color: var(--pc-ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pc-a-steps ul {
+  display: grid;
+  gap: 12px;
+  margin: 8px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--pc-line);
+  list-style: none;
+}
+
+.pc-a-steps ul li {
+  display: grid;
+  gap: 3px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pc-a-steps ul span {
+  color: var(--pc-ink-soft);
+}
+
+.pc-dash .pc-a-step-ask {
+  margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--pc-violet-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pc-a-step-ask strong {
+  color: var(--pc-violet-deep);
+}
+
+.pc-a-labs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-a-labs > li {
+  padding: 22px;
+  border: 1px solid var(--pc-line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pc-a-labs > li.is-required {
+  border-color: var(--pc-violet);
+  box-shadow: 0 0 0 1px var(--pc-violet) inset;
+}
+
+.pc-a-labs header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pc-a-labs h3 {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pc-a-lab-tag {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eef0f4;
+  color: var(--pc-ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.is-required .pc-a-lab-tag {
+  background: var(--pc-violet);
+  color: #fff;
+}
+
+.pc-a-labs dl {
+  display: grid;
+  gap: 4px;
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pc-a-labs dt {
+  margin-top: 6px;
+  color: var(--pc-ink-faint);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pc-a-labs dd {
+  margin: 0;
+  color: var(--pc-ink-soft);
+}
+
+.pc-a-tests-foot {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-top: 32px;
+  text-align: center;
+}
+
+.pc-dash .pc-a-tests-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 720px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: #ffe8ec;
+  color: var(--pc-danger-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.pc-a-tests-warn svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.pc-dash .pc-a-tests-note {
+  color: var(--pc-ink-soft);
+  font-size: 14px;
+}
+
 /* ---------- Inputs ---------- */
 
 .pc-a-pills {
@@ -2151,6 +2350,10 @@ details[open] > summary .pc-a-plus::after {
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1100px) {
+  .pc-a-labs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .pc-bento {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2212,6 +2415,7 @@ details[open] > summary .pc-a-plus::after {
 
   .pc-a-contrasts,
   .pc-a-audiences,
+  .pc-a-steps,
   .pc-a-trust {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2236,6 +2440,10 @@ details[open] > summary .pc-a-plus::after {
 }
 
 @media (max-width: 640px) {
+  .pc-a-labs {
+    grid-template-columns: 1fr;
+  }
+
   .pc-a-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

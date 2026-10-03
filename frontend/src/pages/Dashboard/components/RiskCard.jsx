@@ -1,4 +1,5 @@
 import { linkProps } from '../../../components/link';
+import { pctText } from '../../../clinical/risk';
 
 const LEVELS = {
   low: { label: 'Low risk', className: 'is-low' },
@@ -24,7 +25,7 @@ export default function RiskCard({ risk, LinkComponent }) {
     );
   }
 
-  const pct = Math.round(risk.probability * 100);
+  const pct = Math.round(risk.probability * 100); // the meter's fill
   const level = LEVELS[risk.level] ?? LEVELS.low;
 
   return (
@@ -34,7 +35,7 @@ export default function RiskCard({ risk, LinkComponent }) {
       <div className="pc-risk-score">
         <span className="pc-risk-value">
           {/* Never a flat 0% or 100%: a model estimate is never certain (same as the Prediction page). */}
-          {pct < 1 ? '<1' : pct > 99 ? '>99' : pct}
+          {pctText(risk.probability)}
           <span className="pc-risk-unit">%</span>
         </span>
         <span className={`pc-badge ${level.className}`}>{level.label}</span>

@@ -21,6 +21,7 @@ import {
 } from './fields';
 import { INFO, PAYLOAD_KEY, levelsFor, trackBands } from './fieldInfo';
 import { USE_MOCK } from '../../api/mode';
+import { linkProps } from '../../components/link';
 import { analyze } from '../../clinical/analyze';
 import { buildNotification } from '../../clinical/notifications';
 import { useNotifications } from '../../notifications/NotificationsContext';
@@ -399,6 +400,13 @@ export default function Prediction({
                 ? 'Enter the patient’s clinical values. In demo mode a simple built-in formula gives an illustrative score; it is not the trained model.'
                 : 'Enter the patient’s values from their latest check-up and lab report. Tap ? beside any field to see what it is, where to find it and its healthy levels.'}
             </p>
+            <LinkComponent {...linkProps(LinkComponent, '/about#a-tests')} className="pc-pr-guide pc-enter" style={{ '--d': '260ms' }}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 14h9" />
+              </svg>
+              Input guide: which tests do I need?
+              <span aria-hidden="true">→</span>
+            </LinkComponent>
           </div>
 
           <div className="pc-pr-presets pc-enter" style={{ '--d': '140ms' }} role="group" aria-labelledby="pr-presets">
