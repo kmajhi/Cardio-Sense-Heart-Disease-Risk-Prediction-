@@ -126,3 +126,15 @@ describe('Values outside the allowed range', () => {
     expect(screen.getByRole('button', { name: /run/i }).disabled).toBe(true);
   });
 });
+
+describe('The "which tests do I need?" guide on About', () => {
+  it('names a lab test for every lab on the form, and only the lipid profile is required', async () => {
+    const { GET_NUMBERS } = await import('../About/content');
+    const fills = GET_NUMBERS.tests.map((t) => t.fields).join(' ');
+    for (const word of ['Total cholesterol', 'HDL', 'LDL', 'Triglycerides', 'Random blood sugar', 'Hemoglobin',
+      'Platelets', 'Creatinine', 'Sodium', 'Potassium', 'Chloride', 'Troponin']) {
+      expect(fills, word).toContain(word);
+    }
+    expect(GET_NUMBERS.tests.filter((t) => t.required).map((t) => t.ask)).toEqual(['Lipid profile']);
+  });
+});
