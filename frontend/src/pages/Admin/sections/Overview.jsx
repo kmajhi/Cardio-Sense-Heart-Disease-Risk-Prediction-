@@ -5,17 +5,17 @@ import { Badge, ErrorNote, Icon, KpiCard, PageHeader, Panel, Segmented, Skeleton
 const KIND_TONE = { login_failed: 'danger', admin: 'violet', maintenance: 'violet', signup: 'ok', account_deleted: 'warn' };
 
 export function ActivityList({ events, empty = 'No activity yet.' }) {
-  if (!events?.length) return <p className="ad-muted">{empty}</p>;
+  if (!events?.length) return <p className="cx-muted">{empty}</p>;
   return (
-    <ul className="ad-feed">
+    <ul className="cx-feed">
       {events.map((e) => (
         <li key={e.id}>
-          <span className={`ad-feed-dot is-${KIND_TONE[e.kind] ?? 'neutral'}`} aria-hidden="true" />
-          <span className="ad-feed-text">
+          <span className={`cx-feed-dot is-${KIND_TONE[e.kind] ?? 'neutral'}`} aria-hidden="true" />
+          <span className="cx-feed-text">
             {e.summary}
             <Badge tone={KIND_TONE[e.kind] ?? 'neutral'}>{e.kind_label}</Badge>
           </span>
-          <time className="ad-muted" dateTime={e.created_at} title={new Date(e.created_at).toLocaleString()}>
+          <time className="cx-muted" dateTime={e.created_at} title={new Date(e.created_at).toLocaleString()}>
             {fmtAgo(e.created_at)}
           </time>
         </li>
@@ -46,7 +46,7 @@ export default function Overview({ go }) {
       actions={
         <>
           <Segmented label="Period" value={days} onChange={setDays} options={PERIODS} />
-          <button type="button" className="ad-btn" onClick={reload} disabled={loading}>
+          <button type="button" className="cx-btn" onClick={reload} disabled={loading}>
             <Icon name="refresh" size={15} />
             {loading ? 'Refreshing…' : 'Refresh'}
           </button>
@@ -70,7 +70,7 @@ export default function Overview({ go }) {
       {header}
 
       {(site.maintenance_mode || !site.registration_open || !site.predictions_open || site.announcement) && (
-        <div className="ad-callout is-warn">
+        <div className="cx-callout is-warn">
           <Icon name="bolt" size={16} />
           <span>
             <strong>Site controls are active:</strong>{' '}
@@ -84,13 +84,13 @@ export default function Overview({ go }) {
               .join(' · ')}
             .
           </span>
-          <button type="button" className="ad-link-btn" onClick={() => go('site')}>
+          <button type="button" className="cx-link-btn" onClick={() => go('site')}>
             Manage →
           </button>
         </div>
       )}
 
-      <div className="ad-kpis">
+      <div className="cx-kpis">
         <KpiCard
           label="New accounts"
           icon="users"
@@ -137,7 +137,7 @@ export default function Overview({ go }) {
         />
       </div>
 
-      <div className="ad-grid-main">
+      <div className="cx-grid-main">
         <Panel title="Assessments" subtitle={`By risk band · ${label}`}>
           <AssessmentsChart series={series} />
         </Panel>
@@ -146,13 +146,13 @@ export default function Overview({ go }) {
         </Panel>
       </div>
 
-      <div className="ad-grid-3">
+      <div className="cx-grid-3">
         <Panel title="Risk mix" subtitle="All assessments">
           <RiskMix risk={assessments.risk} />
-          <div className="ad-mini-stats">
+          <div className="cx-mini-stats">
             <div>
               <span>Low-confidence</span>
-              <strong className={lowConfShare > 0.3 ? 'ad-down' : undefined}>{Math.round(lowConfShare * 100)}%</strong>
+              <strong className={lowConfShare > 0.3 ? 'cx-down' : undefined}>{Math.round(lowConfShare * 100)}%</strong>
             </div>
             <div>
               <span>All-time</span>
@@ -162,22 +162,22 @@ export default function Overview({ go }) {
         </Panel>
         <Panel title="Top drivers" subtitle={`What most often raised estimates · ${label}`}>
           {data.top_raising_factors.length ? (
-            <ol className="ad-rank">
+            <ol className="cx-rank">
               {data.top_raising_factors.map((f) => {
                 const max = data.top_raising_factors[0].count;
                 return (
                   <li key={f.name}>
                     <span>{f.name}</span>
-                    <span className="ad-rank-bar" aria-hidden="true">
+                    <span className="cx-rank-bar" aria-hidden="true">
                       <span style={{ width: `${(f.count / max) * 100}%` }} />
                     </span>
-                    <span className="ad-muted">{f.count}×</span>
+                    <span className="cx-muted">{f.count}×</span>
                   </li>
                 );
               })}
             </ol>
           ) : (
-            <p className="ad-muted">No assessments in this period.</p>
+            <p className="cx-muted">No assessments in this period.</p>
           )}
         </Panel>
         <Panel title="Sign-ups" subtitle={label}>
@@ -185,35 +185,35 @@ export default function Overview({ go }) {
         </Panel>
       </div>
 
-      <div className="ad-grid-2">
-        <Panel title="Recent activity" actions={<button type="button" className="ad-link-btn" onClick={() => go('activity')}>View all →</button>}>
+      <div className="cx-grid-2">
+        <Panel title="Recent activity" actions={<button type="button" className="cx-link-btn" onClick={() => go('activity')}>View all →</button>}>
           <ActivityList events={data.recent_activity} />
         </Panel>
-        <Panel title="Platform" actions={<button type="button" className="ad-link-btn" onClick={() => go('system')}>System health →</button>}>
-          <ul className="ad-platform">
+        <Panel title="Platform" actions={<button type="button" className="cx-link-btn" onClick={() => go('system')}>System health →</button>}>
+          <ul className="cx-platform">
             <li>
-              <span className={`ad-status-dot is-${model.loaded ? 'ok' : 'warn'}`} aria-hidden="true" />
+              <span className={`cx-status-dot is-${model.loaded ? 'ok' : 'warn'}`} aria-hidden="true" />
               <span>
                 <strong>Prediction model</strong>
-                <span className="ad-muted">
+                <span className="cx-muted">
                   {model.name || 'No model'} · trained {model.trained_at ? new Date(model.trained_at).toLocaleDateString() : '—'}
                 </span>
               </span>
               <Badge tone={model.loaded ? 'ok' : 'neutral'}>{model.loaded ? 'Loaded' : 'Idle'}</Badge>
             </li>
             <li>
-              <span className={`ad-status-dot is-${site.maintenance_mode ? 'warn' : 'ok'}`} aria-hidden="true" />
+              <span className={`cx-status-dot is-${site.maintenance_mode ? 'warn' : 'ok'}`} aria-hidden="true" />
               <span>
                 <strong>Availability</strong>
-                <span className="ad-muted">{site.maintenance_mode ? 'Maintenance mode: staff only' : 'Open to everyone'}</span>
+                <span className="cx-muted">{site.maintenance_mode ? 'Maintenance mode: staff only' : 'Open to everyone'}</span>
               </span>
-              <button type="button" className="ad-link-btn" onClick={() => go('site')}>Manage</button>
+              <button type="button" className="cx-link-btn" onClick={() => go('site')}>Manage</button>
             </li>
             <li>
-              <span className="ad-status-dot is-ok" aria-hidden="true" />
+              <span className="cx-status-dot is-ok" aria-hidden="true" />
               <span>
                 <strong>Accounts</strong>
-                <span className="ad-muted">
+                <span className="cx-muted">
                   {users.with_profile} with a profile · {users.google_or_x} use Google or X · {users.staff} staff
                 </span>
               </span>

@@ -35,8 +35,8 @@ function TestPrediction() {
 
   return (
     <Panel title="Test prediction" subtitle="Runs the live model on any input. Never saved, never shown to users.">
-      <div className="ad-actions-row">
-        <label className="ad-select">
+      <div className="cx-actions-row">
+        <label className="cx-select">
           <span>Sample patient</span>
           <select value={sample} onChange={(e) => setSample(e.target.value)}>
             <option value="low">Low risk</option>
@@ -46,7 +46,7 @@ function TestPrediction() {
         </label>
         <button
           type="button"
-          className="ad-btn is-primary"
+          className="cx-btn is-primary"
           disabled={busy}
           onClick={() => {
             setJson('');
@@ -56,23 +56,23 @@ function TestPrediction() {
           {busy ? 'Running…' : 'Run sample'}
         </button>
       </div>
-      <label className="ad-field">
+      <label className="cx-field">
         <span>Or edit the request (JSON, API units)</span>
-        <textarea className="ad-textarea is-code" rows={8} value={json} onChange={(e) => setJson(e.target.value)} placeholder="Run a sample first to get a starting point." />
+        <textarea className="cx-textarea is-code" rows={8} value={json} onChange={(e) => setJson(e.target.value)} placeholder="Run a sample first to get a starting point." />
       </label>
-      <div className="ad-actions-row">
-        <button type="button" className="ad-btn" disabled={busy || !json.trim()} onClick={runJson}>
+      <div className="cx-actions-row">
+        <button type="button" className="cx-btn" disabled={busy || !json.trim()} onClick={runJson}>
           Run this request
         </button>
       </div>
       {result && (
-        <div className="ad-test-result">
-          <div className="ad-result">
-            <span className="ad-result-pct">{fmtPct(result.result.probability)}</span>
+        <div className="cx-test-result">
+          <div className="cx-result">
+            <span className="cx-result-pct">{fmtPct(result.result.probability)}</span>
             <RiskBadge level={result.result.risk_level} />
             {result.result.low_confidence && <Badge tone="warn">Low confidence</Badge>}
           </div>
-          <p className="ad-muted">
+          <p className="cx-muted">
             Top factors:{' '}
             {result.result.top_factors.map((f) => `${f.name} ${f.contribution > 0 ? '+' : '−'}${Math.abs(f.contribution * 100).toFixed(1)}`).join(' · ')}
           </p>
@@ -124,20 +124,20 @@ export default function Model() {
         subtitle={`${m.selected_model ?? 'No model'} · trained ${m.trained_at ? fmtDateTime(m.trained_at) : '—'}`}
         actions={
           <>
-            <button type="button" className="ad-btn" onClick={runReload} disabled={Boolean(busy)}>
+            <button type="button" className="cx-btn" onClick={runReload} disabled={Boolean(busy)}>
               {busy === 'reload' ? 'Reloading…' : 'Reload model'}
             </button>
-            <button type="button" className="ad-btn is-primary" onClick={runCheck} disabled={Boolean(busy)}>
+            <button type="button" className="cx-btn is-primary" onClick={runCheck} disabled={Boolean(busy)}>
               {busy === 'check' ? 'Checking…' : 'Run health check'}
             </button>
           </>
         }
       />
-      <div className="ad-callout is-info">{m.validation || 'Internal validation only.'}</div>
+      <div className="cx-callout is-info">{m.validation || 'Internal validation only.'}</div>
 
       {check && (
         <Panel title={check.ok ? 'Health check passed' : 'Health check found a problem'} subtitle={`The three sample patients, ${check.seconds}s`} className={check.ok ? 'is-ok' : 'is-danger'}>
-          <ul className="ad-check-list">
+          <ul className="cx-check-list">
             {check.results.map((r) => (
               <li key={r.sample}>
                 <Badge tone={r.ok ? 'ok' : 'danger'}>{r.ok ? 'In band' : 'Out of band'}</Badge>
@@ -148,18 +148,18 @@ export default function Model() {
               </li>
             ))}
           </ul>
-          {!check.ok && <p className="ad-note">Retune the sample patients (frontend fields.js → PRESETS) or review the model before releasing it.</p>}
+          {!check.ok && <p className="cx-note">Retune the sample patients (frontend fields.js → PRESETS) or review the model before releasing it.</p>}
         </Panel>
       )}
 
-      <div className="ad-stats">
+      <div className="cx-stats">
         <Stat label="Test ROC-AUC" value={num(metrics.test_roc_auc)} hint={`CV ${num(metrics.cv_roc_auc_mean)}`} />
         <Stat label="Accuracy" value={fmtPct(metrics.test_accuracy, 1)} hint={`Recall ${fmtPct(metrics.test_recall, 1)}`} />
         <Stat label="Brier score" value={num(metrics.test_brier)} hint={`${num(cal.test_brier_uncalibrated)} before calibration`} />
         <Stat label="State" value={data.loaded ? 'Loaded' : 'Idle'} hint={data.available ? 'artifacts present' : 'artifacts missing'} tone={data.available ? undefined : 'danger'} />
       </div>
 
-      <div className="ad-grid-2">
+      <div className="cx-grid-2">
         <Panel title="Model card">
           <Facts
             items={[
@@ -188,7 +188,7 @@ export default function Model() {
               { key: 'tauc', label: 'Test ROC-AUC', align: 'right', render: (r) => num(r['Test ROC-AUC']) },
             ]}
           />
-          <h3 className="ad-h3">Files</h3>
+          <h3 className="cx-h3">Files</h3>
           <DataTable
             rows={data.files}
             rowKey={(r) => r.name}
@@ -201,7 +201,7 @@ export default function Model() {
         </Panel>
       </div>
 
-      <div className="ad-grid-2">
+      <div className="cx-grid-2">
         <TestPrediction />
         <Panel title="Training ranges" subtitle="Values beyond these are flagged as less reliable">
           <DataTable

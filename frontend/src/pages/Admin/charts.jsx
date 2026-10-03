@@ -44,10 +44,10 @@ function column(x, y, w, h, r) {
 
 function Legend({ items }) {
   return (
-    <ul className="ad-legend">
+    <ul className="cx-legend">
       {items.map((i) => (
         <li key={i.label}>
-          <span className="ad-legend-key" style={{ background: i.color }} aria-hidden="true" />
+          <span className="cx-legend-key" style={{ background: i.color }} aria-hidden="true" />
           {i.label}
         </li>
       ))}
@@ -58,12 +58,12 @@ function Legend({ items }) {
 function ChartFrame({ title, legend, table, children }) {
   const [asTable, setAsTable] = useState(false);
   return (
-    <figure className="ad-chart">
-      <div className="ad-chart-head">
+    <figure className="cx-chart">
+      <div className="cx-chart-head">
         <figcaption>{title}</figcaption>
-        <div className="ad-chart-tools">
+        <div className="cx-chart-tools">
           {legend}
-          <button type="button" className="ad-link-btn" onClick={() => setAsTable((v) => !v)} aria-pressed={asTable}>
+          <button type="button" className="cx-link-btn" onClick={() => setAsTable((v) => !v)} aria-pressed={asTable}>
             {asTable ? 'Show chart' : 'View as table'}
           </button>
         </div>
@@ -92,12 +92,12 @@ function DailyColumns({ series, keys, colors, labels, height = 190 }) {
   const labelEvery = Math.max(1, Math.ceil(series.length / 7));
 
   return (
-    <div className="ad-chart-plot" ref={ref}>
+    <div className="cx-chart-plot" ref={ref}>
       <svg width={width} height={height} role="img" aria-label={`Daily counts for the last ${series.length} days`}>
         {values.map((v) => (
           <g key={v}>
-            <line x1={pad.left} x2={width - pad.right} y1={y(v)} y2={y(v)} className="ad-grid" />
-            <text x={pad.left - 6} y={y(v)} className="ad-axis" textAnchor="end" dominantBaseline="middle">
+            <line x1={pad.left} x2={width - pad.right} y1={y(v)} y2={y(v)} className="cx-grid" />
+            <text x={pad.left - 6} y={y(v)} className="cx-axis" textAnchor="end" dominantBaseline="middle">
               {v}
             </text>
           </g>
@@ -130,18 +130,18 @@ function DailyColumns({ series, keys, colors, labels, height = 190 }) {
                 onMouseLeave={() => setHover(null)}
               />
               {(i % labelEvery === 0 || i === series.length - 1) && (
-                <text x={x + barW / 2} y={height - 8} className="ad-axis" textAnchor="middle">
+                <text x={x + barW / 2} y={height - 8} className="cx-axis" textAnchor="middle">
                   {day(d.date)}
                 </text>
               )}
             </g>
           );
         })}
-        <line x1={pad.left} x2={width - pad.right} y1={y(0)} y2={y(0)} className="ad-baseline" />
+        <line x1={pad.left} x2={width - pad.right} y1={y(0)} y2={y(0)} className="cx-baseline" />
       </svg>
       {hover !== null && (
         <div
-          className="ad-tooltip"
+          className="cx-tooltip"
           style={{ left: Math.min(width - 150, Math.max(0, pad.left + hover * slot + slot / 2 - 70)) }}
           role="status"
         >
@@ -160,8 +160,8 @@ function DailyColumns({ series, keys, colors, labels, height = 190 }) {
 
 function SeriesTable({ series, keys, labels }) {
   return (
-    <div className="ad-table-wrap ad-chart-table">
-      <table className="ad-table">
+    <div className="cx-table-wrap cx-chart-table">
+      <table className="cx-table">
         <thead>
           <tr>
             <th>Day</th>
@@ -211,21 +211,21 @@ export function DailyChart({ title, series, keys, height }) {
 export function Funnel({ steps }) {
   const first = steps[0]?.count || 0;
   return (
-    <ol className="ad-funnel">
+    <ol className="cx-funnel">
       {steps.map((s, i) => {
         const share = first ? s.count / first : 0;
         const prev = i ? steps[i - 1].count : null;
         const kept = prev ? s.count / prev : null;
         return (
           <li key={s.step}>
-            <div className="ad-funnel-label">
+            <div className="cx-funnel-label">
               <span>{s.step}</span>
               <strong>{s.count.toLocaleString()}</strong>
             </div>
-            <div className="ad-funnel-track" aria-hidden="true">
+            <div className="cx-funnel-track" aria-hidden="true">
               <span style={{ width: `${Math.max(share * 100, s.count ? 2 : 0)}%` }} />
             </div>
-            <div className="ad-funnel-meta">
+            <div className="cx-funnel-meta">
               <span>{first ? `${Math.round(share * 100)}% of sign-ups` : '—'}</span>
               {kept !== null && <span>{`${Math.round(kept * 100)}% kept from the step before`}</span>}
             </div>
@@ -261,23 +261,23 @@ export function SignupsChart({ series }) {
 export function RiskMix({ risk }) {
   const total = BANDS.reduce((s, k) => s + (risk[k] || 0), 0);
   return (
-    <div className="ad-mix">
-      <div className="ad-mix-bar" role="img" aria-label={BANDS.map((k) => `${RISK_LABELS[k]} ${risk[k] || 0}`).join(', ')}>
+    <div className="cx-mix">
+      <div className="cx-mix-bar" role="img" aria-label={BANDS.map((k) => `${RISK_LABELS[k]} ${risk[k] || 0}`).join(', ')}>
         {total === 0 ? (
-          <span className="ad-mix-empty" />
+          <span className="cx-mix-empty" />
         ) : (
           BANDS.filter((k) => risk[k]).map((k) => (
             <span key={k} style={{ flexGrow: risk[k], background: RISK_COLORS[k] }} title={`${RISK_LABELS[k]}: ${risk[k]}`} />
           ))
         )}
       </div>
-      <ul className="ad-mix-legend">
+      <ul className="cx-mix-legend">
         {BANDS.map((k) => (
           <li key={k}>
-            <span className="ad-legend-key" style={{ background: RISK_COLORS[k] }} aria-hidden="true" />
+            <span className="cx-legend-key" style={{ background: RISK_COLORS[k] }} aria-hidden="true" />
             <span>{RISK_LABELS[k]}</span>
             <strong>{(risk[k] || 0).toLocaleString()}</strong>
-            <span className="ad-muted">{total ? `${Math.round(((risk[k] || 0) / total) * 100)}%` : '—'}</span>
+            <span className="cx-muted">{total ? `${Math.round(((risk[k] || 0) / total) * 100)}%` : '—'}</span>
           </li>
         ))}
       </ul>

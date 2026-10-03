@@ -105,10 +105,10 @@ export default function CommandPalette({ open, onClose, sections, actions, onSec
 
   let index = -1;
   return (
-    <div className="ad-cmdk-layer">
-      <button type="button" className="ad-drawer-scrim" aria-label="Close" tabIndex={-1} onClick={onClose} />
-      <div className="ad-cmdk" role="dialog" aria-modal="true" aria-label="Command palette">
-        <div className="ad-cmdk-input">
+    <div className="cx-cmdk-layer">
+      <button type="button" className="cx-drawer-scrim" aria-label="Close" tabIndex={-1} onClick={onClose} />
+      <div className="cx-cmdk" role="dialog" aria-modal="true" aria-label="Command palette">
+        <div className="cx-cmdk-input">
           <Icon name="search" size={18} />
           <input
             ref={inputRef}
@@ -119,17 +119,17 @@ export default function CommandPalette({ open, onClose, sections, actions, onSec
             placeholder="Search users, assessments (A-0012), pages or actions…"
             role="combobox"
             aria-expanded="true"
-            aria-controls="ad-cmdk-list"
+            aria-controls="cx-cmdk-list"
             aria-activedescendant={flat[active] ? `cmdk-${flat[active].id}` : undefined}
           />
-          {searching && <span className="ad-spinner" aria-hidden="true" />}
+          {searching && <span className="cx-spinner" aria-hidden="true" />}
           <Kbd>Esc</Kbd>
         </div>
-        <div className="ad-cmdk-list" id="ad-cmdk-list" role="listbox" ref={listRef}>
-          {flat.length === 0 && <p className="ad-cmdk-empty">{search.length >= 2 && !searching ? `Nothing matches “${q}”.` : 'Type to search.'}</p>}
+        <div className="cx-cmdk-list" id="cx-cmdk-list" role="listbox" ref={listRef}>
+          {flat.length === 0 && <p className="cx-cmdk-empty">{search.length >= 2 && !searching ? `Nothing matches “${q}”.` : 'Type to search.'}</p>}
           {groups.map((g) => (
-            <div key={g.title} className="ad-cmdk-group" role="group" aria-label={g.title}>
-              <p className="ad-cmdk-title">{g.title}</p>
+            <div key={g.title} className="cx-cmdk-group" role="group" aria-label={g.title}>
+              <p className="cx-cmdk-title">{g.title}</p>
               {g.items.map((item) => {
                 index += 1;
                 const i = index;
@@ -140,16 +140,16 @@ export default function CommandPalette({ open, onClose, sections, actions, onSec
                     role="option"
                     aria-selected={i === active}
                     data-active={i === active}
-                    className="ad-cmdk-item"
+                    className="cx-cmdk-item"
                     onMouseMove={() => setActive(i)}
                     onClick={() => choose(item)}
                   >
                     {item.avatar ? <Avatar name={item.avatar.name} email={item.avatar.email} size={24} /> : <Icon name={item.icon} size={17} />}
-                    <span className="ad-cmdk-label">{item.label}</span>
-                    {item.hint && <span className="ad-cmdk-hint">{item.hint}</span>}
+                    <span className="cx-cmdk-label">{item.label}</span>
+                    {item.hint && <span className="cx-cmdk-hint">{item.hint}</span>}
                     {item.badge}
                     {item.keys && (
-                      <span className="ad-cmdk-keys">
+                      <span className="cx-cmdk-keys">
                         {item.keys.map((k) => (
                           <Kbd key={k}>{k}</Kbd>
                         ))}
@@ -161,7 +161,7 @@ export default function CommandPalette({ open, onClose, sections, actions, onSec
             </div>
           ))}
         </div>
-        <footer className="ad-cmdk-foot">
+        <footer className="cx-cmdk-foot">
           <span>
             <Kbd>↑</Kbd>
             <Kbd>↓</Kbd> to move
@@ -197,18 +197,18 @@ export function ShortcutsDialog({ open, onClose, sections }) {
     [['Esc'], 'Close a panel or dialog'],
   ];
   return (
-    <div className="ad-modal-layer">
-      <button type="button" className="ad-drawer-scrim" aria-label="Close" tabIndex={-1} onClick={onClose} />
-      <div className="ad-modal ad-shortcuts" role="dialog" aria-modal="true" aria-labelledby="ad-keys-title">
-        <header className="ad-shortcuts-head">
-          <h2 id="ad-keys-title">Keyboard shortcuts</h2>
-          <button type="button" className="ad-icon-btn" aria-label="Close" onClick={onClose}>
+    <div className="cx-modal-layer">
+      <button type="button" className="cx-drawer-scrim" aria-label="Close" tabIndex={-1} onClick={onClose} />
+      <div className="cx-modal cx-shortcuts" role="dialog" aria-modal="true" aria-labelledby="cx-keys-title">
+        <header className="cx-shortcuts-head">
+          <h2 id="cx-keys-title">Keyboard shortcuts</h2>
+          <button type="button" className="cx-icon-btn" aria-label="Close" onClick={onClose}>
             <Icon name="x" size={16} />
           </button>
         </header>
-        <div className="ad-shortcuts-cols">
+        <div className="cx-shortcuts-cols">
           <section>
-            <h3 className="ad-h3">General</h3>
+            <h3 className="cx-h3">General</h3>
             <ul>
               {general.map(([keys, label]) => (
                 <li key={label}>
@@ -223,7 +223,7 @@ export function ShortcutsDialog({ open, onClose, sections }) {
             </ul>
           </section>
           <section>
-            <h3 className="ad-h3">Go to</h3>
+            <h3 className="cx-h3">Go to</h3>
             <ul>
               {sections.map((s) => (
                 <li key={s.id}>
