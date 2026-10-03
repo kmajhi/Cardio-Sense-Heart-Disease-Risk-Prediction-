@@ -64,6 +64,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Logs the stack of any request still running after 15 s (predictor/watchdog.py).
+    "predictor.watchdog.SlowRequestWatchdogMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
