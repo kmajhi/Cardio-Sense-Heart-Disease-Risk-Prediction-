@@ -251,3 +251,21 @@ def test_each_sample_patient_lands_in_its_own_band(trained, sample):
 def test_samples_are_clearly_apart(trained):
     low, moderate, high = (predict(SAMPLES[s])["probability"] for s in ("low", "moderate", "high"))
     assert low < 0.10 and 0.40 <= moderate <= 0.60 and high > 0.90
+
+
+def test_fast_forest_matches_sklearn(trained, patient):
+    """The direct per-tree predict_proba gives sklearn's numbers exactly."""
+    from sklearn.ensemble import RandomForestClassifier
+
+    pipeline, _ = trained
+    model = pipeline.named_steps["model"]
+    forests = [cc.estimator for cc in getattr(model, "calibrated_classifiers_", [])] or [model]
+    x = pipeline.named_steps["preprocess"].transform(build_features(patient))
+    rows = np.repeat(x, 50, axis=0) + np.random.RandomState(1).normal(0, 0.5, (50, x.shape[1]))
+    checked = 0
+    for forest in forests:
+        if isinstance(forest, RandomForestClassifier):
+            assert "predict_proba" in vars(forest)  # the fast version is installed
+            assert np.allclose(forest.predict_proba(rows), RandomForestClassifier.predict_proba(forest, rows), atol=1e-12)
+            checked += 1
+    assert checked or not isinstance(model, RandomForestClassifier)
