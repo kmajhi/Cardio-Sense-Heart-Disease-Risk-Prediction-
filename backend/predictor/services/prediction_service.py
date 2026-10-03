@@ -42,7 +42,9 @@ import threading
 from functools import lru_cache
 
 import joblib
+import numpy as np
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
 
 from . import explainability_service
 from .model_store import METADATA_PATH, PIPELINE_PATH
@@ -161,6 +163,39 @@ class PredictionInputError(ValueError):
 _load_lock = threading.Lock()
 
 
+def _fast_forest_proba(forest):
+    """forest.predict_proba, computed by calling each tree directly.
+
+    sklearn dispatches every tree through joblib, which costs ~0.15 ms per tree;
+    the deployed model has 5 calibrated forests x 400 trees, so that overhead
+    was most of a prediction. On Render's free CPU it made a prediction take long
+    enough that the 5-second health check timed out and Render restarted the API
+    mid-request (the prediction never answered). Same numbers, ~5x less CPU
+    (test_fast_forest_matches_sklearn)."""
+    trees = [est.tree_ for est in forest.estimators_]
+
+    def predict_proba(X):
+        X = np.ascontiguousarray(X, dtype=np.float32)
+        total = np.zeros((X.shape[0], forest.n_classes_))
+        for tree in trees:
+            leaf = tree.predict(X)
+            total += leaf[:, 0, :] if leaf.ndim == 3 else leaf
+        total /= len(trees)
+        return total
+
+    return predict_proba
+
+
+def _speed_up(pipeline):
+    """Swap in the fast predict_proba on every random forest in the pipeline."""
+    model = pipeline.named_steps["model"]
+    forests = [cc.estimator for cc in getattr(model, "calibrated_classifiers_", [])] or [model]
+    for forest in forests:
+        if isinstance(forest, RandomForestClassifier) and forest.n_outputs_ == 1:
+            forest.predict_proba = _fast_forest_proba(forest)
+    return pipeline
+
+
 @lru_cache(maxsize=1)
 def _load_model():
     if not PIPELINE_PATH.exists():
@@ -168,7 +203,7 @@ def _load_model():
             f"No trained model at {PIPELINE_PATH}. Train one from ml/ "
             "(python -m training.train --data <dataset.xlsx>) or set CARDIO_MODEL_DIR."
         )
-    pipeline = joblib.load(PIPELINE_PATH)
+    pipeline = _speed_up(joblib.load(PIPELINE_PATH))
     with open(METADATA_PATH, encoding="utf-8") as f:
         metadata = json.load(f)
     return pipeline, metadata
