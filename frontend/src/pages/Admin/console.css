@@ -283,7 +283,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--cx-ink-4);
+  color: var(--cx-ink-3); /* ink-4 fails WCAG AA contrast at 11px */
   white-space: nowrap;
 }
 

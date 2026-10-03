@@ -267,6 +267,10 @@ suite('model risk bands', () => {
     expect([0.34, 0.35, 0.64, 0.65].map(riskLevel)).toEqual(['low', 'moderate', 'moderate', 'high']);
     expect([0.004, 0.5, 0.996].map(pctText)).toEqual(['<1', '50', '>99']);
   });
+
+  it('say "<1" / ">99" for anything under 1% / over 99%, like the admin console (QA BUG-03)', () => {
+    expect([0.0065, 0.01, 0.0149, 0.9899, 0.9935].map(pctText)).toEqual(['<1', '1', '1', '99', '>99']);
+  });
 });
 
 suite('allergy matching', () => {

@@ -17,8 +17,13 @@ export const RISK = {
 
 export const riskLevel = (probability) => RISK_BANDS.find((b) => probability < b.below).level;
 
-/** "72", "<1" or ">99": a model estimate is never a flat 0% or 100%. */
+/**
+ * "72", "<1" or ">99": a model estimate is never a flat 0% or 100%. Judged on
+ * the unrounded value, so 0.65% reads "<1" here, in History and in the admin
+ * console alike (Admin/ui.jsx fmtPct).
+ */
 export function pctText(probability) {
-  const pct = Math.round(probability * 100);
-  return pct < 1 ? '<1' : pct > 99 ? '>99' : String(pct);
+  if (probability < 0.01) return '<1';
+  if (probability > 0.99) return '>99';
+  return String(Math.min(99, Math.max(1, Math.round(probability * 100))));
 }
