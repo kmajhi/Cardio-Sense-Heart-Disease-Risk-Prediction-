@@ -12,3 +12,11 @@
 .pc-demo-banner strong {
   font-weight: 800;
 }
+
+/* Phones: it scrolls away with the page instead of covering it. */
+@media (max-width: 760px) {
+  .pc-demo-banner {
+    position: static;
+    font-size: 12px;
+  }
+}

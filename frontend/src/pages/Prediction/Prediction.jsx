@@ -144,6 +144,30 @@ function SectionHead({ id, title, hint, review }) {
   );
 }
 
+/** True on phones while the result card (and its own Run button) is off-screen. */
+function useRunBar() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const phone = window.matchMedia?.('(max-width: 760px)');
+    const card = document.querySelector('.pc-pr-result');
+    if (!phone || !card || typeof IntersectionObserver === 'undefined') return undefined;
+    let cardVisible = false;
+    const update = () => setShow(phone.matches && !cardVisible);
+    const io = new IntersectionObserver(([entry]) => {
+      cardVisible = entry.isIntersecting;
+      update();
+    }, { threshold: 0.15 });
+    io.observe(card);
+    phone.addEventListener?.('change', update);
+    update();
+    return () => {
+      io.disconnect();
+      phone.removeEventListener?.('change', update);
+    };
+  }, []);
+  return show;
+}
+
 /**
  * Cardio Sense — Prediction page.
  *
@@ -293,6 +317,10 @@ export default function Prediction({
       : problems.length === 1
         ? problems[0]
         : `${problems.length} values are outside their allowed range: ${problems.map((m) => m.split(/ must| ?:/)[0]).join(', ')}. Fix them to run the prediction.`;
+  // Phones: the form is long and the Run button sits under it, so a bar pinned
+  // to the bottom of the screen runs it from anywhere, then shows the result.
+  const showRunBar = useRunBar();
+
   const focusFirstInvalid = () => document.querySelector('.pc-pr-inputs [aria-invalid="true"]')?.focus();
 
   const run = async (e) => {
@@ -563,6 +591,26 @@ export default function Prediction({
             </section>
           </div>
 
+          {showRunBar && (
+            <div className="pc-pr-runbar">
+              <button
+                type="submit"
+                className="pc-pr-run"
+                disabled={status === 'loading'}
+                onClick={() => {
+                  if (inputError || blocked) return; // run() takes them to the field to fix instead
+                  requestAnimationFrame(() =>
+                    document.querySelector('.pc-pr-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+                  );
+                }}
+              >
+                {status === 'loading' ? 'Running model…' : !signedIn ? 'Log in to run prediction' : result ? 'Run again' : 'Run prediction'}
+                <span className="pc-hero-cta-arrow" aria-hidden="true">
+                  →
+                </span>
+              </button>
+            </div>
+          )}
           <ResultCard
             status={status}
             data={result?.data}

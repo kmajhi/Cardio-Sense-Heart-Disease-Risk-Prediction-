@@ -12,4 +12,17 @@ body {
    Dashboard) are exactly as wide as those that do and the nav never shifts. */
 html {
   scrollbar-gutter: stable;
+  /* iPhone: don't inflate text when the phone is turned sideways. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* iPhone Safari zooms the whole page in when a field with text under 16px is
+   focused, and doesn't zoom back out. Phones get 16px fields everywhere. */
+@media (max-width: 760px) {
+  input:not([type='range']):not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
 }

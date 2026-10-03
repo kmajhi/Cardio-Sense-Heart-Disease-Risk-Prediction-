@@ -2517,6 +2517,125 @@ details[open] > summary .pc-a-plus::after {
   }
 }
 
+/* ---------- Phones (≤640px): shorter, swipeable, thumb-friendly ---------- */
+
+@media (max-width: 640px) {
+  .pc-a-section {
+    padding-top: 72px;
+  }
+
+  /* Headline first; the artwork follows, smaller. */
+  .pc-a-hero {
+    padding-top: 20px;
+  }
+
+  .pc-a-hero-art {
+    order: 1;
+  }
+
+  .pc-a-hero-art .pc-hero {
+    max-width: 280px;
+    margin-inline: auto;
+  }
+
+  .pc-a-h1 {
+    font-size: 40px;
+  }
+
+  .pc-dash .pc-a-lead {
+    font-size: 16px;
+  }
+
+  .pc-a-hero-actions {
+    gap: 14px 20px;
+  }
+
+  /* Card sets become one swipeable row: a card at a time, the next one peeking in. */
+  .pc-a-contrasts,
+  .pc-a-principles,
+  .pc-bento,
+  .pc-a-audiences,
+  .pc-a-steps,
+  .pc-a-labs,
+  .pc-a-trust {
+    display: grid;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 86%;
+    gap: 12px;
+    /* Bleed to the screen edges; the page gutter (Dashboard.css .pc-dash) is the inset. */
+    --pc-gutter: clamp(16px, 4.4vw, 64px);
+    margin-inline: calc(-1 * var(--pc-gutter));
+    padding: 6px var(--pc-gutter) 14px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--pc-gutter);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pc-a-contrasts::-webkit-scrollbar,
+  .pc-a-principles::-webkit-scrollbar,
+  .pc-bento::-webkit-scrollbar,
+  .pc-a-audiences::-webkit-scrollbar,
+  .pc-a-steps::-webkit-scrollbar,
+  .pc-a-labs::-webkit-scrollbar,
+  .pc-a-trust::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pc-a-contrasts > li,
+  .pc-a-principles > li,
+  .pc-bento > li,
+  .pc-a-audiences > li,
+  .pc-a-steps > li,
+  .pc-a-labs > li,
+  .pc-a-trust > li {
+    scroll-snap-align: start;
+    min-width: 0;
+  }
+
+  .pc-bento-card,
+  .pc-bento-card.is-prediction {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  /* 21 inputs: two compact columns instead of 21 rows. */
+  .pc-a-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .pc-a-tile {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .pc-a-tile-name {
+    font-size: 14px;
+  }
+
+  /* The model pipeline: two columns of steps. */
+  .pc-pipeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 14px;
+  }
+
+  /* Section links and filters: big enough for a thumb. */
+  .pc-a-jump a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 16px;
+  }
+
+  .pc-a-pills .pc-filter {
+    min-height: 40px;
+  }
+}
+
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
