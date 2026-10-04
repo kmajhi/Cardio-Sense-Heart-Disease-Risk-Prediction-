@@ -15,7 +15,7 @@ describe('Phone menu', () => {
     openMenu();
     const menu = screen.getByRole('dialog', { name: 'Menu' });
     const links = within(menu).getAllByRole('link').map((a) => a.textContent.trim());
-    expect(links).toEqual(expect.arrayContaining(['Dashboard', 'Prediction', 'History', 'About', 'Guidance', 'Profile']));
+    expect(links).toEqual(expect.arrayContaining(['Dashboard', 'Prediction', 'History', 'Ask a Doctor', 'About', 'Guidance', 'Profile']));
     expect(within(menu).getByRole('link', { name: 'History' }).getAttribute('aria-current')).toBe('page');
     expect(document.documentElement.style.overflow).toBe('hidden');
     expect(screen.getByRole('button', { name: 'Open menu' }).getAttribute('aria-expanded')).toBe('true');

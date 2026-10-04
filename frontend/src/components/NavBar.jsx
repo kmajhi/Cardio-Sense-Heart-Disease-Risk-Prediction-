@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard', to: '/dashboard' },
   { label: 'Prediction', to: '/prediction' },
   { label: 'History', to: '/history' },
+  { label: 'Ask a Doctor', to: '/ask-a-doctor' },
   { label: 'About', to: '/about' },
 ];
 // Signed out: Home and the pages a visitor can look at.
