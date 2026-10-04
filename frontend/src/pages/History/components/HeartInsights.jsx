@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import HeartHero from '../../../components/HeartHero';
+import { useEffect, useRef, useState } from 'react';
+import usePrefersReducedMotion from '../../../hooks/usePrefersReducedMotion';
+import heartVideo from '../../../assets/history-heart.mp4';
+import heartPoster from '../../../assets/history-heart-poster.webp';
 import { LEVELS, panel, pctText } from '../board';
 import { fmt } from '../tests';
 
@@ -30,12 +32,57 @@ function spotsFor(tab, records) {
 const DOT_TEXT = { high: 'above typical range', low: 'below typical range', ok: 'in typical range' };
 
 /**
- * The glowing heart with tab pills and three glass callouts pinned to it,
+ * The hero clip in a portrait card: muted, looping, decorative. Paused under
+ * reduced motion and while the tab is hidden (saves battery).
+ */
+function VideoCard() {
+  const ref = useRef(null);
+  const reducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return undefined;
+    if (reducedMotion) {
+      video.pause();
+      return undefined;
+    }
+    const play = () => video.play().catch(() => {});
+    play();
+    const onVisibility = () => (document.hidden ? video.pause() : play());
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [reducedMotion]);
+
+  return (
+    <figure className="pc-h-video pc-enter" style={{ '--d': '240ms' }} aria-hidden="true">
+      <video
+        ref={ref}
+        src={heartVideo}
+        poster={heartPoster}
+        muted
+        loop
+        playsInline
+        autoPlay={!reducedMotion}
+        preload="metadata"
+        disablePictureInPicture
+        tabIndex={-1}
+      />
+      <span className="pc-h-video-chip">
+        <i /> Live view
+      </span>
+      <figcaption>
+        <strong>Your heart, over time</strong>
+        <span>Every estimate and test result, in one place</span>
+      </figcaption>
+    </figure>
+  );
+}
+
+/**
+ * The hero video card with tab pills and three glass callouts pinned to it,
  * like the reference's anatomy hotspots. Switching tabs pops new callouts in.
  *
- * The callouts are siblings of <HeartHero />, never wrappers, and this
- * column adds no transform/filter/opacity/z-index: the heart video's screen
- * blend needs that (see HeartHero.jsx).
+ * The callouts float beside the portrait video card (VideoCard).
  */
 export default function HeartInsights({ records }) {
   const [tab, setTab] = useState(TABS[0]);
@@ -57,7 +104,7 @@ export default function HeartInsights({ records }) {
       </div>
 
       <div className="pc-h-heart-stage">
-        <HeartHero showCta={false} />
+        <VideoCard />
         <ul
           className="pc-h-spots"
           style={{ '--base': switched ? '0s' : '1.3s' }}

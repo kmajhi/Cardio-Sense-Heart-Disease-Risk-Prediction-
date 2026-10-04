@@ -5,6 +5,7 @@ import SliderField from './components/SliderField';
 import Segmented from './components/Segmented';
 import TroponinField from './components/TroponinField';
 import ResultCard from './components/ResultCard';
+import PlanToast from './components/PlanToast';
 import FieldHelp from './components/FieldHelp';
 import {
   SECTIONS,
@@ -194,6 +195,8 @@ export default function Prediction({
   const [error, setError] = useState('');
   const [triedRun, setTriedRun] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  // Bumped on every saved estimate: shows the "Your plan is ready" notification again.
+  const [planToast, setPlanToast] = useState(0);
   const [restored, setRestored] = useState(false);
   const [units, setUnits] = useState(readUnits);
   const [activeSection, setActiveSection] = useState('profile');
@@ -221,6 +224,7 @@ export default function Prediction({
         setResult({ data, payload: pending.payload });
         notifications?.setLatest({ inputs: pending.payload, result: data, created_at: new Date().toISOString() });
         setJustSaved(true);
+        setPlanToast((k) => k + 1);
         setStatus('idle');
       })
       .catch((err) => {
@@ -351,6 +355,7 @@ export default function Prediction({
       setJustSaved(true);
       // The nav bell and the Guidance page follow the newest assessment.
       notifications?.setLatest({ inputs: payload, result: data, created_at: new Date().toISOString() });
+      setPlanToast((k) => k + 1);
       setStatus('idle');
     } catch (err) {
       setError(err?.message ?? '');
@@ -619,6 +624,7 @@ export default function Prediction({
             notification={notification}
             LinkComponent={LinkComponent}
             saveNote={saveNote}
+            report={result?.data?.id ? { id: result.data.id, inputs: result.payload, result: result.data } : null}
             signedIn={signedIn}
             blocked={inputError || blocked}
             blockedTitle={inputError ? 'Check the highlighted values. ' : undefined}
@@ -626,6 +632,9 @@ export default function Prediction({
           />
         </form>
       </main>
+      {planToast > 0 && notification && !stale && status === 'idle' && (
+        <PlanToast key={planToast} notification={notification} LinkComponent={LinkComponent} onClose={() => setPlanToast(0)} />
+      )}
       <SiteFooter LinkComponent={LinkComponent} activePath={activePath} />
     </div>
   );

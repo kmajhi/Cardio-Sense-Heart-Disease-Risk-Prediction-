@@ -253,5 +253,7 @@ REST_FRAMEWORK = {
         "auth": os.environ.get("AUTH_THROTTLE_RATE", "10/minute"),
         # Each prediction runs SHAP and writes a row.
         "predict": os.environ.get("PREDICT_THROTTLE_RATE", "30/minute"),
+        # Each PDF report is built on demand (about a second of CPU).
+        "report": os.environ.get("REPORT_THROTTLE_RATE", "20/minute"),
     },
 }

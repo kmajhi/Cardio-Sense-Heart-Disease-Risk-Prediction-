@@ -11,6 +11,10 @@ numpy==2.5.2
 joblib==1.6.0
 shap==0.52.0
 
+# PDF health reports (predictor/reports.py). Pure Python; pulls in Pillow,
+# fontTools and defusedxml.
+fpdf2==2.8.9
+
 # Deployment: WSGI server and the PostgreSQL driver (used when DATABASE_URL is set)
 gunicorn==26.2.0
 psycopg[binary]==3.3.6
@@ -18,3 +22,5 @@ psycopg[binary]==3.3.6
 # Tests
 pytest==9.1.1
 pytest-django==4.14.0
+# Reads the PDF reports back in tests/test_reports.py.
+pypdf==6.16.2

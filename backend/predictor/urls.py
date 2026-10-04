@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import accounts, admin_api, connections, social_login, views
+from . import accounts, admin_api, connections, reports, social_login, views
 
 A = admin_api
 
@@ -48,5 +48,7 @@ urlpatterns = [
     path("predict/", views.PredictView.as_view(), name="predict"),
     path("history/", views.HistoryView.as_view(), name="history"),
     path("history/<str:ref>/", views.HistoryRecordView.as_view(), name="history-record"),
+    path("history/<str:ref>/guidance/", reports.GuidanceView.as_view(), name="history-guidance"),
+    path("history/<str:ref>/report/", reports.ReportView.as_view(), name="history-report"),
     path("profile/", views.ProfileView.as_view(), name="profile"),
 ]
