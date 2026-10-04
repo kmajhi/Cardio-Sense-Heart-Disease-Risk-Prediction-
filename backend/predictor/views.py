@@ -32,8 +32,8 @@ def first_error(errors):
 
 
 class PredictView(APIView):
-    """POST /api/predict/ → { probability, risk_level, top_factors, missing_fields, outside_training,
-    low_confidence },
+    """POST /api/predict/ → { id, probability, risk_level, top_factors, missing_fields, outside_training,
+    low_confidence }, where `id` is the saved assessment's reference (e.g. A-0012),
     saved as an Assessment. Throttled per user: each call runs SHAP and writes a row."""
 
     throttle_classes = [ScopedRateThrottle]
@@ -56,7 +56,7 @@ class PredictView(APIView):
 
         _, metadata = prediction_service.load_model()
         age = payload.get("age")
-        Assessment.objects.create(
+        assessment = Assessment.objects.create(
             user=request.user,
             profile=current_profile(request.user),
             inputs=payload,
@@ -74,7 +74,7 @@ class PredictView(APIView):
         log_activity("prediction", f"Prediction {result['risk_level']} ({result['probability']:.0%})",
                      user=request.user, request=request, risk_level=result["risk_level"],
                      low_confidence=result["low_confidence"])
-        return Response(result)
+        return Response({"id": assessment.reference, **result})
 
 
 class HistoryView(APIView):

@@ -1,0 +1,535 @@
+/* Guidance page as a dashboard (Guidance.jsx): KPI cards, the doctor card,
+   three photo plan cards, areas to watch. White cards with a hairline border
+   and a faint shadow, like the About page's card system; colour only for
+   meaning. Older Guidance.css still styles the checks table and disclaimer. */
+
+.pc-gd {
+  --gd-border: #e6e4ee;
+  --gd-border-strong: #d6d2e4;
+  --gd-muted: #625c76;
+  --gd-subtle: #f7f6fb;
+  --gd-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.05);
+  --gd-shadow-hover: 0 14px 30px -16px rgba(16, 24, 40, 0.22);
+  gap: 18px;
+}
+
+.pc-gd p,
+.pc-gd h2 {
+  margin: 0;
+}
+
+/* ---------- header ---------- */
+
+.pc-gd-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.pc-gd-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-gd-meta li {
+  padding: 6px 12px;
+  border: 1px solid var(--gd-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--gd-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* ---------- cards ---------- */
+
+.pc-gd-card {
+  padding: 22px;
+  border: 1px solid var(--gd-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--gd-shadow);
+}
+
+.pc-gd-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pc-gd-card-head h2 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pc-gd-card-head p {
+  margin-top: 3px;
+  color: var(--gd-muted);
+  font-size: 13px;
+}
+
+.pc-gd-kpi-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #ebe5fd;
+  border-radius: 10px;
+  background: #f3effe;
+  color: var(--pc-violet);
+}
+
+/* ---------- KPI row ---------- */
+
+.pc-gd-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.pc-gd-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pc-gd-kpi header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pc-gd-kpi header p {
+  flex: 1;
+  color: var(--gd-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pc-gd-kpi-value {
+  font-size: 36px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-gd-kpi-value small {
+  color: var(--gd-muted);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.pc-gd-kpi-foot {
+  margin-top: auto !important;
+  color: var(--gd-muted);
+  font-size: 12px;
+}
+
+.pc-gd-kpi-foot a {
+  color: var(--pc-violet);
+  font-weight: 600;
+}
+
+/* Risk scale, same gradient as the rest of the app. */
+.pc-gd-scale {
+  position: relative;
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pc-risk-scale, linear-gradient(90deg, #1a9e70 18%, #f2b01e 50%, #e5484d 82%));
+}
+
+.pc-gd-scale i {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--pc-ink);
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.35);
+  translate: -50% -50%;
+}
+
+/* One dot per checked value: a glanceable picture of the panel. */
+.pc-gd-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.pc-gd-dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: #cfe9dc;
+}
+
+.pc-gd-dots i.is-elevated {
+  background: #f2c25a;
+}
+
+.pc-gd-dots i.is-high {
+  background: #e7684f;
+}
+
+.pc-gd-dots i.is-urgent {
+  background: #d81e43;
+}
+
+.pc-gd-split {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-gd-split a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--gd-border);
+  border-radius: 999px;
+  color: var(--pc-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.pc-gd-split a:hover {
+  border-color: var(--gd-border-strong);
+  background: var(--gd-subtle);
+}
+
+.pc-gd-split svg {
+  color: var(--pc-violet);
+}
+
+/* ---------- doctor card ---------- */
+
+.pc-gd-doctor.is-urgent {
+  border-color: #f3c2cb;
+  box-shadow: inset 4px 0 0 #d81e43, var(--gd-shadow);
+}
+
+.pc-gd-doctor.is-urgent .pc-gd-kpi-icon {
+  border-color: #f6cbd3;
+  background: #fff1f4;
+  color: #c0183d;
+}
+
+/* ---------- suggestion items ---------- */
+
+.pc-gd-items {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-gd-items.is-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
+}
+
+.pc-gd-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px 0;
+  border-top: 1px solid var(--gd-border);
+}
+
+.pc-gd-items:not(.is-columns) .pc-gd-item:first-child,
+.pc-gd-items.is-columns .pc-gd-item:nth-child(-n + 2) {
+  border-top: 0;
+  padding-top: 2px;
+}
+
+.pc-gd-item-n {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--gd-subtle);
+  color: var(--gd-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pc-gd-item-text {
+  color: var(--pc-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pc-gd-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px !important;
+}
+
+.pc-gd-chip {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #f3effe;
+  color: var(--pc-violet-deep);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.pc-gd-source {
+  color: #8a849c;
+  font-size: 11.5px;
+}
+
+/* ---------- photo plan cards ---------- */
+
+.pc-gd-plans {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px;
+}
+
+.pc-gd-plan {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--gd-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--gd-shadow);
+  overflow: hidden;
+  transition:
+    box-shadow 0.25s ease,
+    border-color 0.2s ease;
+}
+
+.pc-gd-plan:hover {
+  border-color: var(--gd-border-strong);
+  box-shadow: var(--gd-shadow-hover);
+}
+
+.pc-gd-plan-media {
+  position: relative;
+  height: 190px;
+  overflow: hidden;
+}
+
+.pc-gd-plan-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: scale 0.6s var(--pc-ease, ease);
+}
+
+.pc-gd-plan:hover .pc-gd-plan-media img {
+  scale: 1.04;
+}
+
+.pc-gd-plan-overlay {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 40px 18px 16px;
+  background: linear-gradient(180deg, transparent, rgba(16, 12, 36, 0.78));
+  color: #fff;
+}
+
+.pc-gd-plan-overlay > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.pc-gd-plan-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.pc-gd-plan-tag {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pc-gd-plan-overlay h2 {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.pc-gd-plan-count {
+  flex: none;
+  min-width: 30px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--pc-ink);
+  font-size: 12.5px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pc-gd-plan .pc-gd-items {
+  padding: 14px 18px 4px;
+}
+
+.pc-gd-more {
+  margin: 0 18px 16px;
+  padding: 9px;
+  border: 1px solid var(--gd-border);
+  border-radius: 10px;
+  background: var(--gd-subtle);
+  color: var(--pc-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pc-gd-more:hover {
+  border-color: var(--gd-border-strong);
+  background: #fff;
+}
+
+/* ---------- areas to watch, checks, empty state ---------- */
+
+/* Two columns of compact rows on wide screens (one list on phones). */
+.pc-gd-watch .pc-ri-rows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  column-gap: 0;
+  border-radius: 12px;
+}
+
+.pc-gd-watch .pc-ri-row {
+  border-bottom: 1px solid var(--gd-border);
+}
+
+.pc-gd-watch .pc-ri-row + .pc-ri-row {
+  border-top: 0;
+}
+
+.pc-gd-watch .pc-ri-row:nth-child(odd) {
+  border-right: 1px solid var(--gd-border);
+}
+
+@media (max-width: 860px) {
+  .pc-gd-watch .pc-ri-rows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pc-gd-watch .pc-ri-row:nth-child(odd) {
+    border-right: 0;
+  }
+}
+
+.pc-gd .pc-gd-checks {
+  border: 1px solid var(--gd-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--gd-shadow);
+}
+
+.pc-gd-empty {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  max-width: 560px;
+}
+
+.pc-gd-empty h2 {
+  font-size: 20px;
+}
+
+.pc-gd-empty p {
+  color: var(--gd-muted);
+}
+
+.pc-gd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--pc-ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pc-gd a:focus-visible,
+.pc-gd button:focus-visible {
+  outline: 3px solid var(--pc-violet-soft);
+  outline-offset: 2px;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 1100px) {
+  .pc-gd-plans {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .pc-gd-kpis,
+  .pc-gd-plans {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pc-gd-items.is-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pc-gd-items.is-columns .pc-gd-item:nth-child(2) {
+    border-top: 1px solid var(--gd-border);
+    padding-top: 13px;
+  }
+
+  .pc-gd-plan-media {
+    height: 170px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-gd-plan-media img {
+    transition: none;
+  }
+
+  .pc-gd-plan:hover .pc-gd-plan-media img {
+    scale: none;
+  }
+}

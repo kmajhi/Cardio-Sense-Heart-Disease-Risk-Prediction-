@@ -6,16 +6,22 @@
 export const DISCLAIMER = 'Research prototype. Not externally validated, not approved for clinical use.';
 
 export const HERO = {
-  badge: 'Final-year CSE capstone · Research prototype',
+  badge: 'PDF health reports · Doctor review coming next',
   lines: [
-    { text: 'Heart risk,', weight: 'thin' },
-    { text: 'estimated early,', weight: 'bold' },
-    { text: 'explained clearly.', weight: 'bold' },
+    { text: 'Your heart check,', weight: 'thin' },
+    { text: 'ready for a', weight: 'bold' },
+    // `accent`: set in the display serif (About.css .pc-a-accent).
+    { text: 'doctor’s eyes.', weight: 'bold', accent: 'doctor’s' },
   ],
   lead:
-    'Cardio Sense turns the routine measurements a clinic already takes (blood pressure, lipids and a basic ' +
-    'blood panel) into a calibrated, explained estimate of heart disease risk, checks every value against ' +
-    'clinical reference ranges, and keeps the history so change is easy to see.',
+    'Routine check-up numbers in, an explained heart-risk estimate out, with every value checked against ' +
+    'clinical ranges and a report ready for your doctor.',
+  // What is true today, and what comes next. The review is never shown as done.
+  points: [
+    { icon: 'check', text: 'Every value checked against published reference ranges' },
+    { icon: 'download', text: 'A clinical PDF report for any saved assessment' },
+    { icon: 'stethoscope', text: 'Doctor review is next: shown as pending until a verified doctor signs' },
+  ],
 };
 
 export const FACTS = [
@@ -54,21 +60,20 @@ export const STEPS = [
 export const MISSION = {
   statement: 'Specialist heart tests aren’t everywhere. Routine blood work is.',
   text:
-    'Cardiovascular disease is the world’s leading cause of death (WHO). Many clinics can measure blood ' +
-    'pressure and run a basic blood panel, but can’t easily reach angiography or a cardiologist. Cardio Sense ' +
-    'asks what those routine numbers already say, and shows its reasoning so a health worker can question it.',
+    'Many clinics can measure blood pressure and run a blood panel, but can’t easily reach a cardiologist. ' +
+    'Cardio Sense asks what those numbers already say, and shows its reasoning.',
   contrasts: [
-    { problem: 'A risk score nobody can question', answer: 'Every estimate names the five inputs that moved it, in percentage points.' },
-    { problem: 'Labs that weren’t run', answer: 'Mark a test “not measured”: the model fills the gap and says so, and flags the result when too much is missing.' },
-    { problem: 'Numbers without context', answer: 'Each value is checked against published clinical ranges, separately from the model, with urgent findings first.' },
+    { problem: 'A risk score nobody can question', answer: 'Every estimate names the five inputs that moved it.' },
+    { problem: 'Labs that weren’t run', answer: 'Mark a lab “not measured”: the estimate says what it filled in.' },
+    { problem: 'Numbers without context', answer: 'Every value is checked against clinical ranges, urgent ones first.' },
   ],
 };
 
 export const PRINCIPLES = [
-  { icon: 'spark', title: 'Explain, don’t dictate', text: 'An estimate is only useful if you can see why. Explanations are part of every result, not an add-on.' },
-  { icon: 'shield', title: 'Honest about limits', text: 'Internal validation only, said plainly. Results are labelled as estimates, never diagnoses.' },
-  { icon: 'pin', title: 'Built for where it’s needed', text: 'Designed around the tests a district hospital already runs, and around the gaps in them.' },
-  { icon: 'lock', title: 'Private by default', text: 'Your records are visible to your account only, exportable at any time, and deletable for good.' },
+  { icon: 'spark', title: 'Explain, don’t dictate', text: 'Every result shows why.' },
+  { icon: 'shield', title: 'Honest about limits', text: 'Estimates, never diagnoses.' },
+  { icon: 'pin', title: 'Built for where it’s needed', text: 'Built on the tests clinics already run.' },
+  { icon: 'lock', title: 'Private by default', text: 'Yours only, exportable, deletable.' },
 ];
 
 // ---------- Product tour (how it works) ----------
@@ -77,25 +82,25 @@ export const TOUR = [
   {
     key: 'enter',
     title: 'Enter routine values',
-    text: 'Age, sex, height and weight, four yes/no history questions, blood pressure, blood sugar, a lipid panel and a basic blood panel. BMI is calculated for you, and any lab you don’t have can be marked “not measured”.',
+    text: 'Vitals, history and routine labs. Missing a lab? Mark it “not measured”.',
     time: '~40 s',
   },
   {
     key: 'check',
     title: 'Check against clinical ranges',
-    text: 'Every value is compared with published reference ranges (NCEP ATP III, ACC/AHA), separately from the model. Urgent findings are listed first.',
+    text: 'Each value against published reference ranges, urgent ones first.',
     time: 'instant',
   },
   {
     key: 'estimate',
     title: 'Get a calibrated estimate',
-    text: 'A calibrated Random Forest returns the probability of heart disease and its band: low under 35%, moderate 35–65%, high 65% and above. Calibrated means a 30% estimate behaves like 3 in 10.',
+    text: 'A calibrated Random Forest returns a probability and its band.',
     time: '< 1 s',
   },
   {
     key: 'explain',
     title: 'See why, then follow up',
-    text: 'The five inputs that pushed the estimate up or down most, saved to your History with personalised guidance on diet, activity and when to see a doctor.',
+    text: 'Top five factors, personal guidance and a PDF report for your doctor.',
     time: 'saved',
   },
 ];
@@ -108,20 +113,20 @@ export const PLATFORM = [
     to: '/prediction',
     icon: 'pulse',
     title: 'Prediction',
-    text: 'The 21-value form with sample patients, unit-safe inputs and “not measured” for missing labs. Results arrive with their band, confidence and top factors.',
+    text: '21 values, sample patients and unit-safe inputs. Every result downloads as a PDF.',
   },
-  { key: 'dashboard', to: '/dashboard', icon: 'grid', title: 'Dashboard', text: 'Your latest estimate, risk over time, check-ups and a guided 4-7-8 breathing exercise.' },
-  { key: 'history', to: '/history', icon: 'clock', title: 'History', text: 'Every assessment, with lab trends, the change since last time and sparklines per test.' },
-  { key: 'guidance', to: '/guidance', icon: 'leaf', title: 'Guidance', text: 'Rule-based diet, activity and habit suggestions, each showing what triggered it and the guideline behind it.' },
-  { key: 'profile', to: '/profile', icon: 'user', title: 'Profile & reports', text: 'Your details, a printable health report, sharing that includes only what you tick, and Google or X sign-in.' },
-  { key: 'alerts', to: '/dashboard', cta: 'See them on the Dashboard', icon: 'bell', title: 'Notifications', text: 'Out-of-range values grouped by topic, most serious first, plus a note when a new estimate lands.' },
+  { key: 'dashboard', to: '/dashboard', icon: 'grid', title: 'Dashboard', text: 'Latest estimate, risk over time, guided breathing.' },
+  { key: 'history', to: '/history', icon: 'clock', title: 'History', text: 'Every assessment and lab trend, each with its own PDF.' },
+  { key: 'guidance', to: '/guidance', icon: 'leaf', title: 'Guidance', text: 'Diet, activity and habits, each with its reason.' },
+  { key: 'profile', to: '/profile', icon: 'user', title: 'Profile & reports', text: 'Your details, a printable summary, selective sharing.' },
+  { key: 'alerts', to: '/dashboard', cta: 'See them on the Dashboard', icon: 'bell', title: 'Notifications', text: 'Out-of-range values by topic, most serious first.' },
   {
     key: 'admin',
     to: '/console',
     cta: 'Open the console',
     icon: 'console',
     title: 'Admin console',
-    text: 'For clinic staff: users, assessments, a model card with health checks, security monitoring, an audit log and site-wide controls.',
+    text: 'Users, assessments, model health, security and an audit log.',
     staff: true,
   },
 ];
@@ -132,19 +137,19 @@ export const AUDIENCES = [
   {
     icon: 'stethoscope',
     who: 'Clinics & health workers',
-    text: 'A second look at routine results, with the reasoning shown, for triage and for deciding who needs a specialist referral first.',
+    text: 'A second look at routine results, for triage and referral.',
     points: ['No imaging or specialist tests', 'Works with missing labs', 'Staff console for oversight'],
   },
   {
     icon: 'heart',
     who: 'Patients & families',
-    text: 'Understand what your numbers mean, track them over time and take practical, guideline-based steps between visits.',
+    text: 'Understand your numbers and track them between visits.',
     points: ['Plain-language results', 'History and trends', 'Personal guidance'],
   },
   {
     icon: 'book',
     who: 'Students & researchers',
-    text: 'An end-to-end, documented example of clinical ML: leakage controls, calibration, explanations and an honest validation story.',
+    text: 'A documented, end-to-end example of clinical ML.',
     points: ['Research notebook', 'Model card and metrics', 'QA traced to requirements'],
   },
 ];
@@ -154,52 +159,43 @@ export const AUDIENCES = [
 // Required/optional matches the backend's REQUIRED_FIELDS / OPTIONAL_FIELDS.
 
 export const GET_NUMBERS = {
-  intro:
-    'Cardio Sense is built on hospital records from Bangladesh, and its units match the way Bangladeshi ' +
-    'lab reports are written. You need a recent blood-pressure reading and one blood test; the other labs ' +
-    'make the estimate more reliable but can be left as “Not measured”.',
+  intro: 'One blood-pressure reading and one blood test. Units match Bangladeshi lab reports.',
   minimum: 'Minimum to get an estimate: height, weight, blood pressure and a Lipid profile.',
   steps: [
     {
       n: 1,
       title: 'Measure yourself',
-      where: 'At home, a pharmacy or a community clinic. Free or nearly free.',
+      where: 'Home, pharmacy or community clinic.',
       items: [
-        { name: 'Height and weight', detail: 'Without shoes. BMI is calculated for you.' },
+        { name: 'Height and weight', detail: 'Without shoes.' },
         {
           name: 'Blood pressure (systolic)',
-          detail:
-            'The top number of a reading, e.g. 130 in 130/85. Sit and rest 5 minutes first. A digital BP machine at home, ' +
-            'a pharmacy, or a nurse at a clinic can do it.',
+          detail: 'The top number (130 in 130/85), after 5 minutes’ rest.',
         },
         {
           name: 'Your medical history',
-          detail:
-            'Four yes/no questions: family history of heart disease, diagnosed high blood pressure, diagnosed diabetes, ' +
-            'and past chest pain. Ask your doctor or check old prescriptions if unsure.',
+          detail: 'Four yes/no questions.',
         },
       ],
     },
     {
       n: 2,
       title: 'Get a blood test',
-      where:
-        'Any diagnostic centre or hospital lab: a private diagnostic centre, a district or medical college hospital, ' +
-        'or an upazila health complex. One blood sample covers every test below.',
+      where: 'Any diagnostic centre or hospital lab. One sample covers it all.',
       items: [],
     },
     {
       n: 3,
       title: 'Enter your report',
-      where: 'Open Prediction and copy the numbers from your report.',
+      where: 'Copy the numbers into Prediction.',
       items: [
         {
           name: 'Use the (?) beside each field',
-          detail: 'It shows what the value is called on a report, its healthy range, and how to convert units.',
+          detail: 'Report names, healthy ranges, unit conversions.',
         },
         {
           name: 'Missing a test?',
-          detail: 'Tick “Not measured” for any optional lab. The estimate is still made and says what was left out.',
+          detail: 'Tick “Not measured”.',
         },
       ],
     },
@@ -324,23 +320,23 @@ export const METRICS = [
 ];
 
 export const LIMITATIONS = [
-  'Trained and tested on a single hospital’s records, so these scores are not proof it works elsewhere.',
-  'Not externally validated, and not approved for clinical use.',
-  'Some fields in the source data follow recording patterns rather than physiology. Troponin-I ran backwards and is left out; LDL almost separates the two groups on its own, so the model leans on it heavily.',
-  'Adults only. The data’s 13 children were all heart-disease cases, so there is nothing to learn a child’s risk from; the app explains this instead of estimating.',
-  'Trained on ages 18–97, weights 38–101 kg and heights 141–186 cm. Values beyond that are accepted, but those estimates are flagged as less reliable.',
-  'It estimates probability. It does not diagnose, and it doesn’t replace a clinician’s judgement or an ECG.',
+  'One hospital’s records: the scores aren’t proof it works elsewhere.',
+  'Not externally validated or approved for clinical use.',
+  'Data quirks: Troponin-I ran backwards (left out); the model leans on LDL.',
+  'Adults only: the data had no healthy children.',
+  'Trained on ages 18–97 and 38–101 kg; values beyond are flagged.',
+  'Estimates probability; it doesn’t diagnose or replace an ECG.',
 ];
 
 // ---------- Trust & privacy (each line is enforced in backend/predictor) ----------
 
 export const TRUST = [
-  { icon: 'lock', title: 'Only you see your records', text: 'Every profile and assessment belongs to one account. The API checks ownership on every request.' },
-  { icon: 'download', title: 'Export whenever you like', text: 'Download everything stored about you, from your Profile, as one JSON file.' },
-  { icon: 'trash', title: 'Delete for good', text: 'Deleting your account removes it, your profile and every assessment at once. The audit log keeps only a note that it happened.' },
-  { icon: 'key', title: 'Passwords stay secret', text: 'Passwords are stored only as salted hashes, and are never included in exports or staff backups.' },
-  { icon: 'eye', title: 'Staff actions are audited', text: 'Every change made in the admin console is written to an activity log, kept for 180 days.' },
-  { icon: 'share', title: 'You choose what’s shared', text: 'Sharing a result includes just the risk level unless you tick more, and the text stays editable.' },
+  { icon: 'lock', title: 'Only you see your records', text: 'Ownership checked on every request; reports never stored.' },
+  { icon: 'download', title: 'Export whenever you like', text: 'Everything about you, as one JSON file.' },
+  { icon: 'trash', title: 'Delete for good', text: 'Account, profile and assessments, gone at once.' },
+  { icon: 'key', title: 'Passwords stay secret', text: 'Salted hashes only, never in exports.' },
+  { icon: 'eye', title: 'Staff actions are audited', text: 'Every admin change logged for 180 days.' },
+  { icon: 'share', title: 'You choose what’s shared', text: 'Just the risk level, unless you tick more.' },
 ];
 
 export const STACK = ['React', 'Vite', 'Django REST Framework', 'scikit-learn', 'SHAP', 'pandas', 'Open-Meteo'];
@@ -348,12 +344,13 @@ export const STACK = ['React', 'Vite', 'Django REST Framework', 'scikit-learn', 
 // ---------- Journey (from the git history) ----------
 
 export const JOURNEY = [
-  { date: '2026-09-24', title: 'Model trained, first release', text: 'Four models compared on the Northern Bangladesh dataset; the calibrated Random Forest is saved as one pipeline.' },
-  { date: '2026-09-26', title: 'Django API and Profile', text: 'A real backend for predictions and history, a redesigned History page and the Profile page.' },
-  { date: '2026-09-27', title: 'Accounts, alerts and guidance', text: 'Per-user data, risk notifications, personalised health guidance and a responsive pass across every page.' },
-  { date: '2026-10-01', title: 'QA review and retraining', text: '114 test cases traced to 24 requirements. Fixes applied, Troponin-I left out of the model, Google and X sign-in added.' },
-  { date: '2026-10-02', title: 'Admin console', text: 'A staff console with site controls, security monitoring, an audit log and model health checks.' },
-  { date: null, title: 'Next', text: 'Move the hosted site from demo mode onto the API. Before any clinical use, the model needs external validation on another hospital’s data.' },
+  { date: '2026-09-24', title: 'Model trained, first release', text: 'Four models compared; calibrated Random Forest chosen.' },
+  { date: '2026-09-26', title: 'Django API and Profile', text: 'A real backend, History and Profile pages.' },
+  { date: '2026-09-27', title: 'Accounts, alerts and guidance', text: 'Per-user data, alerts and personal guidance.' },
+  { date: '2026-10-01', title: 'QA review and retraining', text: '114 test cases; Troponin-I left out of the model.' },
+  { date: '2026-10-02', title: 'Admin console', text: 'Site controls, security and model health.' },
+  { date: '2026-10-04', title: 'PDF health reports', text: 'Clinical PDF for any saved assessment.' },
+  { date: null, title: 'Next', text: 'Verified doctor review, then external validation.' },
 ];
 
 // ---------- FAQ ----------
@@ -366,6 +363,10 @@ export const FAQ = [
   {
     q: 'How accurate is it?',
     a: 'On 207 held-out patients from the same hospital, ROC-AUC was 0.987 and accuracy 95.7%. Scores that high on one hospital’s data very likely overstate real-world performance, so treat them as dataset-specific, not as clinical accuracy.',
+  },
+  {
+    q: 'Can I take my results to a doctor?',
+    a: 'Yes. After a prediction, or from any record in your History, choose “Download PDF Health Report”. It lists the values you entered, the saved estimate, values outside their healthy range and the app’s recommendations. Its “Doctor’s Clinical Review” section stays pending: no doctor reviews reports in the app yet, and the report never says one did.',
   },
   {
     q: 'What if some lab results are missing?',

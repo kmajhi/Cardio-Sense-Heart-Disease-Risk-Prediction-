@@ -109,6 +109,14 @@ class Assessment(models.Model):
 
     notes = models.TextField(blank=True, help_text="Staff notes (admin only; never shown to users).")
 
+    # The app's automated reading of this assessment as the user saw it: each
+    # value against its reference range, and the rule-based diet, activity and
+    # habit guidance (frontend src/clinical/). Computed in the browser and
+    # recorded once (reports.py → GuidanceView); the PDF report uses this frozen
+    # copy, so it shows exactly what the app said and never re-generates advice.
+    guidance = models.JSONField(null=True, blank=True)
+    guidance_recorded_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         ordering = ["created_at"]
 

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import NavBar from '../../components/NavBar';
 import SiteFooter from '../../components/SiteFooter';
-import HeartHero from '../../components/HeartHero';
 import { linkProps } from '../../components/link';
 import { useAuth } from '../../auth/AuthContext';
 import CountUp from './components/CountUp';
+import HeroStage from './components/HeroStage';
 import ProductTour from './components/ProductTour';
 import useInView from './components/useInView';
 import {
@@ -29,6 +29,7 @@ import {
 } from './content';
 import '../Dashboard/Dashboard.css'; // shared tokens, nav, hero orb, page wipe
 import './About.css';
+import './about-system.css'; // the minimal card system for everything below the hero
 
 const PATHS = {
   spark: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18',
@@ -235,6 +236,12 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
       <main className="pc-a-main">
         {/* ---------- Hero ---------- */}
         <section className="pc-a-hero" aria-labelledby="a-title">
+          {/* The Dashboard's fog, rolling in along the bottom of the glass panel. */}
+          <div className="pc-fog" aria-hidden="true">
+            <span style={{ '--d': '100ms' }} />
+            <span style={{ '--d': '300ms' }} />
+            <span style={{ '--d': '500ms' }} />
+          </div>
           <div className="pc-a-hero-copy">
             <p className="pc-a-badge pc-enter" style={{ '--d': '60ms' }}>
               <span className="pc-a-badge-dot" aria-hidden="true" />
@@ -243,14 +250,29 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
             <h1 id="a-title" className="pc-a-h1">
               {HERO.lines.map((line, i) => (
                 <span key={line.text} className={`pc-wipe pc-${line.weight}`} style={{ '--d': `${140 + i * 160}ms` }}>
-                  {line.text}
+                  {line.accent ? (
+                    <>
+                      <em className="pc-a-accent">{line.accent}</em>
+                      {line.text.slice(line.accent.length)}
+                    </>
+                  ) : (
+                    line.text
+                  )}
                 </span>
               ))}
             </h1>
             <p className="pc-a-lead pc-enter" style={{ '--d': '520ms' }}>
               {HERO.lead}
             </p>
-            <div className="pc-a-hero-actions pc-enter" style={{ '--d': '620ms' }}>
+            <ul className="pc-a-hero-points pc-enter" style={{ '--d': '580ms' }}>
+              {HERO.points.map((p) => (
+                <li key={p.text}>
+                  <Icon name={p.icon} />
+                  {p.text}
+                </li>
+              ))}
+            </ul>
+            <div className="pc-a-hero-actions pc-enter" style={{ '--d': '640ms' }}>
               <L {...linkProps(L, '/prediction')} className="pc-a-btn">
                 Run a prediction <span className="pc-hero-cta-arrow" aria-hidden="true">→</span>
               </L>
@@ -259,8 +281,8 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
               </a>
             </div>
           </div>
-          <div className="pc-a-hero-art">
-            <HeartHero LinkComponent={LinkComponent} />
+          <div className="pc-a-hero-art pc-enter" style={{ '--d': '200ms' }}>
+            <HeroStage />
           </div>
         </section>
 
@@ -333,7 +355,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
             center
             eyebrow="How it works"
             title="From routine values to an explained result"
-            text="Four steps, about a minute. Pick a step to see it, or let the tour play."
+            text="Four steps, about a minute."
           />
           <ProductTour inView={tourIn} />
         </section>
@@ -344,7 +366,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
             id="a-platform"
             eyebrow="The platform"
             title="Everything in one place"
-            text="Cardio Sense is more than a calculator: it keeps your history, turns findings into guidance and gives clinic staff the oversight tools they need."
+            text="More than a calculator."
           />
           <Reveal as="ul" className="pc-bento">
             {PLATFORM.map((p, i) => {
@@ -443,6 +465,11 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
               </li>
             ))}
           </Reveal>
+          {/* The full per-test detail stays one click away instead of filling the page. */}
+          <details className="pc-a-labs-more">
+            <summary>
+              <Icon name="flask" size={16} /> Test-by-test details: preparation and report units
+            </summary>
           <Reveal as="ul" className="pc-a-labs" aria-label="Tests to ask the lab for">
             {GET_NUMBERS.tests.map((t, i) => (
               <li key={t.ask} className={t.required ? 'is-required' : ''} style={{ '--i': i }}>
@@ -464,6 +491,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
               </li>
             ))}
           </Reveal>
+          </details>
           <Reveal className="pc-a-tests-foot">
             <p className="pc-a-tests-warn" role="note">
               <Icon name="warn" size={18} /> {GET_NUMBERS.safety}
@@ -482,7 +510,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
             center
             eyebrow="What the model looks at"
             title="21 routine measurements"
-            text="21 values that you enter, plus BMI and max heart rate, which are calculated for you. Troponin-I is checked against clinical limits instead of feeding the model."
+            text="21 values you enter; BMI and max heart rate are calculated."
           />
           <div className="pc-a-pills" role="group" aria-label="Filter inputs by group">
             {INPUT_GROUPS.map((g) => (
@@ -521,7 +549,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
             light
             eyebrow="Under the hood"
             title="How the model was built"
-            text="A standard, auditable pipeline. Preprocessing is fitted on training data only and saved with the model, so what was tested is exactly what runs."
+            text="A standard, auditable pipeline: what was tested is what runs."
           />
           <Reveal as="ol" className="pc-pipeline">
             {PIPELINE.map((p, i) => (
@@ -588,7 +616,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
             id="a-trust"
             eyebrow="Privacy & trust"
             title="Health data deserves care"
-            text="Every commitment below is enforced in the code, not just promised."
+            text="Enforced in the code, not just promised."
           />
           <Reveal as="ul" className="pc-a-trust">
             {TRUST.map((t, i) => (
@@ -615,8 +643,9 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
 
         {/* ---------- Journey ---------- */}
         <section className="pc-a-section pc-a-journey-wrap" aria-labelledby="a-journey">
-          <SectionHead id="a-journey" eyebrow="Our journey" title="Built step by step" text="Every milestone below is in the project’s commit history." />
-          <Reveal as="ol" className="pc-a-journey">
+          <SectionHead id="a-journey" eyebrow="Our journey" title="Built step by step" text="Every milestone is in the commit history." />
+          {/* One column per milestone on wide screens, however many there are. */}
+          <Reveal as="ol" className="pc-a-journey" style={{ '--n': JOURNEY.length }}>
             {JOURNEY.map((j, i) => (
               <li key={j.title} className={j.date ? undefined : 'is-next'} style={{ '--i': i }}>
                 <time dateTime={j.date ?? undefined}>{j.date ? fmtDay(j.date) : 'Up next'}</time>
@@ -630,7 +659,7 @@ export default function About({ user = { name: 'Demo User' }, hasNotifications =
         {/* ---------- FAQ ---------- */}
         <section className="pc-a-section pc-a-faq-wrap" aria-labelledby="a-faq">
           <div className="pc-a-faq-side">
-            <SectionHead id="a-faq" eyebrow="FAQ" title="Questions, answered" text="The things people ask first. Anything else is covered in the project README." />
+            <SectionHead id="a-faq" eyebrow="FAQ" title="Questions, answered" text="The things people ask first." />
           </div>
           <div className="pc-a-faq">
             {FAQ.map((f, i) => (

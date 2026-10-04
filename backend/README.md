@@ -35,9 +35,11 @@ The frontend's dev server proxies `/api/*` to `:8000`. Put `VITE_USE_MOCK_API=fa
 | POST | `/api/auth/password-reset/confirm/` | `{ uid, token, password }` → 204 |
 | GET | `/api/auth/export/` | everything stored about the user (account, profile, assessments) as a JSON download |
 | DELETE | `/api/auth/account/` | `{ password }` → 204; deletes the account, profile and assessments at once |
-| POST | `/api/predict/` | `toPayload()` body → `{ probability, risk_level, top_factors, missing_fields, outside_training, low_confidence }`; saved as an Assessment |
+| POST | `/api/predict/` | `toPayload()` body → `{ id, probability, risk_level, top_factors, missing_fields, outside_training, low_confidence }`; saved as an Assessment |
 | GET | `/api/history/` | `[{ id, created_at, inputs, result }]`, oldest first |
 | DELETE | `/api/history/<id>/` | `id` as shown (`A-0012`) → 204 |
+| PUT | `/api/history/<id>/guidance/` | `{ guidance }` (frontend `clinical/snapshot.js`) → `{ recorded_at }`. Kept the first time only; values are checked against the assessment |
+| GET | `/api/history/<id>/report/` | the Heart Health Assessment Report PDF, built on demand from the saved assessment (`predictor/reports.py`); owner only, 404 otherwise, 409 before the guidance is recorded |
 | GET | `/api/profile/` | profile, or 404 when none exists |
 | PUT | `/api/profile/` | profile → the stored profile (creates, replaces, or restores one deleted minutes ago) |
 | DELETE | `/api/profile/` | 204; undoable for 10 minutes, then purged. Assessments stay with the account |
