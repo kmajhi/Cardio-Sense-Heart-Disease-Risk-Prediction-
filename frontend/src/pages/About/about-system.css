@@ -1,0 +1,346 @@
+/* ============================================================
+   About page, below the hero: one minimal design system.
+
+   The way SaaS and medical sites present content: white cards on a
+   calm background, a hairline border, one radius, a barely-there
+   neutral shadow, consistent icon chips and section headings, and
+   colour used only for meaning. Loaded after About.css; every rule is
+   scoped to .pc-about so it overrides the older glass and gradient
+   card styles without touching layout or the phone breakpoints.
+   ============================================================ */
+
+.pc-about {
+  --sx-border: #e6e4ee;
+  --sx-border-strong: #d6d2e4;
+  --sx-surface: #fff;
+  --sx-subtle: #f7f6fb;
+  --sx-radius: 16px;
+  --sx-radius-sm: 12px;
+  --sx-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.05);
+  --sx-shadow-hover: 0 12px 28px -14px rgba(16, 24, 40, 0.18);
+  --sx-muted: #5f5a73;
+  --sx-chip: #f3effe;
+}
+
+/* ---------- Section rhythm and headings ---------- */
+
+.pc-about .pc-a-section {
+  padding-top: 96px;
+}
+
+.pc-about .pc-a-head .pc-a-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 5px 12px;
+  border: 1px solid var(--sx-border);
+  border-radius: 999px;
+  background: var(--sx-surface);
+  color: var(--pc-violet);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.pc-about .pc-a-head .pc-a-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pc-violet);
+}
+
+.pc-about .pc-a-head.is-light .pc-a-eyebrow {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbbcff;
+}
+
+.pc-about .pc-a-head.is-light .pc-a-eyebrow::before {
+  background: #cbbcff;
+}
+
+.pc-about .pc-a-h2 {
+  font-size: clamp(28px, 2.8vw, 40px);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+
+.pc-about .pc-a-head .pc-a-text {
+  margin-top: 12px;
+  color: var(--sx-muted);
+  font-size: 16px;
+}
+
+/* ---------- Icon chips: one size, one shape ---------- */
+
+.pc-about .pc-a-icon {
+  border: 1px solid #ebe5fd;
+  border-radius: 10px;
+  background: var(--sx-chip);
+  color: var(--pc-violet);
+}
+
+/* ---------- Stats strip: a metrics bar with column dividers ---------- */
+
+.pc-about .pc-a-facts {
+  gap: 0;
+  margin-top: 28px;
+  padding: 0;
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius);
+  background: var(--sx-surface);
+  box-shadow: var(--sx-shadow);
+}
+
+.pc-about .pc-a-facts li {
+  padding: 22px 26px;
+}
+
+.pc-about .pc-a-facts li + li {
+  border-left: 1px solid var(--sx-border);
+}
+
+.pc-about .pc-a-facts b {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.pc-about .pc-a-facts li > span {
+  color: var(--sx-muted);
+}
+
+/* ---------- On-this-page bar: quiet text tabs ---------- */
+
+.pc-about .pc-a-jump {
+  border: 0;
+}
+
+.pc-about .pc-a-jump a {
+  border-color: transparent;
+  background: transparent;
+  color: var(--sx-muted);
+  font-weight: 500;
+}
+
+.pc-about .pc-a-jump a:hover {
+  border-color: var(--sx-border);
+  background: var(--sx-surface);
+  color: var(--pc-ink);
+}
+
+/* ---------- Cards: every grid below the hero ---------- */
+
+.pc-about .pc-a-contrasts > li,
+.pc-about .pc-a-audiences > li,
+.pc-about .pc-a-steps > li,
+.pc-about .pc-a-labs > li,
+.pc-about .pc-a-trust > li,
+.pc-about .pc-a-tile,
+.pc-about .pc-bento-inner {
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius);
+  background: var(--sx-surface);
+  box-shadow: var(--sx-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.25s ease,
+    translate 0.25s ease;
+}
+
+.pc-about .pc-a-audiences > li:hover,
+.pc-about .pc-a-steps > li:hover,
+.pc-about .pc-a-labs > li:hover,
+.pc-about .pc-a-trust > li:hover,
+.pc-about a.pc-bento-inner:hover {
+  border-color: var(--sx-border-strong);
+  box-shadow: var(--sx-shadow-hover);
+  translate: 0 -2px;
+}
+
+.pc-about .pc-a-steps > li,
+.pc-about .pc-a-trust > li {
+  padding: 24px;
+}
+
+.pc-about .pc-a-labs > li {
+  padding: 20px;
+}
+
+.pc-about .pc-a-tile {
+  border-radius: var(--sx-radius-sm);
+}
+
+/* The one required lab: a violet edge, not a glow. */
+.pc-about .pc-a-labs > li.is-required {
+  border-color: rgba(104, 51, 228, 0.45);
+  box-shadow: var(--sx-shadow);
+}
+
+/* Platform cards: flat white; the admin card stays the one dark accent. */
+.pc-about .pc-bento-card.is-prediction .pc-bento-inner {
+  background: var(--sx-surface);
+}
+
+.pc-about .pc-bento-card.is-prediction .pc-mini-pred {
+  border-color: var(--sx-border);
+  border-radius: var(--sx-radius-sm);
+  background: var(--sx-subtle);
+}
+
+.pc-about .pc-bento-card.is-admin .pc-bento-inner {
+  border-color: #1c1633;
+  background: #1c1633;
+}
+
+.pc-about .pc-a-contrasts > li {
+  padding: 24px;
+}
+
+/* Problem → answer: the problem is a quiet label, the answer carries the card. */
+.pc-about .pc-a-problem {
+  color: var(--sx-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pc-about .pc-a-answer {
+  color: var(--pc-ink);
+  font-weight: 500;
+}
+
+/* Mission principles: a quiet row, divided, no boxes. */
+.pc-about .pc-a-principles {
+  border-top-color: var(--sx-border);
+}
+
+/* ---------- How it works: the active step is the only card ---------- */
+
+.pc-about .pc-tour-step.is-active {
+  border-color: var(--sx-border);
+  background: var(--sx-surface);
+  box-shadow: var(--sx-shadow-hover);
+}
+
+.pc-about .pc-tour-step:hover:not(.is-active) {
+  background: var(--sx-subtle);
+}
+
+.pc-about .pc-tour-n {
+  border-radius: 8px;
+}
+
+.pc-about .pc-tour-progress {
+  background:
+    linear-gradient(90deg, var(--pc-violet), var(--pc-violet)) 0 0 / 0% 100% no-repeat,
+    var(--sx-border);
+}
+
+.pc-about .pc-tour-stage::before {
+  opacity: 0.5;
+}
+
+/* ---------- Tests guide ---------- */
+
+.pc-about .pc-a-tests-min {
+  border: 1px solid #cfeadc;
+  background: #f1faf5;
+}
+
+.pc-about .pc-a-step-ask {
+  border-radius: var(--sx-radius-sm);
+}
+
+.pc-about .pc-a-tests-warn {
+  border: 1px solid #f6c9d1;
+  border-radius: var(--sx-radius-sm);
+  background: #fff5f6;
+}
+
+.pc-about .pc-a-labs-more > summary {
+  border-color: var(--sx-border);
+  background: var(--sx-surface);
+  color: var(--pc-ink);
+  box-shadow: var(--sx-shadow);
+}
+
+/* ---------- The science: one dark band, flat ---------- */
+
+.pc-about .pc-a-science {
+  background: #14102a;
+}
+
+.pc-about .pc-a-metrics li,
+.pc-about .pc-a-transparency {
+  border-color: rgba(255, 255, 255, 0.09);
+  border-radius: var(--sx-radius);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pc-about .pc-pipeline > li:not(:last-child)::after {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- Journey: a neutral rule with violet milestones ---------- */
+
+.pc-about .pc-a-journey::before {
+  background: var(--sx-border-strong);
+}
+
+/* ---------- FAQ: one bordered list ---------- */
+
+.pc-about .pc-a-faq {
+  padding: 4px 24px;
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius);
+  background: var(--sx-surface);
+  box-shadow: var(--sx-shadow);
+}
+
+.pc-about .pc-a-faq details + details {
+  border-top: 1px solid var(--sx-border);
+}
+
+.pc-about .pc-a-faq details {
+  border-bottom: 0;
+}
+
+/* ---------- Closing call to action: solid, no glow ---------- */
+
+.pc-about .pc-a-cta {
+  border-radius: 24px;
+  background: #1c1633;
+  box-shadow: none;
+}
+
+.pc-about .pc-a-cta-glow {
+  display: none;
+}
+
+/* ---------- Phones: the stats strip stacks, dividers follow ---------- */
+
+@media (max-width: 1000px) {
+  .pc-about .pc-a-facts li + li {
+    border-left: 0;
+  }
+
+  .pc-about .pc-a-facts li {
+    border-bottom: 1px solid var(--sx-border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-about .pc-a-audiences > li:hover,
+  .pc-about .pc-a-steps > li:hover,
+  .pc-about .pc-a-labs > li:hover,
+  .pc-about .pc-a-trust > li:hover,
+  .pc-about a.pc-bento-inner:hover {
+    translate: none;
+  }
+}

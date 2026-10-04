@@ -31,9 +31,11 @@ def client(user):
 def test_predict_returns_the_contract_and_saves_an_assessment(trained, client, patient):
     res = client.post(reverse("predict"), {**patient, "unexpected": "dropped"}, format="json")
     assert res.status_code == 200
-    assert set(res.json()) == {"probability", "risk_level", "top_factors", "missing_fields", "outside_training", "low_confidence"}
+    assert set(res.json()) == {"id", "probability", "risk_level", "top_factors", "missing_fields", "outside_training",
+                               "low_confidence"}
 
     saved = Assessment.objects.get()
+    assert res.json()["id"] == saved.reference
     assert saved.probability == res.json()["probability"]
     assert saved.age == 45 and saved.sex == "M"
     assert "unexpected" not in saved.inputs

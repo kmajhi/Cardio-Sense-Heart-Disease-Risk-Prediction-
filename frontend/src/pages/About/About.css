@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap');
 /* ============================================================
    Cardio Sense — About page
    Builds on Dashboard.css (tokens, nav, hero orb, .pc-wipe,
@@ -156,14 +157,42 @@
 
 /* ---------- Hero ---------- */
 
+/* The Dashboard's glass panel (.pc-panel): white gradient, soft violet shadow,
+   fog along the bottom. No backdrop-filter or z-index, like the Dashboard. */
 .pc-a-hero {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  align-items: center;
-  gap: 32px;
-  min-height: calc(100vh - 150px);
-  min-height: calc(100dvh - 150px);
-  padding: 40px 0 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start; /* the first line sits where the Dashboard's title does */
+  gap: 24px;
+  min-height: calc(100vh - 170px);
+  min-height: calc(100dvh - 170px);
+  /* Same gap below the nav and same padding as the Dashboard's panel
+     (.pc-stage / .pc-panel), at every breakpoint, so switching pages never
+     moves the panel's edges or its first line of text. */
+  margin-top: 62px;
+  padding: 46px 48px 40px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 40px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.28));
+  box-shadow: 0 50px 90px -50px rgba(58, 28, 150, 0.45);
+}
+
+.pc-a-hero > :not(.pc-fog) {
+  position: relative;
+}
+
+/* The headline's creative accent: an italic display serif in the brand gradient. */
+.pc-a-accent {
+  padding-right: 0.06em;
+  background: linear-gradient(100deg, var(--pc-violet) 10%, var(--pc-brand) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
 .pc-a-h1 {
@@ -197,6 +226,36 @@
 .pc-a-hero-art {
   display: grid;
   place-items: center;
+  align-self: center;
+}
+
+/* What the report does today, and the doctor review that comes next. */
+.pc-dash .pc-a-hero-points {
+  display: grid;
+  gap: 10px;
+  max-width: 540px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-a-hero-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--pc-ink-soft);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.pc-a-hero-points svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 3px;
+  border-radius: 7px;
+  background: var(--pc-lilac);
+  color: var(--pc-violet);
 }
 
 .pc-a-hero-art .pc-hero {
@@ -2160,7 +2219,7 @@ details[open] > summary .pc-a-plus::after {
 .pc-a-journey {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr));
   gap: 18px;
   margin: 52px 0 0;
   padding: 0;
@@ -2343,7 +2402,6 @@ details[open] > summary .pc-a-plus::after {
 @media (min-width: 1001px) and (max-height: 1000px) {
   .pc-a-hero {
     min-height: auto;
-    padding-top: 24px;
   }
 }
 
@@ -2525,10 +2583,6 @@ details[open] > summary .pc-a-plus::after {
   }
 
   /* Headline first; the artwork follows, smaller. */
-  .pc-a-hero {
-    padding-top: 20px;
-  }
-
   .pc-a-hero-art {
     order: 1;
   }
@@ -2658,4 +2712,82 @@ details[open] > summary .pc-a-plus::after {
 /* The tall Prediction card: preview sits just above its link. */
 .pc-bento-card.is-prediction .pc-bento-go {
   margin-top: 0;
+}
+
+/* ---------- Hero panel: the Dashboard panel's breakpoints ---------- */
+
+@media (min-width: 1181px) and (max-height: 1000px) {
+  .pc-a-hero {
+    margin-top: var(--pc-stage-gap);
+    padding: clamp(22px, 4vh, 46px) 40px clamp(28px, 4vh, 40px);
+    border-radius: 32px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .pc-a-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pc-a-hero-art {
+    order: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .pc-a-hero {
+    margin-top: 28px;
+    padding: 28px 20px 28px;
+    border-radius: 28px;
+  }
+}
+
+/* ---------- Tests guide: per-test detail, one click away ---------- */
+
+.pc-a-labs-more {
+  margin-top: 28px;
+}
+
+.pc-a-labs-more > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 10px 18px;
+  border: 1px solid rgba(104, 51, 228, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--pc-violet-deep);
+  font-size: 14px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.pc-a-labs-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pc-a-labs-more > summary::after {
+  content: '+';
+  margin-left: 4px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pc-a-labs-more[open] > summary::after {
+  content: '−';
+}
+
+.pc-a-labs-more > summary:hover {
+  border-color: var(--pc-violet);
+  background: #fff;
+}
+
+.pc-a-labs-more > summary:focus-visible {
+  outline: 3px solid var(--pc-violet-soft);
+  outline-offset: 2px;
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { TESTS, fmt, reading, status } from '../tests';
 import { pctText } from '../board';
+import ReportButton from '../../../components/ReportButton';
 
 const LEVELS = {
   low: { label: 'Low risk', className: 'is-low' },
@@ -70,6 +71,8 @@ function RecordDetail({ record }) {
             );
           })}
         </ul>
+        {/* This assessment's own report, from its saved values and result. */}
+        <ReportButton record={record} className="pc-h-report" />
       </div>
     </div>
   );
