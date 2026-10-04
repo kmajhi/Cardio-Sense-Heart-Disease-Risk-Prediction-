@@ -1475,7 +1475,11 @@
   }
 
   .pc-hero {
-    max-width: min(560px, calc(100dvh - 170px));
+    /* The orb block (rings and button included) is ~1.48x as tall as it is
+       wide, and it sets the panel's height: this keeps it inside the screen at
+       every laptop size (1536x864 and 1600x900 used to scroll). */
+    max-width: min(560px, calc((100vh - 210px) * 0.655));
+    max-width: min(560px, calc((100dvh - 210px) * 0.655));
   }
 
   .pc-side {
