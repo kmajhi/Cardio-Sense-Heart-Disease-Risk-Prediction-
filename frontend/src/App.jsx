@@ -12,6 +12,7 @@ const History = lazyPage(() => import('./pages/History/History'));
 const About = lazyPage(() => import('./pages/About/About'));
 const Profile = lazyPage(() => import('./pages/Profile/Profile'));
 const Guidance = lazyPage(() => import('./pages/Guidance/Guidance'));
+const AskDoctor = lazyPage(() => import('./pages/AskDoctor/AskDoctor'));
 const ResetPassword = lazyPage(() => import('./pages/ResetPassword/ResetPassword'));
 const Console = lazyPage(() => import('./pages/Admin/Console'));
 import DemoBanner from './components/DemoBanner';
@@ -91,6 +92,14 @@ function DashboardRoute(props) {
   return <Dashboard {...props} data={dashboardFrom(Array.isArray(records) ? records : [])} />;
 }
 
+// Ask a Doctor: the user picks one of their own assessments to ask about.
+function AskDoctorRoute(props) {
+  const records = useHistory();
+  if (!records) return <LoadingShell {...props} />;
+  if (records.error) return <AskDoctor {...props} records={[]} loadError={records.error} />;
+  return <AskDoctor {...props} records={records} />;
+}
+
 // The health report on the Profile page lists the user's own assessments.
 function ProfileRoute(props) {
   const records = useHistory();
@@ -165,6 +174,7 @@ function AppRoutes() {
         <Route path="/about" element={<About {...shared} />} />
         <Route path="/profile" element={guard(<ProfileRoute {...shared} account={account} onProfileChange={setProfile} />)} />
         <Route path="/guidance" element={guard(<Guidance {...shared} />)} />
+        <Route path="/ask-a-doctor" element={guard(<AskDoctorRoute {...shared} account={account?.email} />)} />
         <Route path="/reset-password" element={<ResetPassword {...shared} />} />
         {/* Admin console: staff only (it checks, and so does every API call). */}
         {/* Its own fallback: the console has a different shell, so don't flash the app's nav while it loads. */}

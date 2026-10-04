@@ -11,6 +11,7 @@ const COLUMNS = [
       ['Prediction', '/prediction'],
       ['History', '/history'],
       ['Guidance', '/guidance'],
+      ['Ask a Doctor', '/ask-a-doctor'],
       ['Profile', '/profile'],
     ],
   },
