@@ -16,6 +16,8 @@ import Security from './sections/Security';
 import System from './sections/System';
 import Maintenance from './sections/Maintenance';
 import SiteControls from './sections/SiteControls';
+import Doctors from './sections/Doctors';
+import Reviews from './sections/Reviews';
 import './console.css';
 
 // `keys` are the "g then letter" shortcuts.
@@ -24,13 +26,15 @@ const SECTIONS = [
   { id: 'activity', label: 'Activity log', icon: 'activity', group: 'Insights', keys: ['G', 'L'] },
   { id: 'users', label: 'Users', icon: 'users', group: 'Manage', keys: ['G', 'U'] },
   { id: 'assessments', label: 'Assessments', icon: 'assessments', group: 'Manage', keys: ['G', 'A'] },
+  { id: 'doctors', label: 'Doctors', icon: 'doctor', group: 'Clinical', keys: ['G', 'D'] },
+  { id: 'reviews', label: 'Review requests', icon: 'reviews', group: 'Clinical', keys: ['G', 'R'] },
   { id: 'security', label: 'Security', icon: 'security', group: 'Platform', keys: ['G', 'S'] },
   { id: 'model', label: 'Model', icon: 'model', group: 'Platform', keys: ['G', 'M'] },
   { id: 'system', label: 'System health', icon: 'system', group: 'Platform', keys: ['G', 'H'] },
   { id: 'site', label: 'Site controls', icon: 'site', group: 'Settings', keys: ['G', 'C'] },
   { id: 'maintenance', label: 'Maintenance', icon: 'maintenance', group: 'Settings', keys: ['G', 'X'] },
 ];
-const GROUPS = ['Insights', 'Manage', 'Platform', 'Settings'];
+const GROUPS = ['Insights', 'Manage', 'Clinical', 'Platform', 'Settings'];
 const ENV = typeof window !== 'undefined' && /^(localhost|127\.|\[::1\])/.test(window.location.hostname) ? 'Local' : 'Production';
 const THEMES = [
   ['light', 'Light', 'sun'],
@@ -196,6 +200,12 @@ function Shell({ user, logout }) {
       break;
     case 'assessments':
       body = <Assessments initialRef={openRef} onOpened={clearOpenRef} openUser={openUserById} />;
+      break;
+    case 'doctors':
+      body = <Doctors />;
+      break;
+    case 'reviews':
+      body = <Reviews />;
       break;
     case 'model':
       body = <Model />;

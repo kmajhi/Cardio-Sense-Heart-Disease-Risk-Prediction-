@@ -48,11 +48,15 @@ export default function NotificationsMenu({ LinkComponent = 'a', fallbackDot = f
     );
   }
 
-  const { notification: n, unread, markRead } = ctx;
+  const { notification: n, unread, markRead, inbox, markInboxRead } = ctx;
   const L = LinkComponent;
+  const messages = (inbox?.results ?? []).slice(0, 3);
   const toggle = () => {
     setOpen((o) => !o);
-    if (!open) markRead();
+    if (!open) {
+      markRead();
+      markInboxRead?.();
+    }
   };
   const close = () => setOpen(false);
 
@@ -83,6 +87,22 @@ export default function NotificationsMenu({ LinkComponent = 'a', fallbackDot = f
               </span>
             )}
           </header>
+
+          {messages.length > 0 && (
+            <ul className="pc-n-inbox">
+              {messages.map((m) => (
+                <li key={m.id} className={m.read ? undefined : 'is-new'}>
+                  <strong>{m.title}</strong>
+                  {m.body && <p>{m.body}</p>}
+                  {m.link && (
+                    <L {...linkProps(L, m.link)} className="pc-n-cta" onClick={close}>
+                      {m.kind === 'review_completed' ? 'View Review' : 'Open'} <span aria-hidden="true">→</span>
+                    </L>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
 
           {!n ? (
             <div className="pc-n-empty">

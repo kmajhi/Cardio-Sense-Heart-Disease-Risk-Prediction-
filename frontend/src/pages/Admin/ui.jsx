@@ -34,6 +34,9 @@ export const ICONS = {
   pause: 'M8 5v14M16 5v14',
   play: 'M7 4v16l13-8z',
   inbox: 'M3 13h5l1.5 3h5L16 13h5M5 5h14l2 8v6H3v-6z',
+  doctor: 'M6 3v6a5 5 0 0 0 10 0V3M11 14v2a5 5 0 0 0 10 0v-2M21 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
+  reviews: 'M9 4h6v3H9zM7 5.5H5.5V21h13V5.5H17M8.5 12h7M8.5 16h5',
+  plus: 'M12 5v14M5 12h14',
 };
 
 export function Icon({ name, d, size = 18, className }) {

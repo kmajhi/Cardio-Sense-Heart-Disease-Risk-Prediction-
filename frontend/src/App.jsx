@@ -15,6 +15,7 @@ const Guidance = lazyPage(() => import('./pages/Guidance/Guidance'));
 const AskDoctor = lazyPage(() => import('./pages/AskDoctor/AskDoctor'));
 const ResetPassword = lazyPage(() => import('./pages/ResetPassword/ResetPassword'));
 const Console = lazyPage(() => import('./pages/Admin/Console'));
+const DoctorPortal = lazyPage(() => import('./pages/Doctor/DoctorPortal'));
 import DemoBanner from './components/DemoBanner';
 import SiteBanner from './components/SiteBanner';
 import { AuthProvider, RequireAuth, useAuth } from './auth/AuthContext';
@@ -183,6 +184,15 @@ function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <Console />
+            </Suspense>
+          }
+        />
+        {/* Doctor Panel: doctors only (it checks, and so does every API call). Its own shell, like the console. */}
+        <Route
+          path="/doctor/*"
+          element={
+            <Suspense fallback={null}>
+              <DoctorPortal />
             </Suspense>
           }
         />

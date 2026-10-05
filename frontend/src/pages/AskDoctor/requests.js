@@ -1,7 +1,6 @@
-// Ask a Doctor requests, demo phase: kept in this browser only, per account.
-// There is no doctor side yet, so every request stays "pending". A future
-// review system replaces this file with API calls (and fills the PDF report's
-// Doctor's Clinical Review section, backend/predictor/reports.py).
+// Ask a Doctor requests in demo mode (no server): kept in this browser only,
+// per account, and always "pending" since no doctor can see them. With the
+// server, api/reviewApi.js sends them to the doctors' review queue instead.
 
 const KEY = (account) => `cardio-sense:doctor-requests:${account || 'guest'}`;
 export const MAX_QUESTION = 1000;
@@ -49,4 +48,21 @@ export function addRequest(account, { assessment, topic, question }, now = new D
 /** Withdraws a request and returns the new list. */
 export function cancelRequest(account, id) {
   return save(account, loadRequests(account).filter((r) => r.id !== id));
+}
+
+/**
+ * The patient's review timeline, from the request's recorded events: steps that
+ * happened carry their time (`when`), later ones are null.
+ */
+export function reviewSteps(r, assessmentDate) {
+  const at = (kind) => r.timeline?.find((e) => e.kind === kind)?.at ?? null;
+  const done = r.status === 'completed';
+  return [
+    ['Assessment completed', assessmentDate ?? null],
+    ['Doctor review requested', at('requested') ?? r.requested_at ?? null],
+    ['Doctor assigned', at('claimed') ?? r.claimed_at ?? null],
+    ['Currently under review', at('opened') ?? at('claimed') ?? r.claimed_at ?? null],
+    ['Doctor review completed', at('submitted') ?? r.completed_at ?? null],
+    ['Updated report available', done ? at('report_updated') ?? r.completed_at ?? null : null],
+  ].map(([label, when]) => ({ label, when }));
 }

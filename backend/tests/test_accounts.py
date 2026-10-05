@@ -24,7 +24,7 @@ def register(api, email="rahim@example.com", name="Rahim Uddin", password=PASSWO
 def test_register_creates_a_signed_in_account_with_a_hashed_password(anon):
     res = register(anon, email=" Rahim@Example.com ")
     assert res.status_code == 201
-    assert res.json() == {"name": "Rahim Uddin", "email": "rahim@example.com", "has_password": True, "sign_in_with": [], "is_staff": False, "is_superuser": False}
+    assert res.json() == {"name": "Rahim Uddin", "email": "rahim@example.com", "has_password": True, "sign_in_with": [], "is_staff": False, "is_superuser": False, "doctor": None}
     assert anon.get(reverse("auth-me")).json()["email"] == "rahim@example.com"
 
     user = get_user_model().objects.get(username="rahim@example.com")
@@ -65,7 +65,7 @@ def test_login_and_logout(anon, user):
     assert wrong.json() == unknown.json() == {"detail": "Incorrect email or password."}
 
     ok = anon.post(reverse("auth-login"), {"email": "Nadia@Example.com", "password": PASSWORD}, format="json")
-    assert ok.json() == {"name": "Nadia Rahman", "email": "nadia@example.com", "has_password": True, "sign_in_with": [], "is_staff": False, "is_superuser": False}
+    assert ok.json() == {"name": "Nadia Rahman", "email": "nadia@example.com", "has_password": True, "sign_in_with": [], "is_staff": False, "is_superuser": False, "doctor": None}
     assert anon.get(reverse("auth-me")).status_code == 200
 
     assert anon.post(reverse("auth-logout")).status_code == 204

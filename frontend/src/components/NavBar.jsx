@@ -134,7 +134,11 @@ export default function NavBar({ user, hasNotifications, activePath, LinkCompone
   const signedIn = auth ? Boolean(auth.user) : true;
   // Staff also get the admin console.
   const isStaff = Boolean(auth?.user?.is_staff);
-  const items = signedIn ? (isStaff ? [...NAV_ITEMS, { label: 'Admin', to: '/console' }] : NAV_ITEMS) : GUEST_ITEMS;
+  // Doctors get the Doctor Panel.
+  const isDoctor = Boolean(auth?.user?.doctor);
+  const items = signedIn
+    ? [...NAV_ITEMS, ...(isDoctor ? [{ label: 'Doctor Panel', to: '/doctor' }] : []), ...(isStaff ? [{ label: 'Admin', to: '/console' }] : [])]
+    : GUEST_ITEMS;
   const [scrollRef, more] = useScrollCue(activePath);
   const menu = useMobileMenu(activePath);
   const menuId = useId();
