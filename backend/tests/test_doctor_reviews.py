@@ -324,3 +324,32 @@ def test_patient_can_still_delete_their_account_after_a_review(user, patient_api
     res = patient_api.delete(reverse("auth-account"), {"password": "Correct-Horse-9"}, format="json")
     assert res.status_code == 204
     assert not ClinicalReview.objects.exists() and not ReviewRequest.objects.exists()
+
+
+@pytest.mark.django_db
+def test_admin_sets_a_new_password_for_a_doctor_who_forgot_it(django_user_model):
+    staff = django_user_model.objects.create_user(username="admin@example.com", email="admin@example.com",
+                                                  password="pw", is_staff=True)
+    d = make_doctor(django_user_model)
+    c = api_as(staff)
+    url = reverse("admin-doctor-reset", args=[d.pk])
+    doctor = api_as(d.user)
+    assert doctor.get(reverse("doctor-me")).status_code == 200
+
+    assert c.post(url, {"password": "short"}, format="json").status_code == 400
+    assert c.post(url, {"password": PASSWORD}, format="json").status_code == 400  # same as before
+    # Not temporary: the doctor signs straight in with it.
+    res = c.post(url, {"password": NEW_PASSWORD, "require_change": False}, format="json")
+    assert res.status_code == 200 and NEW_PASSWORD not in json.dumps(res.json())
+    d.refresh_from_db()
+    assert d.must_change_password is False and d.user.check_password(NEW_PASSWORD)
+    assert doctor.get(reverse("doctor-me")).status_code in (401, 403)  # old sessions ended
+    login = APIClient().post(reverse("doctor-login"), {"identifier": d.doctor_id, "password": NEW_PASSWORD},
+                             format="json")
+    assert login.status_code == 200 and login.json()["must_change_password"] is False
+
+    # Default: temporary, must be changed at next sign-in.
+    c.post(url, {"password": "Another-Strong-55"}, format="json")
+    d.refresh_from_db()
+    assert d.must_change_password is True
+    assert api_as(d.user).post(url, {"password": "Another-Strong-66"}, format="json").status_code == 403

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import SetDoctorPassword, { PasswordFields } from './DoctorPassword';
+import { passwordProblem } from '../labels';
 import { admin } from '../../../api/adminApi';
 import {
   Avatar, Badge, ConfirmDialog, DataTable, Drawer, ErrorNote, Facts, Icon, Loading, PageHeader, Pagination, SearchBox,
@@ -25,7 +27,7 @@ function Field({ label, children, hint }) {
 /** A new doctor account. The temporary password is hashed by the server and never shown again. */
 function NewDoctor({ onClose, onCreated }) {
   const notify = useToast();
-  const [form, setForm] = useState({ name: '', email: '', password: '', specialty: '', organization: '', registration_number: '', phone: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', specialty: '', organization: '', registration_number: '', phone: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -34,7 +36,8 @@ function NewDoctor({ onClose, onCreated }) {
     setBusy(true);
     setError('');
     try {
-      const d = await admin.createDoctor(form);
+      const { confirm: _confirm, ...body } = form;
+      const d = await admin.createDoctor(body);
       notify(`Doctor account ${d.doctor_id} created. Give the doctor their temporary password in person; they must change it at first sign-in.`);
       onCreated(d);
     } catch (err) {
@@ -53,7 +56,7 @@ function NewDoctor({ onClose, onCreated }) {
           <button type="button" className="cx-btn" onClick={onClose}>
             Cancel
           </button>
-          <button type="submit" form="cx-new-doctor" className="cx-btn is-primary" disabled={busy || !form.name || !form.email || !form.password}>
+          <button type="submit" form="cx-new-doctor" className="cx-btn is-primary" disabled={busy || !form.name || !form.email || Boolean(passwordProblem(form.password, form.confirm))}>
             {busy ? 'Creating…' : 'Create doctor account'}
           </button>
         </>
@@ -66,9 +69,12 @@ function NewDoctor({ onClose, onCreated }) {
         <Field label="Email (used to sign in)">
           <input type="email" value={form.email} onChange={set('email')} required autoComplete="off" />
         </Field>
-        <Field label="Temporary password" hint="At least 8 characters. Stored hashed; the doctor must replace it at first sign-in.">
-          <input type="password" value={form.password} onChange={set('password')} required autoComplete="new-password" />
-        </Field>
+        <PasswordFields
+          label="Temporary password"
+          value={form.password}
+          confirm={form.confirm}
+          onChange={(password, confirm) => setForm((f) => ({ ...f, password, confirm }))}
+        />
         {TEXT_FIELDS.map(([k, label, max]) => (
           <Field key={k} label={label} hint={k === 'registration_number' ? 'Enter only the number the doctor’s medical council issued. Verify it before marking the doctor verified.' : undefined}>
             <input value={form[k]} maxLength={max} onChange={set(k)} />
@@ -89,8 +95,7 @@ function DoctorDetail({ id, onClose, onChanged }) {
   const { data: d, error, loading, reload } = useLoad(() => admin.doctor(id), [id]);
   const [edit, setEdit] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [confirm, setConfirm] = useState(null); // 'deactivate' | 'verify' | 'reset'
-  const [temp, setTemp] = useState('');
+  const [confirm, setConfirm] = useState(null); // 'deactivate' | 'verify'
 
   const act = async (fn, message) => {
     setBusy(true);
@@ -121,9 +126,6 @@ function DoctorDetail({ id, onClose, onChanged }) {
       footer={
         d && (
           <>
-            <button type="button" className="cx-btn" disabled={busy} onClick={() => setConfirm('reset')}>
-              Reset credentials
-            </button>
             {d.status === 'active' ? (
               <button type="button" className="cx-btn is-danger" disabled={busy} onClick={() => setConfirm('deactivate')}>
                 Deactivate
@@ -190,6 +192,16 @@ function DoctorDetail({ id, onClose, onChanged }) {
             </button>
           </div>
 
+          <h3 className="cx-h3">Password</h3>
+          <Facts items={[['Status', d.must_change_password ? 'Temporary: must be changed at next sign-in' : 'Set by the doctor']]} />
+          <SetDoctorPassword
+            doctor={d}
+            onDone={() => {
+              reload();
+              onChanged();
+            }}
+          />
+
           <h3 className="cx-h3">Workload</h3>
           <Facts
             items={[
@@ -246,27 +258,6 @@ function DoctorDetail({ id, onClose, onChanged }) {
             busy={busy}
             onCancel={() => setConfirm(null)}
             onConfirm={() => act(() => admin.updateDoctor(d.id, { is_verified: true }), 'Doctor verified.')}
-          />
-          <ConfirmDialog
-            open={confirm === 'reset'}
-            title="Set a new temporary password"
-            tone="primary"
-            body={
-              <>
-                <p>The doctor is signed out everywhere and must choose a new password at next sign-in. Give them the temporary one in person.</p>
-                <label className="cx-field">
-                  <span>Temporary password</span>
-                  <input type="password" value={temp} onChange={(e) => setTemp(e.target.value)} autoComplete="new-password" />
-                </label>
-              </>
-            }
-            confirmLabel="Set password"
-            busy={busy}
-            onCancel={() => {
-              setConfirm(null);
-              setTemp('');
-            }}
-            onConfirm={() => act(() => admin.resetDoctorPassword(d.id, temp), 'Temporary password set.').then(() => setTemp(''))}
           />
         </>
       )}
