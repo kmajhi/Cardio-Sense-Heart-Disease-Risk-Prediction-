@@ -1,0 +1,83 @@
+/* Cardio Sense loading ring (components/RingLoader.jsx). */
+
+.rl-ring {
+  --rl-size: 120px;
+  --rl-n: 36; /* bars */
+  --rl-dur: 1.8s; /* one flip */
+  --rl-waves: 2; /* crests travelling around the ring at once */
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: var(--rl-size);
+  height: var(--rl-size);
+}
+
+/* Each bar stands on the ring, pointing outward. */
+.rl-bar {
+  --rl-w: calc(var(--rl-size) * 0.07);
+  --rl-h: calc(var(--rl-size) * 0.19);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--rl-w);
+  height: var(--rl-h);
+  margin: calc(var(--rl-h) / -2) 0 0 calc(var(--rl-w) / -2);
+  transform: rotate(calc(var(--i) * 360deg / var(--rl-n))) translateY(calc(var(--rl-size) * -0.4));
+}
+
+/* The pill: shaded like a small metal capsule, flipping on its long axis. */
+.rl-bar > i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f4f4f6 0%, #a9a9b0 35%, #4a4a50 75%, #1b1b1f 100%);
+  will-change: transform, filter;
+  animation: rl-flip var(--rl-dur) cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  /* Neighbours lag a little: a wave runs around the ring. */
+  animation-delay: calc(var(--i) * var(--rl-dur) * var(--rl-waves) / var(--rl-n) * -1);
+}
+
+@keyframes rl-flip {
+  0%,
+  100% {
+    /* edge-on: a thin, faint, slightly shorter line */
+    transform: scale(0.16, 0.72);
+    filter: brightness(1.75);
+    opacity: 0.5;
+  }
+  50% {
+    /* face-on: a full, dark capsule */
+    transform: scale(1, 1);
+    filter: brightness(0.32);
+    opacity: 1;
+  }
+}
+
+/* On a dark surface the dark crest would vanish: lift it instead. */
+.rl-ring.is-on-dark .rl-bar > i {
+  background: linear-gradient(90deg, #ffffff 0%, #d9d9de 40%, #8f8f97 100%);
+  animation-name: rl-flip-dark;
+}
+@keyframes rl-flip-dark {
+  0%,
+  100% {
+    transform: scale(0.16, 0.72);
+    filter: brightness(0.55);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1, 1);
+    filter: brightness(1.15);
+    opacity: 1;
+  }
+}
+
+/* No motion wanted: a calm, static ring that still reads as "busy". */
+@media (prefers-reduced-motion: reduce) {
+  .rl-bar > i {
+    animation: none;
+    transform: scale(0.5, 0.9);
+    filter: brightness(calc(0.5 + var(--i) / var(--rl-n)));
+  }
+}

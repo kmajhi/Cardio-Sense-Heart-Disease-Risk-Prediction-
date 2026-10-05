@@ -1151,17 +1151,26 @@
 /* ---------- Loader (launch, and between pages) ---------- */
 
 .hm-loader {
+  /* Its own copy of the site's font and colours: on a first visit to another page
+     (components/BootScreen.jsx) it sits outside .pc-dash, which defines them. */
+  --pc-ink: #1c1633;
+  --pc-ink-faint: rgba(28, 22, 51, 0.6);
+  --pc-brand: #ed3a4f;
   position: fixed;
   inset: 0;
   z-index: 300;
+  color: var(--pc-ink);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 40px;
+  gap: 0;
+  /* The ring's soft grey, with a faint violet glow behind it. */
   background:
-    radial-gradient(38% 40% at 50% 47%, rgba(104, 51, 228, 0.16) 0%, rgba(104, 51, 228, 0) 100%),
-    linear-gradient(100deg, #f6f4f8 0%, #f3f1f7 42%, #efedf4 100%);
+    radial-gradient(30% 32% at 50% 44%, rgba(104, 51, 228, 0.08) 0%, rgba(104, 51, 228, 0) 100%),
+    #f3f2f6;
   animation: hm-fade 0.35s ease both;
 }
 
@@ -1177,13 +1186,23 @@
   }
 }
 
+/* The ring comes first, then the logo and the caption, centred beneath it. */
+.hm-lring {
+  margin-bottom: 36px;
+  animation: hm-fade 0.5s ease both;
+}
+
+.hm-loader.out .hm-lring {
+  animation: hm-lw-out 0.25s cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+
 /* The Dashboard's logo: coral heart mark + "Cardio Sense". */
 .hm-lw {
   display: inline-flex;
   align-items: center;
   gap: 0.28em;
   color: var(--pc-ink);
-  font-size: clamp(40px, 7vw, 84px);
+  font-size: clamp(26px, 3.4vw, 34px);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -1266,54 +1285,22 @@
   }
 }
 
-.hm-lbar {
-  position: relative;
-  width: 220px;
-  height: 3px;
-  overflow: hidden;
-  border-radius: 3px;
-  background: rgba(28, 22, 51, 0.09);
-  opacity: 0;
-  animation: hm-show 0.4s ease 0.95s forwards;
-}
-
-.hm-lbar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 40%;
-  border-radius: 3px;
-  background: linear-gradient(90deg, rgba(177, 155, 230, 0), var(--pc-violet-soft) 55%, var(--pc-violet));
-  animation: hm-sweep 1.15s cubic-bezier(0.45, 0, 0.25, 1) infinite;
-}
-
 @keyframes hm-show {
   to {
     opacity: 1;
   }
 }
 
-@keyframes hm-sweep {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(250%);
-  }
-}
-
 .hm-lcap {
-  margin-top: -18px;
+  margin-top: 12px;
   color: var(--pc-ink-faint);
-  font-size: 15px;
+  font-size: 14px;
+  letter-spacing: 0.02em;
   font-weight: 500;
   opacity: 0;
-  animation: hm-show 0.4s ease 0.9s forwards;
+  animation: hm-show 0.4s ease 0.5s forwards;
 }
 
-.hm-loader.out .hm-lbar,
 .hm-loader.out .hm-lcap {
   animation: none;
   opacity: 0;
@@ -1486,7 +1473,6 @@
   .hm-lc,
   .hm-lmark,
   .hm-lw,
-  .hm-lbar::after,
   .hm-bob,
   .hm-bob2,
   .hm-ping,
