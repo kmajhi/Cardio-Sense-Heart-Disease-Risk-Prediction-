@@ -71,11 +71,11 @@ function Login({ onSignedIn }) {
 
   return (
     <div className="dr-root dr-login">
-      <ThemeToggle className="dr-login-theme" />
       <main className="dr-card dr-login-card">
         <div className="dr-login-brand">
           <HeartMark />
           <strong style={{ color: 'var(--dr-navy)', fontWeight: 600 }}>Cardio Sense</strong>
+          <ThemeToggle className="dr-login-theme" />
         </div>
         <RolePicker role="doctor" onRole={chooseRole} />
         <h1 style={{ marginTop: 20 }}>Doctor Portal</h1>
