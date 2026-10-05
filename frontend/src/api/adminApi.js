@@ -41,7 +41,8 @@ export const admin = {
   doctor: (id) => request(`/admin/doctors/${id}/`),
   createDoctor: (body) => request('/admin/doctors/', { method: 'POST', body }),
   updateDoctor: (id, body) => request(`/admin/doctors/${id}/`, { method: 'PATCH', body }),
-  resetDoctorPassword: (id, password) => request(`/admin/doctors/${id}/reset-password/`, { method: 'POST', body: { password } }),
+  resetDoctorPassword: (id, password, requireChange = true) =>
+    request(`/admin/doctors/${id}/reset-password/`, { method: 'POST', body: { password, require_change: requireChange } }),
   reviews: (params) => request(`/admin/reviews/${qs(params)}`),
 
   settings: () => request('/admin/settings/'),

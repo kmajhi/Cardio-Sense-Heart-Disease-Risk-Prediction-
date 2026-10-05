@@ -28,3 +28,31 @@ export function labelStep(days, plotWidth) {
   const fit = Math.max(2, Math.min(7, Math.floor(plotWidth / LABEL_W)));
   return Math.max(1, Math.ceil(days / fit));
 }
+
+// No look-alikes (0/O, 1/l/I), so a password read out or copied by hand survives.
+const PW_SETS = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnopqrstuvwxyz', '23456789', '-_!@#%+?'];
+
+/**
+ * A strong random password for an administrator to hand to a doctor: `length`
+ * characters with at least one of each kind, from the browser's crypto RNG.
+ */
+export function generatePassword(length = 14, random = (n) => crypto.getRandomValues(new Uint32Array(n))) {
+  const all = PW_SETS.join('');
+  const nums = random(length + PW_SETS.length);
+  const chars = PW_SETS.map((set, i) => set[nums[i] % set.length]);
+  for (let i = PW_SETS.length; i < length; i += 1) chars.push(all[nums[i] % all.length]);
+  // Shuffle so the guaranteed kinds aren't always first (Fisher–Yates).
+  for (let i = chars.length - 1; i > 0; i -= 1) {
+    const j = nums[length + (i % PW_SETS.length)] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+}
+
+/** What's wrong with a new password before it is sent, or '' (the server checks too). */
+export function passwordProblem(password, confirm) {
+  if (password.length < 8) return 'Use at least 8 characters.';
+  if (/^\d+$/.test(password)) return 'Use letters as well as numbers.';
+  if (password !== confirm) return 'The two passwords don’t match.';
+  return '';
+}

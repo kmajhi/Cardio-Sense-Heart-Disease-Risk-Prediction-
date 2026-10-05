@@ -1532,6 +1532,7 @@
 .cx-select select,
 .cx-select input,
 .cx-field input,
+.cx-pw-row input,
 .cx-textarea {
   width: 100%;
   height: 34px;
@@ -1554,6 +1555,7 @@
 .cx-select select:focus,
 .cx-select input:focus,
 .cx-field input:focus,
+.cx-pw-row input:focus,
 .cx-textarea:focus {
   border-color: var(--cx-violet);
   outline: none;
@@ -3460,4 +3462,35 @@
 .cx-panel .cx-textarea + .cx-actions-row,
 .cx-panel .cx-segment + .cx-field + .cx-actions-row {
   margin-top: 14px;
+}
+
+/* Doctors → set a password (sections/DoctorPassword.jsx) */
+.cx-pw-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+.cx-pw-row input {
+  flex: 1;
+  font-family: var(--cx-mono);
+  letter-spacing: 0.02em;
+}
+.cx-pw-row input[readonly] {
+  cursor: text;
+}
+.cx-pw-hint {
+  margin: 6px 0 8px;
+  font-size: 12.5px;
+  color: var(--cx-ink-3);
+}
+.cx-pw-hint.is-bad {
+  color: var(--cx-danger);
+}
+.cx-pw-form {
+  margin-top: 4px;
+  padding: 4px 14px 14px;
+  border: 1px solid var(--cx-line);
+  border-radius: var(--cx-radius);
+  background: var(--cx-surface-2);
 }

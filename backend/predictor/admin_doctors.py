@@ -6,7 +6,7 @@
     GET   /api/admin/doctors/<pk>/
     PATCH /api/admin/doctors/<pk>/                { name, phone, specialty, organization, registration_number,
                                                     status, is_verified, is_available }
-    POST  /api/admin/doctors/<pk>/reset-password/ { password } → a new temporary password
+    POST  /api/admin/doctors/<pk>/reset-password/ { password, require_change } → a new password (forgotten)
     GET   /api/admin/reviews/                     ?status &risk=high &q &page
 
 The administrator types a temporary password; it is hashed at once, never sent
@@ -177,24 +177,38 @@ class DoctorDetailView(StaffView):
 
 
 class DoctorResetPasswordView(StaffView):
+    """POST { password, require_change=true } → a new password for a doctor who forgot theirs.
+
+    The password is hashed at once and never returned. Every session of the doctor
+    ends. With require_change (the default) it is temporary: the doctor must choose
+    their own at next sign-in."""
+
     def post(self, request, pk):
         d = DoctorProfile.objects.select_related("user").filter(pk=pk).first()
         if d is None:
             return bad("No such doctor.", 404)
         data = request.data if isinstance(request.data, dict) else {}
         password = str(data.get("password", ""))
+        require_change = data.get("require_change", True) is not False
         problem = password_problem(password, d.user)
         if problem:
-            return bad(f"Temporary password: {problem}")
+            return bad(f"New password: {problem}")
+        if d.user.check_password(password):
+            return bad("New password: choose a password different from the current one.")
         d.user.set_password(password)
         d.user.save(update_fields=["password"])
-        d.must_change_password = True
+        d.must_change_password = require_change
         d.save(update_fields=["must_change_password", "updated_at"])
-        for s in user_sessions(d.user_id):
+        ended = user_sessions(d.user_id)
+        for s in ended:
             s.delete()
-        admin_log(request, f"Reset the password of doctor {d.doctor_id}", target_user=d.user_id,
-                  doctor_id=d.doctor_id)
-        return Response({"detail": f"Temporary password set. {d.name} must choose a new one at next sign-in."})
+        admin_log(request, f"Set a new password for doctor {d.doctor_id}"
+                           f"{' (must change at next sign-in)' if require_change else ''}",
+                  target_user=d.user_id, doctor_id=d.doctor_id, require_change=require_change)
+        then = ("They must choose their own at next sign-in." if require_change
+                else "They can sign in with it now.")
+        return Response({"detail": f"New password set for {d.name} ({d.doctor_id}). {then}",
+                         "require_change": require_change, "sessions_ended": len(ended)})
 
 
 class ReviewsMonitorView(StaffView):
