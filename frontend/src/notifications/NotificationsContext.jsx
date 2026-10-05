@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { buildNotification } from '../clinical/notifications';
 import { getHistory } from '../api/historyApi';
+import { notificationsApi } from '../api/doctorApi';
+import { USE_MOCK } from '../api/mode';
 
 // App-wide notification state: the latest assessment, its notification (model
 // risk + grouped clinical alerts), the profile used to personalise guidance,
@@ -35,8 +37,27 @@ export function NotificationsProvider({ profile, account, children }) {
     };
   }, []);
 
+  // Server-side notifications (e.g. "Clinical Review Completed"), signed-in users only.
+  const [inbox, setInbox] = useState({ results: [], unread: 0 });
+  useEffect(() => {
+    if (USE_MOCK || !account) return undefined;
+    let alive = true;
+    notificationsApi
+      .list()
+      .then((data) => alive && setInbox(data))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [account]);
+  const markInboxRead = useCallback(() => {
+    if (!inbox.unread) return;
+    setInbox((cur) => ({ results: cur.results.map((n) => ({ ...n, read: true })), unread: 0 }));
+    notificationsApi.markRead().catch(() => {});
+  }, [inbox.unread]);
+
   const notification = useMemo(() => buildNotification(assessment), [assessment]);
-  const unread = Boolean(notification?.needsAttention && notification.key !== readKey);
+  const unread = Boolean(notification?.needsAttention && notification.key !== readKey) || inbox.unread > 0;
 
   const markRead = useCallback(() => {
     if (!notification) return;
@@ -49,8 +70,8 @@ export function NotificationsProvider({ profile, account, children }) {
   }, [notification, account]);
 
   const value = useMemo(
-    () => ({ assessment, notification, profile, unread, markRead, setLatest: setAssessment }),
-    [assessment, notification, profile, unread, markRead],
+    () => ({ assessment, notification, profile, unread, markRead, setLatest: setAssessment, inbox, markInboxRead }),
+    [assessment, notification, profile, unread, markRead, inbox, markInboxRead],
   );
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }

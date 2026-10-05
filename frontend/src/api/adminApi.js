@@ -37,6 +37,13 @@ export const admin = {
   system: () => request('/admin/system/'),
   maintenance: () => request('/admin/maintenance/'),
   runTask: (task) => request(`/admin/maintenance/${task}/`, { method: 'POST' }),
+  doctors: (params) => request(`/admin/doctors/${qs(params)}`),
+  doctor: (id) => request(`/admin/doctors/${id}/`),
+  createDoctor: (body) => request('/admin/doctors/', { method: 'POST', body }),
+  updateDoctor: (id, body) => request(`/admin/doctors/${id}/`, { method: 'PATCH', body }),
+  resetDoctorPassword: (id, password) => request(`/admin/doctors/${id}/reset-password/`, { method: 'POST', body: { password } }),
+  reviews: (params) => request(`/admin/reviews/${qs(params)}`),
+
   settings: () => request('/admin/settings/'),
   saveSettings: (body) => request('/admin/settings/', { method: 'PATCH', body }),
 };

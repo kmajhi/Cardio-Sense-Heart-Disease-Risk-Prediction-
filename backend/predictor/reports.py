@@ -19,10 +19,15 @@ like a lab sheet, with reference range and status; page 3 holds the
 recommendations and the doctor's review section. Times use the patient's own
 time zone (Profile) when set, otherwise UTC, and say which.
 
-Doctor review. No review workflow exists yet, so the "Doctor's Clinical Review"
-section always reads as pending (PENDING_REVIEW). A future review system passes
-its own record to `render(..., review=...)` with the same keys; nothing else in
-the report needs to change, and the report never claims a review that didn't happen.
+Doctor review. Until an authenticated doctor submits a review (doctor_api.py),
+the "Doctor's Clinical Review" section reads as pending (PENDING_REVIEW). A
+submitted review is passed as `render(..., review=reviews.review_for_report(r))`:
+the doctor's name, ID, specialty and registration come from their account, the
+decision, remarks and action plan from the review. There is no signature image:
+the section says the review was submitted through an authenticated account.
+
+Versions (ReportVersion): 1 is the automated report, a later one adds the
+submitted review. `?version=N` rebuilds that version; the default is the latest.
 """
 
 import base64
@@ -38,7 +43,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from . import guidance as guidance_rules
-from .models import Assessment, Profile
+from .models import Assessment, Profile, ReportVersion
 
 FONTS = Path(__file__).resolve().parent / "report_fonts"
 # The Cardio Sense logo, the same vector artwork as the site's nav (frontend
@@ -442,8 +447,8 @@ class Builder:
             ("Patient", p["name"] or "Not provided"),
             ("Age", f"{p['age']} years" if p["age"] else "Not recorded"),
             ("Sex", sex),
-            ("Review status", review["status"], AMBER if review is PENDING_REVIEW else NAVY),
-            ("Report ID", report_id(a)),
+            ("Review status", review["status"], AMBER if review is PENDING_REVIEW else TEAL),
+            ("Report ID", report_id(a) + (f" · v{self.c['version'].version}" if self.c.get("version") else "")),
             ("Assessment ID", a.reference),
             ("Assessment date", self.when(a.created_at, zone=False)),
             ("Report generated", self.when(timezone.now(), zone=False)),
@@ -708,18 +713,32 @@ class Builder:
             self.notice("Not yet reviewed by a doctor",
                         "No doctor has reviewed, verified or approved this report. This section is completed only "
                         "through an authenticated clinical review.", AMBER)
-        self.grid([
-            ("Review status", r["status"], AMBER if pending else NAVY),
-            ("Reviewed by", r["reviewed_by"]),
-            ("Review decision", r["decision"]),
-            ("Review date", r["date"]),
-        ])
+            self.grid([
+                ("Review status", r["status"], AMBER),
+                ("Reviewed by", r["reviewed_by"]),
+                ("Review decision", r["decision"]),
+                ("Review date", r["date"]),
+            ])
+        else:
+            reg = r.get("registration_number") or "Not provided"
+            if r.get("registration_number"):
+                reg += " (checked by Cardio Sense)" if r.get("verified") else " (not checked)"
+            self.grid([
+                ("Reviewed by", r["reviewed_by"], NAVY),
+                ("Doctor ID", r.get("doctor_id") or "—"),
+                ("Specialty", r.get("specialty") or "Not provided"),
+                ("Professional registration", reg),
+                ("Review decision", r["decision"], TEAL),
+                ("Review date", self.when(r["submitted_at"]) if r.get("submitted_at") else "—"),
+                ("Review ID", r.get("review_id") or "—"),
+                ("Hospital / organization", r.get("organization") or "Not provided"),
+            ])
         pdf = self.pdf
         for lab, value, height in (("Doctor's remarks", r["remarks"], 24), ("Clinical action plan", r["action_plan"], 20)):
             self.need(height + 6)
             self.label(lab)
             y = pdf.get_y() + 0.6
-            pdf.set_draw_color(*RULE)
+            pdf.set_draw_color(*(RULE if pending else TEAL))
             pdf.set_line_width(0.25)
             self.font(8.4, False, MUTED if pending else TEXT)
             pdf.set_xy(17.5, y + 1.6)
@@ -727,12 +746,18 @@ class Builder:
             bottom = max(pdf.get_y() + 1.6, y + height)
             pdf.rect(15, y, self.W, bottom - y)
             pdf.set_y(bottom + 2.5)
+        if not pending:
+            self.text("Submitted electronically through the reviewer's authenticated Cardio Sense account; no "
+                      "handwritten signature is reproduced. The machine-learning estimate and the rule-based "
+                      "recommendations in this report are unchanged by the review: the doctor's own words are only "
+                      "those in this section.", 7.4, color=MUTED, h=3.7)
+            return
         self.need(16)
         y = pdf.get_y()
         self.label("Doctor's signature", x=15, w=88)
         pdf.set_xy(110, y)
         self.label("Name and registration number", x=110)
-        self.font(8.4, False, MUTED if pending else TEXT)
+        self.font(8.4, False, MUTED)
         pdf.set_xy(15, y + 5)
         pdf.cell(88, 6, r["signature"])
         pdf.set_xy(110, y + 5)
@@ -771,12 +796,31 @@ def patient_details(a):
     return {"name": name, "age": a.age, "sex": a.sex, "photo": photo}, profile
 
 
-def render(a, review=None):
-    """The PDF for one assessment. `review`: a completed doctor review with PENDING_REVIEW's keys, or None."""
+def render(a, review=None, version=None):
+    """The PDF for one assessment. `review`: reviews.review_for_report(...) of a submitted
+    review, or None for pending. `version`: the ReportVersion it is, if recorded."""
     patient, profile = patient_details(a)
     content = {"guidance": a.guidance or {}, "patient": patient, "review": review or PENDING_REVIEW,
-               "tz": zone_for(profile)}
+               "tz": zone_for(profile), "version": version}
     return Builder(a, content).build()
+
+
+def latest_version(a):
+    return ReportVersion.objects.filter(assessment=a).order_by("-version").select_related("review").first()
+
+
+def render_version(a, number=None):
+    """PDF bytes for report version `number` (default: the latest), or None if there is no such version."""
+    from .reviews import review_for_report
+
+    if number is None:
+        v = latest_version(a)
+    else:
+        v = ReportVersion.objects.filter(assessment=a, version=number).select_related("review").first()
+        if v is None:
+            return None
+    review = v.review if v is not None and v.review_id else None
+    return render(a, review=review_for_report(review) if review else None, version=v)
 
 
 # ---------------------------------------------------------------- API
@@ -802,11 +846,15 @@ class GuidanceView(APIView):
             Assessment.objects.filter(pk=a.pk, guidance__isnull=True).update(
                 guidance=cleaned, guidance_recorded_at=timezone.now())
             a.refresh_from_db(fields=["guidance", "guidance_recorded_at"])
+            from .reviews import ensure_first_report
+
+            ensure_first_report(a)
         return Response({"recorded_at": a.guidance_recorded_at.isoformat() if a.guidance_recorded_at else None})
 
 
 class ReportView(APIView):
-    """GET /api/history/<ref>/report/ → the PDF (the signed-in user's own assessments only)."""
+    """GET /api/history/<ref>/report/[?version=N] → the PDF (the signed-in user's own assessments only).
+    The latest version by default: once a doctor has submitted a review, it includes the review."""
 
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "report"
@@ -818,8 +866,14 @@ class ReportView(APIView):
         if not a.guidance:
             return Response({"detail": "This assessment's analysis hasn't been recorded yet. Open it in the app "
                                        "and try again."}, status=409)
-        data = render(a)
+        number = request.query_params.get("version")
+        if number is not None and not (number.isascii() and number.isdigit()):
+            return Response({"detail": "No such report version."}, status=404)
+        data = render_version(a, int(number) if number else None)
+        if data is None:
+            return Response({"detail": "No such report version."}, status=404)
         response = HttpResponse(data, content_type="application/pdf")
-        response["Content-Disposition"] = f'attachment; filename="cardio-sense-report-{a.reference}.pdf"'
+        suffix = f"-v{number}" if number else ""
+        response["Content-Disposition"] = f'attachment; filename="cardio-sense-report-{a.reference}{suffix}.pdf"'
         response["Cache-Control"] = "no-store"
         return response

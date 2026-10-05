@@ -57,7 +57,20 @@ def public_user(user):
         # Staff see the admin console link (frontend /console).
         "is_staff": user.is_staff,
         "is_superuser": user.is_superuser,
+        # Doctors see the Doctor Panel (frontend /doctor); null for everyone else.
+        "doctor": doctor_summary(user),
     }
+
+
+def doctor_summary(user):
+    from .models import DoctorProfile
+
+    try:
+        d = user.doctor
+    except DoctorProfile.DoesNotExist:
+        return None
+    return {"doctor_id": d.doctor_id, "must_change_password": d.must_change_password, "is_active": d.is_active,
+            "verified": d.is_verified}
 
 
 def bad_request(detail):

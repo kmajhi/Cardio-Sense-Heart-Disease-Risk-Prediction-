@@ -13,17 +13,20 @@ export const REPORTS_AVAILABLE = !USE_MOCK;
  * record: { id: 'A-0012', inputs, result }; profile: the Profile page's data or null.
  * Records the app's analysis and recommendations for the assessment (kept from the
  * first time only, so the report matches what was shown), then downloads the PDF.
+ * version: a report version number (1 = the automated report), or null for the latest,
+ * which includes the doctor's clinical review once one has been submitted.
  * → { name, handedOff }: handedOff when a download manager took the file over.
  */
-export async function downloadReport(record, profile = null) {
+export async function downloadReport(record, profile = null, version = null) {
   if (!REPORTS_AVAILABLE) throw new Error('PDF reports need the Cardio Sense server: they aren’t available in demo mode.');
   if (!record?.id) throw new Error('This estimate hasn’t been saved, so there is no report for it.');
   const ref = encodeURIComponent(record.id);
   await request(`/history/${ref}/guidance/`, { method: 'PUT', body: { guidance: guidanceSnapshot(record, profile) } });
+  const url = `/api/history/${ref}/report/${version ? `?version=${version}` : ''}`;
 
   let res;
   try {
-    res = await fetch(`/api/history/${ref}/report/`, { credentials: 'same-origin' });
+    res = await fetch(url, { credentials: 'same-origin' });
   } catch {
     throw new Error("Can't reach the Cardio Sense server. Check your connection and try again.");
   }
@@ -42,12 +45,12 @@ export async function downloadReport(record, profile = null) {
   // the page and hand it an empty one. Then let the browser follow a plain link
   // instead (same origin, so the session cookie goes with it), which they handle.
   if (res.status === 204 || blob.size === 0 || !/pdf/i.test(res.headers.get('Content-Type') ?? '')) {
-    save(`/api/history/${ref}/report/`, name);
+    save(url, name);
     return { name, handedOff: true };
   }
-  const url = URL.createObjectURL(blob);
-  save(url, name);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const blobUrl = URL.createObjectURL(blob);
+  save(blobUrl, name);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
   return { name, handedOff: false };
 }
 

@@ -357,3 +357,28 @@
     transform-origin: top center;
   }
 }
+
+/* Server notifications (doctor reviews) above the assessment alert. */
+.pc-n-inbox {
+  margin: 0;
+  padding: 0 0 4px;
+  list-style: none;
+}
+.pc-n-inbox li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+.pc-n-inbox li.is-new {
+  background: rgba(104, 51, 228, 0.06);
+}
+.pc-n-inbox strong {
+  font-size: 14px;
+}
+.pc-n-inbox p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  opacity: 0.8;
+}

@@ -417,6 +417,10 @@ class UserDetailView(StaffView):
         problem = guard_change(request, user, delete=True)
         if problem:
             return bad(problem, 403)
+        if user.clinical_reviews.exists():
+            # Their reviews are part of patients' records and must keep naming who wrote them.
+            return bad("This doctor has written clinical reviews, so the account can't be deleted. "
+                       "Deactivate it instead (Doctors).", 409)
         email = user.email or user.username
         for s in user_sessions(user.pk):
             s.delete()

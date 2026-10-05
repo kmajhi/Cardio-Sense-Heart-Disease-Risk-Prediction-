@@ -1,8 +1,9 @@
 from django.urls import path
 
-from . import accounts, admin_api, connections, reports, social_login, views
+from . import accounts, admin_api, admin_doctors, connections, doctor_api, reports, reviews, social_login, views
 
 A = admin_api
+D = doctor_api
 
 urlpatterns = [
     path("site/", A.PublicSiteView.as_view(), name="site"),
@@ -31,6 +32,29 @@ urlpatterns = [
     path("admin/notifications/", A.NotificationsView.as_view(), name="admin-notifications"),
     path("admin/security/", A.SecurityView.as_view(), name="admin-security"),
     path("admin/settings/", A.SettingsView.as_view(), name="admin-settings"),
+    path("admin/doctors/", admin_doctors.DoctorsView.as_view(), name="admin-doctors"),
+    path("admin/doctors/<int:pk>/", admin_doctors.DoctorDetailView.as_view(), name="admin-doctor"),
+    path("admin/doctors/<int:pk>/reset-password/", admin_doctors.DoctorResetPasswordView.as_view(),
+         name="admin-doctor-reset"),
+    path("admin/reviews/", admin_doctors.ReviewsMonitorView.as_view(), name="admin-reviews"),
+    # Doctor Panel (doctors only): see predictor/doctor_api.py.
+    path("doctor/login/", D.DoctorLoginView.as_view(), name="doctor-login"),
+    path("doctor/me/", D.DoctorMeView.as_view(), name="doctor-me"),
+    path("doctor/password/", D.DoctorPasswordView.as_view(), name="doctor-password"),
+    path("doctor/overview/", D.OverviewView.as_view(), name="doctor-overview"),
+    path("doctor/requests/", D.RequestsView.as_view(), name="doctor-requests"),
+    path("doctor/requests/<str:ref>/", D.RequestDetailView.as_view(), name="doctor-request"),
+    path("doctor/requests/<str:ref>/claim/", D.ClaimView.as_view(), name="doctor-claim"),
+    path("doctor/reviews/", D.MyReviewsView.as_view(), name="doctor-reviews"),
+    path("doctor/reviews/<str:ref>/", D.ReviewDetailView.as_view(), name="doctor-review"),
+    path("doctor/reviews/<str:ref>/draft/", D.DraftView.as_view(), name="doctor-draft"),
+    path("doctor/reviews/<str:ref>/submit/", D.SubmitView.as_view(), name="doctor-submit"),
+    path("doctor/reviews/<str:ref>/report/", D.ReviewReportView.as_view(), name="doctor-report"),
+    # Patient side of doctor reviews, and everyone's in-app notifications: predictor/reviews.py.
+    path("reviews/", reviews.ReviewsView.as_view(), name="reviews"),
+    path("reviews/<str:ref>/", reviews.ReviewDetailView.as_view(), name="review"),
+    path("notifications/", reviews.NotificationsView.as_view(), name="notifications"),
+    path("notifications/read/", reviews.NotificationsReadView.as_view(), name="notifications-read"),
     path("auth/me/", accounts.MeView.as_view(), name="auth-me"),
     path("auth/register/", accounts.RegisterView.as_view(), name="auth-register"),
     path("auth/login/", accounts.LoginView.as_view(), name="auth-login"),
