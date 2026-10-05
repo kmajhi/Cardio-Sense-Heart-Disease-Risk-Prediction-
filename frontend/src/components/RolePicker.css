@@ -1,0 +1,71 @@
+/* "Choose your role" (components/RolePicker.jsx). Neutral enough for both the
+   home login window and the Doctor Portal; the selected role takes --rp-accent. */
+
+.rp-roles {
+  --rp-accent: #4c2bd8;
+  --rp-accent-soft: #f1ecfe;
+  display: grid;
+  gap: 8px;
+}
+.rp-label {
+  margin: 0;
+  color: #6b6f7b;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.rp-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 6px;
+}
+.rp-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 1px solid #e3e1ea;
+  border-radius: 12px;
+  background: #fff;
+  color: #4a4e5a;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+}
+.rp-role:hover {
+  border-color: #c9c4da;
+}
+.rp-role.is-on {
+  border-color: var(--rp-accent);
+  background: var(--rp-accent-soft);
+  color: var(--rp-accent);
+}
+.rp-role:focus-visible {
+  outline: 2px solid var(--rp-accent);
+  outline-offset: 2px;
+}
+.rp-role svg {
+  flex: none;
+}
+
+/* The Doctor Portal's navy and teal. */
+.dr-root .rp-roles {
+  --rp-accent: #267472;
+  --rp-accent-soft: #e7f2f1;
+}
+
+@media (max-width: 380px) {
+  .rp-role {
+    font-size: 12.5px;
+    gap: 4px;
+  }
+  .rp-role svg {
+    display: none;
+  }
+}

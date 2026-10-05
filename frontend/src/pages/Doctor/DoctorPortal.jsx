@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { USE_MOCK } from '../../api/mode';
 import { doctorApi, notificationsApi } from '../../api/doctorApi';
 import { HeartMark } from '../../components/NavBar';
+import RolePicker from '../../components/RolePicker';
 import { Avatar, Icon, PasswordInput, ToastProvider } from './ui';
 import { drName, fmtDateTime } from './format';
 import Dashboard from './pages/Dashboard';
@@ -42,6 +43,12 @@ function useDoctor() {
 
 function Login({ onSignedIn }) {
   const { refresh } = useAuth();
+  const navigate = useNavigate();
+  // Patients and admins sign in on the main site's login window.
+  const chooseRole = (role) => {
+    if (role === 'patient') navigate('/', { state: { auth: 'login' } });
+    if (role === 'admin') navigate('/', { state: { from: { pathname: '/console' } } });
+  };
   const ids = { who: useId(), pass: useId(), err: useId() };
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -69,7 +76,8 @@ function Login({ onSignedIn }) {
           <HeartMark />
           <strong style={{ color: 'var(--dr-navy)', fontWeight: 600 }}>Cardio Sense</strong>
         </div>
-        <h1>Doctor Portal</h1>
+        <RolePicker role="doctor" onRole={chooseRole} />
+        <h1 style={{ marginTop: 20 }}>Doctor Portal</h1>
         <p className="dr-sub">Clinical Review Workspace</p>
         <form onSubmit={submit} noValidate>
           <div className="dr-field">
