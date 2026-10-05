@@ -32,7 +32,7 @@ describe('Doctor Panel theme', () => {
   it('switches day and night, remembers it, and cleans up on leaving', () => {
     const { unmount } = show();
     expect(theme()).toBe('light');
-    fireEvent.click(screen.getByRole('radio', { name: /Night/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /Dark/ }));
     expect(theme()).toBe('dark');
     expect(localStorage.getItem('cardio-doctor:theme')).toBe('dark');
     unmount();
@@ -40,7 +40,7 @@ describe('Doctor Panel theme', () => {
 
     show();
     expect(theme()).toBe('dark'); // remembered
-    fireEvent.click(screen.getByRole('radio', { name: /Day/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /Light/ }));
     expect(theme()).toBe('light');
   });
 
@@ -52,7 +52,7 @@ describe('Doctor Panel theme', () => {
       throw new Error('blocked');
     });
     show();
-    fireEvent.click(screen.getByRole('radio', { name: /Night/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /Dark/ }));
     expect(theme()).toBe('dark');
     get.mockRestore();
     set.mockRestore();

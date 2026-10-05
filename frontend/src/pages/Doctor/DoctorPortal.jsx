@@ -5,7 +5,7 @@ import { USE_MOCK } from '../../api/mode';
 import { doctorApi, notificationsApi } from '../../api/doctorApi';
 import { HeartMark } from '../../components/NavBar';
 import RolePicker from '../../components/RolePicker';
-import { Avatar, Icon, PasswordInput, ThemePicker, ThemeProvider, ToastProvider } from './ui';
+import { Avatar, Icon, PasswordInput, ThemeProvider, ThemeToggle, ToastProvider } from './ui';
 import { drName, fmtDateTime } from './format';
 import Dashboard from './pages/Dashboard';
 import Requests from './pages/Requests';
@@ -71,7 +71,7 @@ function Login({ onSignedIn }) {
 
   return (
     <div className="dr-root dr-login">
-      <ThemePicker compact className="dr-login-theme" />
+      <ThemeToggle className="dr-login-theme" />
       <main className="dr-card dr-login-card">
         <div className="dr-login-brand">
           <HeartMark />
@@ -329,7 +329,7 @@ function Shell({ me, reloadMe, onLogout }) {
             </button>
             <span className="dr-top-title">{title}</span>
             <div className="dr-top-actions">
-              <ThemePicker compact />
+              <ThemeToggle />
               <NotificationsBell unread={counts.unread ?? 0} onOpened={refreshCounts} />
               <Link to="/doctor/profile" className="dr-icon-btn" aria-label="Your profile" style={{ width: 'auto', padding: '0 4px' }}>
                 <Avatar name={me.name} photo={me.photo} size={30} />

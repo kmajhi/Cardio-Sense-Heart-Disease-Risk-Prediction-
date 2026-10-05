@@ -32,12 +32,12 @@ describe('RolePicker', () => {
     const onRole = vi.fn();
     render(<RolePicker role="patient" onRole={onRole} />);
     const radios = screen.getAllByRole('radio');
-    expect(radios.map((r) => r.textContent)).toEqual(['User / Patient', 'Doctor', 'Admin']);
+    expect(radios.map((r) => r.textContent)).toEqual(['User / Patient', 'Admin', 'Doctor']);
     expect(screen.getByRole('radio', { name: 'User / Patient' }).getAttribute('aria-checked')).toBe('true');
     fireEvent.click(screen.getByRole('radio', { name: 'Admin' }));
     expect(onRole).toHaveBeenCalledWith('admin');
-    fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'ArrowRight' });
-    expect(onRole).toHaveBeenLastCalledWith('doctor');
+    fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'ArrowLeft' });
+    expect(onRole).toHaveBeenLastCalledWith('doctor'); // wraps around from the first to the last
   });
 });
 

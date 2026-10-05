@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { USE_MOCK } from '../../api/mode';
 import { admin, download } from '../../api/adminApi';
 import { HeartMark } from '../../components/NavBar';
+import ThemeSwitch from '../../components/ThemeSwitch';
 import { Avatar, Icon, Kbd, ToastProvider, useStoredState, useToast } from './ui';
 import CommandPalette, { ShortcutsDialog } from './CommandPalette';
 import Inbox, { useNotifications } from './Inbox';
@@ -306,9 +307,7 @@ function Shell({ user, logout }) {
               <span>Search or jump to…</span>
               <Kbd>{mod} K</Kbd>
             </button>
-            <button type="button" className="cx-icon-btn" aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`} title="Theme (Shift D)" onClick={toggleTheme}>
-              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-            </button>
+            <ThemeSwitch dark={theme === 'dark'} onToggle={toggleTheme} />
             <Inbox notes={notes} onGo={go} />
             <button type="button" className="cx-icon-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={() => setShortcuts(true)}>
               <Icon name="keyboard" size={18} />

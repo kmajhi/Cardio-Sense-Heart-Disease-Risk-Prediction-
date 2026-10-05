@@ -145,7 +145,7 @@ export default function Profile({ me, reloadMe }) {
             <h2 className="dr-h2" id="dr-appearance">
               Appearance
             </h2>
-            <p>Day or night mode for the Doctor Panel, or follow your device. Remembered on this browser.</p>
+            <p>Light or dark mode for the Doctor Panel, or follow your device. Remembered on this browser.</p>
           </div>
           <ThemePicker />
         </div>
