@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { doctorApi } from '../../../api/doctorApi';
-import { Avatar, useToast } from '../ui';
+import { PHOTO_ACCEPT, isPhoto } from '../../Profile/photo';
+import { Avatar, ConfirmDialog, useToast } from '../ui';
+import PhotoDialog from './PhotoDialog';
 import { drName, fmtDate, fmtDateTime } from '../format';
 
 /** Availability: whether new review requests can be accepted. */
@@ -29,6 +31,81 @@ export function AvailabilityToggle({ me, reloadMe }) {
   );
 }
 
+/** The doctor's own photo: add, change or remove. Shown in the panel and to patients they review. */
+function PhotoSection({ me, reloadMe }) {
+  const toast = useToast();
+  const inputId = useId();
+  const [file, setFile] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const has = isPhoto(me.photo);
+
+  const save = async (photo, done) => {
+    setBusy(true);
+    try {
+      await doctorApi.setPhoto(photo);
+      await reloadMe();
+      toast(done);
+      setFile(null);
+      setConfirmRemove(false);
+    } catch (err) {
+      toast(err.status === 400 ? err.message : 'We couldn’t save your photo. Please try again.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="dr-card dr-section" aria-labelledby="dr-photo-title">
+      <div className="dr-section-head">
+        <div>
+          <h2 className="dr-h2" id="dr-photo-title">
+            Profile photo
+          </h2>
+          <p>Shown in your Doctor Panel and to patients whose assessments you review.</p>
+        </div>
+      </div>
+      <div className="dr-section-body dr-photo-row">
+        <Avatar name={me.name} photo={me.photo} size={88} />
+        <div className="dr-photo-actions">
+          <input
+            id={inputId}
+            type="file"
+            accept={PHOTO_ACCEPT}
+            className="dr-sr dr-file"
+            disabled={busy || !me.is_active}
+            onChange={(e) => {
+              setFile(e.target.files?.[0] ?? null);
+              e.target.value = ''; // picking the same file again still opens the dialog
+            }}
+          />
+          <label htmlFor={inputId} className={`dr-btn is-primary${busy || !me.is_active ? ' is-disabled' : ''}`}>
+            {has ? 'Change photo' : 'Add photo'}
+          </label>
+          {has && (
+            <button type="button" className="dr-btn is-secondary" disabled={busy || !me.is_active} onClick={() => setConfirmRemove(true)}>
+              Remove photo
+            </button>
+          )}
+          <p className="dr-help">JPG, PNG, WebP or GIF, up to 10 MB. It’s cropped to a square and stored small.</p>
+        </div>
+      </div>
+      <PhotoDialog file={file} busy={busy} onSave={(photo) => save(photo, has ? 'Photo updated.' : 'Photo added.')} onCancel={() => setFile(null)} />
+      <ConfirmDialog
+        open={confirmRemove}
+        title="Remove your photo?"
+        confirmLabel="Remove photo"
+        tone="primary"
+        busy={busy}
+        onConfirm={() => save('', 'Photo removed.')}
+        onCancel={() => setConfirmRemove(false)}
+      >
+        <p>Your initials will be shown instead.</p>
+      </ConfirmDialog>
+    </section>
+  );
+}
+
 export default function Profile({ me, reloadMe }) {
   const facts = [
     ['Name', drName(me.name)],
@@ -51,7 +128,7 @@ export default function Profile({ me, reloadMe }) {
     <>
       <div className="dr-page-head">
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Avatar name={me.name} size={56} />
+          <Avatar name={me.name} photo={me.photo} size={56} />
           <div>
             <h1 className="dr-h1">Doctor Profile</h1>
             <p className="dr-sub">
@@ -61,6 +138,7 @@ export default function Profile({ me, reloadMe }) {
         </div>
         <AvailabilityToggle me={me} reloadMe={reloadMe} />
       </div>
+      <PhotoSection me={me} reloadMe={reloadMe} />
       <section className="dr-card dr-section">
         <div className="dr-section-head">
           <div>

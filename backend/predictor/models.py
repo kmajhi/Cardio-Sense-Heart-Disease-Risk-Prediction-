@@ -314,6 +314,9 @@ class DoctorProfile(models.Model):
     organization = models.CharField(max_length=120, blank=True, verbose_name="hospital / organization")
     registration_number = models.CharField(
         max_length=40, blank=True, help_text="As issued by the medical council. Entered by an administrator.")
+    # Set by the doctor (Doctor Panel → Profile): a small square JPEG data URL,
+    # the same format as Profile.photo (the browser crops and scales it to 320 px).
+    photo = models.TextField(blank=True)
     status = models.CharField(max_length=10, choices=STATUSES, default="active", db_index=True)
     is_verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(null=True, blank=True)

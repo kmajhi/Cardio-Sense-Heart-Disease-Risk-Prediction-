@@ -60,12 +60,14 @@ def doctor_of(user):
         return None
 
 
-def doctor_card(user):
-    """Who reviewed: always read from the doctor's account, never from free text."""
+def doctor_card(user, photo=False):
+    """Who reviewed: always read from the doctor's account, never from free text.
+    `photo` adds the doctor's photo (left out of lists: it is ~30 KB)."""
     d = doctor_of(user) if user is not None else None
     if d is None:
         return None
     return {
+        **({"photo": d.photo} if photo else {}),
         "name": d.name,
         "doctor_id": d.doctor_id,
         "specialty": d.specialty,
@@ -179,6 +181,7 @@ def patient_view(req):
     review = req.submitted_review if req.status == ReviewRequest.COMPLETED else None
     row = request_row(req, review=review)
     row.update({
+        "doctor": doctor_card(req.doctor, photo=True),
         "question": req.question,
         "timeline": [t for t in timeline(req) if t["kind"] != "draft_saved"],
         "review": None if review is None else {
@@ -187,7 +190,7 @@ def patient_view(req):
             "remarks": review.remarks,
             "action_plan": review.action_plan,
             "submitted_at": iso(review.submitted_at),
-            "doctor": doctor_card(review.doctor),
+            "doctor": doctor_card(review.doctor, photo=True),
         },
         "reports": report_versions(req.assessment),
     })

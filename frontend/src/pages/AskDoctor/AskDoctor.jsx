@@ -8,6 +8,7 @@ import { RISK, pctText } from '../../clinical/risk';
 import { REVIEWS_LIVE, listReviews, requestReview, withdrawReview } from '../../api/reviewApi';
 import { REPORTS_AVAILABLE, downloadReport } from '../../api/reportApi';
 import { MAX_QUESTION, TOPICS, reviewSteps } from './requests';
+import { isPhoto } from '../Profile/photo';
 import '../Dashboard/Dashboard.css'; // shared tokens, nav, load sequence
 import './AskDoctor.css';
 
@@ -93,7 +94,8 @@ function RequestItem({ r, record, onWithdraw, onDownload, busy }) {
 
       {r.status === 'pending' && <p className="pc-ask-note">Your assessment has been submitted for clinical review.</p>}
       {r.status === 'under_review' && doctor && (
-        <p className="pc-ask-note">
+        <p className="pc-ask-note pc-ask-doc">
+          {isPhoto(doctor.photo) && <img className="pc-ask-doc-photo" src={doctor.photo} alt="" width="28" height="28" />}
           Reviewed by <b>{drName(doctor.name)}</b>
           {doctor.specialty ? ` · ${doctor.specialty}` : ''}
         </p>
@@ -104,6 +106,7 @@ function RequestItem({ r, record, onWithdraw, onDownload, busy }) {
             {r.review.decision === 'needs_more_information' ? 'Your doctor needs more information' : 'Your clinical review is ready.'}
           </p>
           <p className="pc-ask-note">
+            {isPhoto(doctor?.photo) && <img className="pc-ask-doc-photo" src={doctor.photo} alt="" width="28" height="28" />}
             Reviewed by <b>{drName(doctor?.name ?? '')}</b>
             {doctor?.specialty ? ` · ${doctor.specialty}` : ''} · {dateText(r.review.submitted_at)}
             <br />

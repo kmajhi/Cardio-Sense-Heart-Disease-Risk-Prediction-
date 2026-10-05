@@ -309,7 +309,7 @@ function Shell({ me, reloadMe, onLogout }) {
             </button>
           </nav>
           <div className="dr-side-foot">
-            <Avatar name={me.name} size={34} />
+            <Avatar name={me.name} photo={me.photo} size={34} />
             <div style={{ minWidth: 0 }}>
               <strong>{drName(me.name)}</strong>
               {me.verified ? (
@@ -330,7 +330,7 @@ function Shell({ me, reloadMe, onLogout }) {
             <div className="dr-top-actions">
               <NotificationsBell unread={counts.unread ?? 0} onOpened={refreshCounts} />
               <Link to="/doctor/profile" className="dr-icon-btn" aria-label="Your profile" style={{ width: 'auto', padding: '0 4px' }}>
-                <Avatar name={me.name} size={30} />
+                <Avatar name={me.name} photo={me.photo} size={30} />
               </Link>
             </div>
           </header>

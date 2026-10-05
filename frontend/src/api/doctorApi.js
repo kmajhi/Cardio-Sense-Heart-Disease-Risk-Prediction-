@@ -14,6 +14,8 @@ export const doctorApi = {
   login: (identifier, password) => request('/doctor/login/', { method: 'POST', body: { identifier, password } }),
   me: () => request('/doctor/me/'),
   setAvailable: (isAvailable) => request('/doctor/me/', { method: 'PATCH', body: { is_available: isAvailable } }),
+  /** photo: a JPEG data URL (pages/Profile/photo.js), or '' to remove it. */
+  setPhoto: (photo) => request('/doctor/me/', { method: 'PATCH', body: { photo } }),
   changePassword: (currentPassword, newPassword) =>
     request('/doctor/password/', { method: 'POST', body: { current_password: currentPassword, new_password: newPassword } }),
 

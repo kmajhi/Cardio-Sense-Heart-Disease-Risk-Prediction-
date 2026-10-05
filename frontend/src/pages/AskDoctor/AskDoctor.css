@@ -578,6 +578,15 @@
   gap: 8px;
 }
 
+.pc-ask-doc-photo {
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+}
+
 /* ---------- Smaller screens ---------- */
 
 @media (max-width: 1000px) {

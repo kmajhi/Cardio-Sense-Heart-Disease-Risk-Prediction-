@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RISK } from '../../clinical/risk';
+import { isPhoto } from '../Profile/photo';
 import { RISK_TONE, STATUS_TONE, compactTimeline, fmtDateTime, patientLine, riskLine } from './format';
 
 const PATHS = {
@@ -35,7 +36,11 @@ export function Icon({ name, size = 18, className }) {
   );
 }
 
-export function Avatar({ name = '', size = 32 }) {
+/** The doctor's photo when they have one, otherwise their initials. */
+export function Avatar({ name = '', size = 32, photo = '' }) {
+  if (isPhoto(photo)) {
+    return <img className="dr-avatar dr-avatar-img" src={photo} alt="" width={size} height={size} style={{ width: size, height: size }} />;
+  }
   const initials = name
     .replace(/^dr\.?\s+/i, '')
     .split(/\s+/)

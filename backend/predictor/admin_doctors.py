@@ -128,7 +128,7 @@ class DoctorDetailView(StaffView):
             return bad("No such doctor.", 404)
         recent = ReviewRequest.objects.filter(doctor=d.user).select_related("assessment", "assessment__user",
                                                                             "doctor__doctor")[:10]
-        return Response({**doctor_row(d), "recent_reviews": [request_row(r) for r in recent]})
+        return Response({**doctor_row(d), "photo": d.photo, "recent_reviews": [request_row(r) for r in recent]})
 
     def patch(self, request, pk):
         d = DoctorProfile.objects.select_related("user").filter(pk=pk).first()
