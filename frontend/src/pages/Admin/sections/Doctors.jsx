@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import SetDoctorPassword, { PasswordFields } from './DoctorPassword';
 import { passwordProblem } from '../labels';
+import { isPhoto } from '../../Profile/photo';
 import { admin } from '../../../api/adminApi';
 import {
   Avatar, Badge, ConfirmDialog, DataTable, Drawer, ErrorNote, Facts, Icon, Loading, PageHeader, Pagination, SearchBox,
@@ -144,7 +145,11 @@ function DoctorDetail({ id, onClose, onChanged }) {
       {d && (
         <>
           <div className="cx-profile-card">
-            <Avatar name={d.name} email={d.email} size={52} />
+            {isPhoto(d.photo) ? (
+              <img src={d.photo} alt="" width="52" height="52" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <Avatar name={d.name} email={d.email} size={52} />
+            )}
             <div>
               <strong>{d.name}</strong>
               <span className="cx-muted">

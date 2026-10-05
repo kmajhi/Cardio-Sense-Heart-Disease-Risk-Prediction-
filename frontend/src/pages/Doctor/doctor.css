@@ -1337,6 +1337,87 @@
   margin-top: 24px;
 }
 
+/* ---------- profile photo ---------- */
+
+.dr-avatar-img {
+  object-fit: cover;
+  background: var(--dr-line-2);
+}
+.dr-photo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+}
+.dr-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.dr-photo-actions .dr-help {
+  flex-basis: 100%;
+}
+.dr-file:focus-visible + .dr-btn {
+  outline: 2px solid var(--dr-teal);
+  outline-offset: 2px;
+}
+.dr-btn.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.dr-photo-dialog {
+  width: min(400px, 100%);
+}
+.dr-photo-stage {
+  position: relative;
+  margin: 16px auto 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #e9edf2;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.dr-photo-stage:active {
+  cursor: grabbing;
+}
+.dr-photo-stage img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  pointer-events: none;
+}
+.dr-photo-stage.is-loading::after {
+  content: 'Loading…';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--dr-ink-3);
+}
+/* Everything outside the circle is dimmed: the circle is what the avatar shows. */
+.dr-photo-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 200px rgba(15, 26, 46, 0.45);
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+.dr-photo-zoom {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.dr-photo-zoom input {
+  accent-color: var(--dr-teal);
+}
+
 /* ---------- profile / security / login ---------- */
 
 .dr-facts {

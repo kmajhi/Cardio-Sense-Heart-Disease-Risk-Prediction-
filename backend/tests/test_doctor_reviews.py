@@ -353,3 +353,24 @@ def test_admin_sets_a_new_password_for_a_doctor_who_forgot_it(django_user_model)
     d.refresh_from_db()
     assert d.must_change_password is True
     assert api_as(d.user).post(url, {"password": "Another-Strong-66"}, format="json").status_code == 403
+
+
+@pytest.mark.django_db
+def test_doctor_adds_changes_and_removes_their_photo(user, patient_api, doctor, doctor_api):
+    photo = "data:image/jpeg;base64," + "A" * 4000
+    url = reverse("doctor-me")
+    for bad_photo in ("data:image/png;base64,AAAA", "https://example.com/me.jpg", "data:image/jpeg;base64," + "A" * 400_000, 42):
+        assert doctor_api.patch(url, {"photo": bad_photo}, format="json").status_code == 400
+    res = doctor_api.patch(url, {"photo": photo}, format="json")
+    assert res.status_code == 200 and res.json()["photo"] == photo
+    assert doctor_api.get(url).json()["photo"] == photo
+
+    # Patients see the reviewing doctor's photo; queue lists stay light.
+    rid = request_review(patient_api, assessment(user)).json()["id"]
+    doctor_api.post(reverse("doctor-claim", args=[rid]))
+    assert patient_api.get(reverse("reviews")).json()[0]["doctor"]["photo"] == photo
+    assert "photo" not in doctor_api.get(reverse("doctor-reviews")).json()["results"][0]["doctor"]
+
+    assert doctor_api.patch(url, {"photo": ""}, format="json").json()["photo"] == ""
+    # Patients can't set a doctor's photo.
+    assert patient_api.patch(url, {"photo": photo}, format="json").status_code == 403

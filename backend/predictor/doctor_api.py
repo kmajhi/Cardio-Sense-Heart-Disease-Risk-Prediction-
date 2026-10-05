@@ -2,7 +2,7 @@
 
     POST  /api/doctor/login/                     { identifier: DR-0001 or email, password }
     GET   /api/doctor/me/                        profile, verification, workload counts
-    PATCH /api/doctor/me/                        { is_available }
+    PATCH /api/doctor/me/                        { is_available, photo } (photo: JPEG data URL, or "" to remove)
     POST  /api/doctor/password/                  { current_password, new_password }
     GET   /api/doctor/overview/                  counts + priority queue, active and recent completed
     GET   /api/doctor/requests/                  ?q &risk &age_min &age_max &date_from &date_to &sort &page
@@ -40,6 +40,7 @@ from rest_framework.views import APIView
 
 from . import reports
 from .accounts import password_problem, public_user
+from .serializers import MAX_PHOTO_CHARS, PHOTO_PREFIX
 from .activity import record
 from .models import ClinicalReview, DoctorProfile, ReportVersion, ReviewRequest
 from .reviews import (DECISION_LABEL, bad, doctor_of, dr, ensure_first_report, iso, log_event, notify, patient_name,
@@ -120,6 +121,7 @@ def doctor_me(d):
         "specialty": d.specialty,
         "organization": d.organization,
         "registration_number": d.registration_number,
+        "photo": d.photo,
         "status": d.status,
         "is_active": d.is_active,
         "verified": d.is_verified,
@@ -170,6 +172,15 @@ class DoctorMeView(DoctorView):
         if not d.is_active:
             return bad("This doctor account is inactive. Contact an administrator.", status.HTTP_403_FORBIDDEN)
         data = request.data if isinstance(request.data, dict) else {}
+        if "photo" in data:
+            photo = data["photo"] if isinstance(data["photo"], str) else None
+            if photo is None or (photo and (not photo.startswith(PHOTO_PREFIX) or len(photo) > MAX_PHOTO_CHARS)):
+                return bad("The photo must be a small JPEG image. Choose it again from the Profile page.")
+            had = bool(d.photo)
+            d.photo = photo
+            d.save(update_fields=["photo", "updated_at"])
+            what = "removed their photo" if not photo else "changed their photo" if had else "added a photo"
+            record("doctor", f"{d.doctor_id} {what}", user=request.user, request=request)
         if "is_available" in data:
             d.is_available = bool(data["is_available"])
             d.save(update_fields=["is_available", "updated_at"])
