@@ -120,6 +120,7 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
   const [seen, setSeen] = useState(false);
   const [modal, setModal] = useState(null); // null | 'login' | 'register'
   const [gate, setGate] = useState(null); // what a sign-in unlocks
+  const [role, setRole] = useState('patient'); // "Choose your role": patient | admin (doctor opens /doctor)
   const [authError, setAuthError] = useState(''); // a refused Google / X sign-in
   const [loader, setLoader] = useState(booted.current ? null : { mode: 'boot', msg: '' });
   const [loaderOut, setLoaderOut] = useState(false);
@@ -206,6 +207,8 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
       setGate(state.from.pathname === DASHBOARD_GATE.target && !state.reason ? DASHBOARD_GATE : { ...gate, target });
     } else setGate(null);
     setAuthError(state.error ?? '');
+    // Sent from the admin console: start on the Admin role.
+    setRole(state.from?.pathname?.startsWith('/console') ? 'admin' : 'patient');
     setModal(state.auth === 'register' ? 'register' : 'login');
     navigate(location.pathname, { replace: true, state: null }); // a refresh won't reopen it
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -223,13 +226,24 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
 
   const openAuth = (mode) => {
     setGate(null);
+    setRole('patient');
     setModal(mode);
+  };
+
+  // Doctors sign in on their own portal; Admin and User / Patient use this window.
+  const chooseRole = (next) => {
+    if (next === 'doctor') {
+      setModal(null);
+      setGate(null);
+      go('/doctor');
+    } else setRole(next);
   };
 
   const seeDashboard = (e) => {
     e.preventDefault();
     if (account) go(DASHBOARD_GATE.target); // straight there: no loading screen to sit through
     else {
+      setRole('patient');
       setGate(DASHBOARD_GATE);
       setModal('login');
     }
@@ -242,12 +256,13 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
   }, []);
 
   // After signing in: go where the visitor was headed, otherwise the Dashboard.
-  const onSignedIn = () => {
+  // Admin goes to the console, which itself says so if the account isn't staff.
+  const onSignedIn = (how, signedInAs = role) => {
     const wasGate = gate;
     setModal(null);
     setGate(null);
     // Straight to where they were going: no loading screen to sit through.
-    go(wasGate?.target ?? DASHBOARD_GATE.target);
+    go(signedInAs === 'admin' ? '/console' : wasGate?.target ?? DASHBOARD_GATE.target);
   };
 
   const b = scene === 'b' ? 'on' : seen ? 'off' : 'idle';
@@ -470,6 +485,8 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
           register={register}
           onSignedIn={onSignedIn}
           initialError={authError}
+          role={role}
+          onRole={chooseRole}
         />
       )}
 
