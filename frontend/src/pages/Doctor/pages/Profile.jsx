@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { doctorApi } from '../../../api/doctorApi';
 import { PHOTO_ACCEPT, isPhoto } from '../../Profile/photo';
-import { Avatar, ConfirmDialog, useToast } from '../ui';
+import { Avatar, ConfirmDialog, ThemePicker, useToast } from '../ui';
 import PhotoDialog from './PhotoDialog';
 import { drName, fmtDate, fmtDateTime } from '../format';
 
@@ -139,6 +139,17 @@ export default function Profile({ me, reloadMe }) {
         <AvailabilityToggle me={me} reloadMe={reloadMe} />
       </div>
       <PhotoSection me={me} reloadMe={reloadMe} />
+      <section className="dr-card dr-section" aria-labelledby="dr-appearance">
+        <div className="dr-section-head">
+          <div>
+            <h2 className="dr-h2" id="dr-appearance">
+              Appearance
+            </h2>
+            <p>Day or night mode for the Doctor Panel, or follow your device. Remembered on this browser.</p>
+          </div>
+          <ThemePicker />
+        </div>
+      </section>
       <section className="dr-card dr-section">
         <div className="dr-section-head">
           <div>
