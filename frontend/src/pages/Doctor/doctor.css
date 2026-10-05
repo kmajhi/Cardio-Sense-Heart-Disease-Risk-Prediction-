@@ -27,6 +27,26 @@
   --dr-alert-bg: #fcefef;
   --dr-info: #2357a6;
   --dr-info-bg: #ecf2fb;
+  /* Backgrounds that stay navy, and surfaces that change with the theme. */
+  --dr-side-bg: #152746;
+  --dr-primary: #152746;
+  --dr-primary-hover: #1d3560;
+  --dr-top-bg: rgba(255, 255, 255, 0.92);
+  --dr-hover: #fbfcfd;
+  --dr-line-strong: #c8d1dc;
+  --dr-teal-line: #bcd9d7;
+  --dr-warn-line: #f0dcb4;
+  --dr-alert-line: #efc9cb;
+  --dr-info-line: #cddcf2;
+  --dr-ok-line: #c7e5d4;
+  --dr-skel-a: #edf0f4;
+  --dr-skel-b: #f6f8fa;
+  --dr-model-bg: #efeaf8;
+  --dr-model-ink: #4b3a7a;
+  --dr-ai-bg: #f1f3f5;
+  --dr-stage-bg: #e9edf2;
+  --dr-login-top: #eef2f7;
+  --dr-brand-heart: #e8414d;
   --dr-radius: 12px;
   --dr-radius-sm: 8px;
   --dr-shadow: 0 1px 2px rgba(21, 39, 70, 0.04), 0 2px 8px -4px rgba(21, 39, 70, 0.08);
@@ -34,6 +54,70 @@
   --dr-side-w: 248px;
   --dr-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
+/* Night mode. Same meaning for every colour; contrast checked against the
+   surfaces (text ≥ 4.5:1). Status colours stay distinguishable and every status
+   is still written in words. */
+html[data-dr-theme='dark'] .dr-root,
+html[data-dr-theme='dark'] .dr-toast {
+  --dr-navy: #dfe7f3; /* headings and accents: light on dark */
+  --dr-navy-2: #c5d3e8;
+  --dr-navy-soft: rgba(143, 170, 214, 0.14);
+  --dr-teal: #4fb0aa;
+  --dr-teal-2: #8ad3cd;
+  --dr-teal-soft: rgba(79, 176, 170, 0.14);
+  --dr-bg: #0d131c;
+  --dr-surface: #141c27;
+  --dr-surface-2: #182230;
+  --dr-ink: #e6ebf2;
+  --dr-ink-2: #c3ccd8;
+  --dr-ink-3: #93a0b1;
+  --dr-ink-4: #6c7a8c;
+  --dr-line: #263243;
+  --dr-line-2: #1d2735;
+  --dr-ok: #63d197;
+  --dr-ok-bg: rgba(99, 209, 151, 0.12);
+  --dr-warn: #f2b85a;
+  --dr-warn-bg: rgba(242, 184, 90, 0.12);
+  --dr-alert: #ff8a8f;
+  --dr-alert-bg: rgba(255, 138, 143, 0.12);
+  --dr-info: #8ab6ff;
+  --dr-info-bg: rgba(138, 182, 255, 0.12);
+  --dr-side-bg: #0a1220;
+  --dr-primary: #2f6fb3;
+  --dr-primary-hover: #3a7dc4;
+  --dr-top-bg: rgba(20, 28, 39, 0.92);
+  --dr-hover: #18212e;
+  --dr-line-strong: #3a4a60;
+  --dr-teal-line: #2c5f5c;
+  --dr-warn-line: rgba(242, 184, 90, 0.35);
+  --dr-alert-line: rgba(255, 138, 143, 0.35);
+  --dr-info-line: rgba(138, 182, 255, 0.35);
+  --dr-ok-line: rgba(99, 209, 151, 0.35);
+  --dr-skel-a: #1b2533;
+  --dr-skel-b: #233044;
+  --dr-model-bg: rgba(167, 139, 250, 0.14);
+  --dr-model-ink: #c9b8ff;
+  --dr-ai-bg: rgba(255, 255, 255, 0.06);
+  --dr-stage-bg: #0a1018;
+  --dr-login-top: #111a26;
+  --dr-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px -4px rgba(0, 0, 0, 0.4);
+  --dr-shadow-lg: 0 24px 60px -16px rgba(0, 0, 0, 0.7);
+  color-scheme: dark; /* scrollbars, date pickers, file inputs */
+}
+html[data-dr-theme='dark'] .dr-root .rp-role {
+  border-color: var(--dr-line);
+  background: var(--dr-surface);
+  color: var(--dr-ink-2);
+}
+html[data-dr-theme='dark'] .dr-root .rp-role.is-on {
+  border-color: var(--dr-teal);
+  background: var(--dr-teal-soft);
+  color: var(--dr-teal-2);
+}
+html[data-dr-theme='dark'] .dr-root .rp-label {
+  color: var(--dr-ink-3);
+}
+
 .dr-root {
   min-height: 100vh;
   background: var(--dr-bg);
@@ -67,7 +151,7 @@
   top: -48px;
   z-index: 50;
   padding: 8px 12px;
-  background: var(--dr-navy);
+  background: var(--dr-side-bg);
   color: #fff;
   border-radius: 8px;
 }
@@ -90,7 +174,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 16px 12px;
-  background: var(--dr-navy);
+  background: var(--dr-side-bg);
   color: #d6deea;
 }
 .dr-brand {
@@ -216,7 +300,7 @@
   gap: 12px;
   height: 56px;
   padding: 0 24px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--dr-top-bg);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--dr-line);
 }
@@ -238,7 +322,7 @@
 }
 .dr-login-brand svg,
 .dr-brand-mark {
-  color: #e8414d;
+  color: var(--dr-brand-heart);
 }
 .dr-content {
   width: 100%;
@@ -351,11 +435,11 @@
   cursor: not-allowed;
 }
 .dr-btn.is-primary {
-  background: var(--dr-navy);
+  background: var(--dr-primary);
   color: #fff;
 }
 .dr-btn.is-primary:hover:not(:disabled) {
-  background: var(--dr-navy-2);
+  background: var(--dr-primary-hover);
 }
 .dr-btn.is-secondary {
   background: var(--dr-surface);
@@ -363,7 +447,7 @@
   color: var(--dr-navy);
 }
 .dr-btn.is-secondary:hover:not(:disabled) {
-  border-color: #c8d1dc;
+  border-color: var(--dr-line-strong);
   background: var(--dr-surface-2);
 }
 .dr-btn.is-teal {
@@ -377,7 +461,7 @@
   background: var(--dr-line-2);
 }
 .dr-btn.is-danger {
-  border-color: #efc9cb;
+  border-color: var(--dr-alert-line);
   color: var(--dr-alert);
   background: var(--dr-surface);
 }
@@ -495,7 +579,7 @@
   cursor: pointer;
 }
 .dr-metric:hover {
-  border-color: #c8d1dc;
+  border-color: var(--dr-line-strong);
 }
 .dr-metric-label {
   display: flex;
@@ -570,7 +654,7 @@
   border-bottom: 0;
 }
 .dr-table tbody tr:hover {
-  background: #fbfcfd;
+  background: var(--dr-hover);
 }
 .dr-table .is-right {
   text-align: right;
@@ -785,22 +869,22 @@
   margin: 0;
 }
 .dr-callout.is-warn {
-  border-color: #f0dcb4;
+  border-color: var(--dr-warn-line);
   border-left-color: var(--dr-warn);
   background: var(--dr-warn-bg);
 }
 .dr-callout.is-alert {
-  border-color: #efc9cb;
+  border-color: var(--dr-alert-line);
   border-left-color: var(--dr-alert);
   background: var(--dr-alert-bg);
 }
 .dr-callout.is-info {
-  border-color: #cddcf2;
+  border-color: var(--dr-info-line);
   border-left-color: var(--dr-info);
   background: var(--dr-info-bg);
 }
 .dr-callout.is-ok {
-  border-color: #c7e5d4;
+  border-color: var(--dr-ok-line);
   border-left-color: var(--dr-ok);
   background: var(--dr-ok-bg);
 }
@@ -812,7 +896,7 @@
   display: block;
   height: 12px;
   border-radius: 6px;
-  background: linear-gradient(90deg, #edf0f4 0%, #f6f8fa 50%, #edf0f4 100%);
+  background: linear-gradient(90deg, var(--dr-skel-a) 0%, var(--dr-skel-b) 50%, var(--dr-skel-a) 100%);
   background-size: 200% 100%;
   animation: dr-shimmer 1.4s ease-in-out infinite;
 }
@@ -882,7 +966,7 @@
   max-width: 420px;
   padding: 12px 16px;
   border-radius: 10px;
-  background: var(--dr-navy);
+  background: var(--dr-side-bg);
   color: #fff;
   box-shadow: var(--dr-shadow-lg);
 }
@@ -1060,11 +1144,11 @@
   color: var(--dr-navy);
 }
 .dr-origin.is-model {
-  background: #efeaf8;
-  color: #4b3a7a;
+  background: var(--dr-model-bg);
+  color: var(--dr-model-ink);
 }
 .dr-origin.is-ai {
-  background: #f1f3f5;
+  background: var(--dr-ai-bg);
   color: var(--dr-ink-2);
 }
 .dr-origin.is-doctor {
@@ -1202,7 +1286,7 @@
 }
 
 .dr-review-card {
-  border-color: #bcd9d7;
+  border-color: var(--dr-teal-line);
   box-shadow: 0 0 0 3px rgba(38, 116, 114, 0.06), var(--dr-shadow);
 }
 .dr-review-card .dr-section-head {
@@ -1231,7 +1315,7 @@
   cursor: pointer;
 }
 .dr-decision:hover {
-  border-color: #c8d1dc;
+  border-color: var(--dr-line-strong);
 }
 .dr-decision.is-on {
   border-color: var(--dr-teal);
@@ -1374,7 +1458,7 @@
   margin: 16px auto 0;
   overflow: hidden;
   border-radius: 12px;
-  background: #e9edf2;
+  background: var(--dr-stage-bg);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -1447,7 +1531,7 @@
   place-items: center;
   min-height: 100vh;
   padding: 24px 16px;
-  background: linear-gradient(180deg, #eef2f7 0%, var(--dr-bg) 40%);
+  background: linear-gradient(180deg, var(--dr-login-top) 0%, var(--dr-bg) 40%);
 }
 .dr-login-card {
   width: min(400px, 100%);
@@ -1613,4 +1697,45 @@
   .dr-metric-value {
     font-size: 24px;
   }
+}
+
+/* ---------- theme switch ---------- */
+
+.dr-theme-pick {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--dr-line);
+  border-radius: 10px;
+  background: var(--dr-surface-2);
+}
+.dr-theme-pick button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--dr-ink-3);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.dr-theme-pick button[aria-checked='true'] {
+  background: var(--dr-surface);
+  color: var(--dr-navy);
+  box-shadow: var(--dr-shadow);
+}
+html[data-dr-theme='dark'] .dr-theme-pick button[aria-checked='true'] {
+  background: var(--dr-teal-soft);
+  color: var(--dr-teal-2);
+  box-shadow: inset 0 0 0 1px var(--dr-teal-line);
+}
+.dr-login-theme {
+  position: fixed;
+  top: 16px;
+  right: 16px;
 }

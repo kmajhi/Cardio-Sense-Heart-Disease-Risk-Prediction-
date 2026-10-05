@@ -26,6 +26,9 @@ const PATHS = {
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
   shield: 'M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6zM9 12l2 2 4-4',
   activity: 'M3 12h4l2-6 4 12 2-6h6',
+  sun: 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  moon: 'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z',
+  monitor: 'M3 5h18v11H3zM8 20h8M12 16v4',
 };
 
 export function Icon({ name, size = 18, className }) {
@@ -425,6 +428,75 @@ export function PasswordInput({ id, value, onChange, autoComplete, invalid, desc
       <button type="button" onClick={() => setShown((v) => !v)} aria-pressed={shown} aria-label={shown ? 'Hide password' : 'Show password'}>
         {shown ? 'Hide' : 'Show'}
       </button>
+    </div>
+  );
+}
+
+// ---------- day / night mode ----------
+
+const THEME_KEY = 'cardio-doctor:theme';
+const THEMES = [
+  ['light', 'Day', 'sun'],
+  ['dark', 'Night', 'moon'],
+  ['system', 'System', 'monitor'],
+];
+const ThemeContext = createContext(null);
+
+function storedTheme() {
+  try {
+    const v = localStorage.getItem(THEME_KEY);
+    return THEMES.some(([id]) => id === v) ? v : 'system';
+  } catch {
+    return 'system'; // storage blocked: follow the device
+  }
+}
+
+/**
+ * The Doctor Panel's theme: the doctor's choice (remembered in this browser) or
+ * the device's setting. Applied as <html data-dr-theme> while the panel is open,
+ * so dialogs and toasts follow it too; removed when leaving the panel.
+ */
+export function ThemeProvider({ children }) {
+  const [choice, setChoice] = useState(storedTheme);
+  const query = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  const [osDark, setOsDark] = useState(Boolean(query?.matches));
+  useEffect(() => {
+    if (!query) return undefined;
+    const on = (e) => setOsDark(e.matches);
+    query.addEventListener?.('change', on);
+    return () => query.removeEventListener?.('change', on);
+  }, [query]);
+  const theme = choice === 'system' ? (osDark ? 'dark' : 'light') : choice;
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.drTheme = theme;
+    return () => {
+      delete root.dataset.drTheme;
+    };
+  }, [theme]);
+  const choose = useCallback((next) => {
+    setChoice(next);
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {
+      /* this visit only */
+    }
+  }, []);
+  return <ThemeContext.Provider value={{ choice, theme, choose }}>{children}</ThemeContext.Provider>;
+}
+
+/** Day / Night / System. `compact` shows icons only (labels stay for screen readers). */
+export function ThemePicker({ compact = false, className = '' }) {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) return null;
+  return (
+    <div role="radiogroup" aria-label="Appearance" className={`dr-theme-pick ${className}`}>
+      {THEMES.map(([id, label, icon]) => (
+        <button key={id} type="button" role="radio" aria-checked={ctx.choice === id} onClick={() => ctx.choose(id)} title={`${label} mode`}>
+          <Icon name={icon} size={15} />
+          {compact ? <span className="dr-sr">{label}</span> : label}
+        </button>
+      ))}
     </div>
   );
 }
