@@ -675,6 +675,62 @@
   text-transform: uppercase;
 }
 
+/* Loading card: the ring centred in the card, the text beneath it, centred too. */
+.pc-pr-loading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(260px, 42vh, 380px);
+  padding: 12px 12px 8px;
+  text-align: center;
+  animation: pc-pr-loading-in 0.35s ease both;
+}
+
+.pc-pr-loading-ring {
+  margin-bottom: 26px;
+}
+
+.pc-dash .pc-pr-loading-title {
+  margin: 0;
+  color: var(--pc-ink);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pc-dash .pc-pr-loading-text {
+  max-width: 34ch;
+  margin: 8px auto 0;
+  text-wrap: balance; /* no single word left alone on the last line */
+  color: var(--pc-ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pc-pr-loading-note {
+  margin-top: 14px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(28, 22, 51, 0.05);
+  color: var(--pc-ink-faint);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+@keyframes pc-pr-loading-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .pc-pr-result-body {
   transition: opacity 0.3s;
 }

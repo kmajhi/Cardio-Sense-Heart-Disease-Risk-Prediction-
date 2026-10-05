@@ -18,6 +18,7 @@ const Console = lazyPage(() => import('./pages/Admin/Console'));
 const DoctorPortal = lazyPage(() => import('./pages/Doctor/DoctorPortal'));
 import DemoBanner from './components/DemoBanner';
 import SiteBanner from './components/SiteBanner';
+import BootScreen from './components/BootScreen';
 import { AuthProvider, RequireAuth, useAuth } from './auth/AuthContext';
 import { NotificationsProvider } from './notifications/NotificationsContext';
 import NavBar from './components/NavBar';
@@ -150,6 +151,7 @@ function AppRoutes() {
     <NotificationsProvider key={account?.email ?? 'signed-out'} profile={profile} account={account?.email}>
       <SiteBanner />
       <DemoBanner />
+      <BootScreen />
       <ScrollToTop />
       {/* A page that fails to draw shows what happened and a way out, never a blank screen. */}
       <ErrorBoundary resetKey={pathname}>

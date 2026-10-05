@@ -7,14 +7,15 @@ import { DISCLAIMER, FACTS, METRICS, STEPS } from '../About/content';
 import { useAuth } from '../../auth/AuthContext';
 import { signInErrorMessage } from '../../api/authApi';
 import AuthModal from './AuthModal';
+import RingLoader from '../../components/RingLoader';
+import { alreadyBooted, markBooted } from '../../components/boot';
 import heroVideo from '../../assets/hero-heart.mp4';
 import '../Dashboard/Dashboard.css'; // shared tokens, nav, panel, load sequence, page wipe
 import './Home.css';
 
 const SCENE_SWITCH = 3.72; // s into the clip where headline A hands over to headline B
-const LAUNCH_HOLD = 500; // ms the launch loader holds (first visit of a session only)
+const LAUNCH_HOLD = 1600; // ms the launch loader holds (first visit of a session only): about one turn of the ring
 const LOADER_EXIT = 400; // ms of the loader's exit animation (Home.css → .hm-loader.out)
-const BOOTED_KEY = 'cardio-sense:booted'; // the launch loader plays once per browser session
 
 const DEFAULT_GATE = {
   title: 'Sign in to continue',
@@ -61,22 +62,6 @@ const auc = METRICS.find((m) => m.label === 'ROC-AUC');
 const accuracy = METRICS.find((m) => m.label === 'Accuracy');
 const patients = FACTS.find((f) => f.label === 'adult patient records');
 const measures = FACTS.find((f) => f.label === 'routine measurements');
-
-function alreadyBooted() {
-  try {
-    return sessionStorage.getItem(BOOTED_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function markBooted() {
-  try {
-    sessionStorage.setItem(BOOTED_KEY, '1');
-  } catch {
-    /* storage blocked: the loader just plays again next time */
-  }
-}
 
 function Headline({ id, words, cls, hidden, as: Tag }) {
   let d = 0;
@@ -498,6 +483,7 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
           aria-live="polite"
           aria-label="Loading Cardio Sense"
         >
+          <RingLoader size={132} className="hm-lring" />
           <span className="hm-lw" aria-hidden="true">
             <HeartMark className="hm-lmark" />
             <span className="hm-lword">
@@ -508,8 +494,7 @@ export default function Home({ user, LinkComponent = 'a', activePath = '/' }) {
               ))}
             </span>
           </span>
-          <span className="hm-lbar" aria-hidden="true" />
-          {loader.msg && <span className="hm-lcap">{loader.msg}</span>}
+          <span className="hm-lcap">{loader.msg || 'Loading…'}</span>
         </div>
       )}
     </div>

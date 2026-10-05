@@ -1,4 +1,5 @@
 import { USE_MOCK } from '../../../api/mode';
+import RingLoader from '../../../components/RingLoader';
 import { pctText } from '../../../clinical/risk';
 import heartArt from '../../../assets/prediction-heart.webp';
 import ReportButton from '../../../components/ReportButton';
@@ -75,11 +76,23 @@ export default function ResultCard({
         <h2 id="pr-result-title" className="pc-pr-eyebrow">
           {USE_MOCK ? 'Illustrative score (demo)' : 'Model estimate'}
         </h2>
-        {level && <span className={`pc-badge ${level.className}`}>{level.label}</span>}
-        {data && !level && <span className="pc-badge">{data.risk_level}</span>}
+        {/* The previous estimate's band is hidden while a new one is computed. */}
+        {level && !loading && <span className={`pc-badge ${level.className}`}>{level.label}</span>}
+        {data && !level && !loading && <span className="pc-badge">{data.risk_level}</span>}
       </div>
 
-      <div aria-live="polite" className={`pc-pr-result-body${stale || loading ? ' is-dim' : ''}`}>
+      {loading ? (
+        // While the model runs: the loading ring, with what is happening beneath it.
+        <div className="pc-pr-loading" role="status" aria-live="polite">
+          <RingLoader size={116} className="pc-pr-loading-ring" />
+          <p className="pc-pr-loading-title">Running the prediction</p>
+          <p className="pc-pr-loading-text">
+            Analysing the patient’s measurements and checking each value against its reference range.
+          </p>
+          <span className="pc-pr-loading-note">This usually takes a few seconds.</span>
+        </div>
+      ) : (
+      <div aria-live="polite" className={`pc-pr-result-body${stale ? ' is-dim' : ''}`}>
         <Gauge probability={data?.probability} stroke={level?.stroke ?? '#fff'} />
         <p className="pc-pr-gauge-label">Estimated probability of heart disease</p>
         {data ? (
@@ -91,9 +104,10 @@ export default function ResultCard({
           <p className="pc-pr-empty">Fill in the patient's values, then run the model to see an estimate.</p>
         )}
       </div>
+      )}
 
       {/* Only this middle part scrolls, so the button never leaves the card on short screens. */}
-      {(stale || data) && (
+      {(stale || data) && !loading && (
         <div className="pc-pr-result-scroll">
           {stale && !loading && (
             <p className="pc-pr-stale">Inputs changed since this estimate. Run it again to update.</p>

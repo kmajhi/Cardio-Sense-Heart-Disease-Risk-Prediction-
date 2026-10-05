@@ -145,6 +145,15 @@ function SectionHead({ id, title, hint, review }) {
   );
 }
 
+// The loading card shows for at least this long, so a fast answer doesn't flash it.
+const MIN_LOADING_MS = 900;
+
+/** `promise`'s outcome, but not before `ms` have passed. */
+function atLeast(promise, ms = MIN_LOADING_MS) {
+  const wait = new Promise((resolve) => setTimeout(resolve, ms));
+  return Promise.allSettled([promise, wait]).then(([r]) => (r.status === 'fulfilled' ? r.value : Promise.reject(r.reason)));
+}
+
 /** True on phones while the result card (and its own Run button) is off-screen. */
 function useRunBar() {
   const [show, setShow] = useState(false);
@@ -219,7 +228,7 @@ export default function Prediction({
     setValues(pending.values);
     setTriedRun(true);
     setStatus('loading');
-    predict(pending.payload)
+    atLeast(predict(pending.payload))
       .then((data) => {
         setResult({ data, payload: pending.payload });
         notifications?.setLatest({ inputs: pending.payload, result: data, created_at: new Date().toISOString() });
@@ -350,7 +359,7 @@ export default function Prediction({
     setStatus('loading');
     setJustSaved(false);
     try {
-      const data = await predict(payload);
+      const data = await atLeast(predict(payload));
       setResult({ data, payload });
       setJustSaved(true);
       // The nav bell and the Guidance page follow the newest assessment.
