@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useId, useRef, useSt
 import { Link } from 'react-router-dom';
 import { RISK } from '../../clinical/risk';
 import { isPhoto } from '../Profile/photo';
+import ThemeSwitch from '../../components/ThemeSwitch';
 import { RISK_TONE, STATUS_TONE, compactTimeline, fmtDateTime, patientLine, riskLine } from './format';
 
 const PATHS = {
@@ -436,8 +437,8 @@ export function PasswordInput({ id, value, onChange, autoComplete, invalid, desc
 
 const THEME_KEY = 'cardio-doctor:theme';
 const THEMES = [
-  ['light', 'Day', 'sun'],
-  ['dark', 'Night', 'moon'],
+  ['light', 'Light', 'sun'],
+  ['dark', 'Dark', 'moon'],
   ['system', 'System', 'monitor'],
 ];
 const ThemeContext = createContext(null);
@@ -485,7 +486,15 @@ export function ThemeProvider({ children }) {
   return <ThemeContext.Provider value={{ choice, theme, choose }}>{children}</ThemeContext.Provider>;
 }
 
-/** Day / Night / System. `compact` shows icons only (labels stay for screen readers). */
+/** The glass light / dark switch (top bar, sign-in page). Choosing here sets an explicit mode. */
+export function ThemeToggle({ className = '' }) {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) return null;
+  const dark = ctx.theme === 'dark';
+  return <ThemeSwitch dark={dark} onToggle={() => ctx.choose(dark ? 'light' : 'dark')} className={className} />;
+}
+
+/** Light / Dark / System (Profile → Appearance). `compact` shows icons only (labels stay for screen readers). */
 export function ThemePicker({ compact = false, className = '' }) {
   const ctx = useContext(ThemeContext);
   if (!ctx) return null;
