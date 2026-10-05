@@ -11,10 +11,10 @@ comes out, checked against clinical reference ranges and saved to the patient's 
 ## Repository layout
 
 ```
-frontend/   React (Vite) web app: Home, Dashboard, Prediction, History, Guidance, Profile, About,
-            plus the staff admin console at /console
-backend/    Django REST API + Django admin; accounts, profiles, assessments, activity log;
-            loads the model from ml/artifacts
+frontend/   React (Vite) web app: Home, Dashboard, Prediction, History, Guidance, Ask a Doctor,
+            Profile, About, plus the staff admin console at /console and the Doctor Panel at /doctor
+backend/    Django REST API + Django admin; accounts, profiles, assessments, activity log, PDF
+            reports, doctor reviews; loads the model from ml/artifacts
 ml/         Model training and evaluation, the research notebook, and the saved model artifacts
 ```
 
@@ -23,8 +23,8 @@ The three parts are separate on purpose:
 - `ml/` produces `ml/artifacts/` (the trained pipeline and its metadata).
 - `backend/` only reads those artifacts, via `CARDIO_MODEL_DIR` (default `ml/artifacts`).
 - `frontend/` only talks to the backend over HTTP (`/api/auth/`, `/api/predict/`,
-  `/api/history/`, `/api/profile/`), or to an in-browser mock when `VITE_USE_MOCK_API` isn't
-  `false`.
+  `/api/history/`, `/api/profile/`, `/api/reviews/`, `/api/doctor/`, `/api/admin/`), or to an
+  in-browser mock when `VITE_USE_MOCK_API` isn't `false`.
 
 ## Features
 
@@ -36,7 +36,26 @@ The three parts are separate on purpose:
 - **Dashboard, History and Guidance:** risk over time, lab trends, notifications, and diet,
   activity and "when to see a doctor" advice.
 - **Accounts:** email/password or Google sign-in, password reset by email, download my data,
-  delete my account. Each user sees only their own data.
+  delete my account. Each user sees only their own data. The sign-in window starts with
+  **Choose your role**: User / Patient, Doctor (opens the Doctor Portal) or Admin (opens the
+  admin console).
+- **PDF health report:** a clinical-style PDF of any saved assessment (History → Download report),
+  built from the saved values and result (the model is never re-run). Versioned: version 1 is the
+  automated report; once a doctor submits a review, version 2 adds the doctor's clinical review.
+- **Ask a Doctor (`/ask-a-doctor`):** patients send one of their assessments to a doctor with a
+  question, follow the review on a timeline (requested → assigned → under review → completed),
+  read the doctor's clinical summary and download the updated report. In-app notifications tell
+  them when a doctor starts and finishes the review.
+- **Doctor Panel (`/doctor`, doctor accounts only):** a clinical review workspace. Sign in with a
+  Doctor ID (e.g. `DR-0001`) or email; a temporary password must be changed at first sign-in.
+  Dashboard with workload counts and a priority queue; review requests with search and filters;
+  **Accept Review** (only one doctor can claim a request: the server decides the race); the
+  workspace shows the patient context, the ML estimate (labelled "not a diagnosis"), key findings,
+  every measurement with its reference range, and the AI recommendations, each labelled with
+  where it came from; the doctor writes remarks, a decision and an action plan, can save a draft
+  and submits after a confirmation. Submitted reviews are read-only, with an audit timeline.
+  Profile with a photo and an availability switch, change password, notifications, and
+  day / night mode.
 - **Admin console (`/console`, staff only):** overview with 7/30/90-day KPIs, period-on-period
   changes and an activation funnel; users (bulk activate, deactivate or sign out); assessments;
   security (failed logins by address and account, who is signed in); model card and health check;
@@ -44,6 +63,8 @@ The three parts are separate on purpose:
   mode, announcement banner, pause sign-ups or predictions). Light and dark themes, a command
   palette (Ctrl/⌘ K) that searches users and assessments, keyboard shortcuts (press `?`) and a
   notification centre for failed-login spikes, failing health checks and paused features.
+  **Clinical:** create doctor accounts, verify their registration, activate / deactivate, set a
+  new password for a doctor who forgot theirs, and monitor every review request.
 
 ## Model
 
@@ -105,17 +126,23 @@ Each folder's README has the details.
 
 ## Demo logins (local testing)
 
-`python manage.py seed_demo_accounts` (from `backend/`) creates these two accounts, or resets
+`python manage.py seed_demo_accounts` (from `backend/`) creates these three accounts, or resets
 their passwords if they already exist:
 
 | Role | Email | Password | Where |
 |---|---|---|---|
 | Admin (staff + superuser) | `admin@example.com` | `Admin-Demo-2026` | Admin console at http://localhost:5173/console, Django admin at http://localhost:8000/admin/ |
 | User (patient) | `sujon@example.com` | `Sujon123` | Log in on http://localhost:5173 |
+| Doctor (verified, available) | `doctor@example.com` (or its Doctor ID, printed by the command, e.g. `DR-0001`) | `Heart-Review-2026` | Doctor Panel at http://localhost:5173/doctor, or Log in → Choose your role → Doctor |
+
+The demo doctor, **Dr. Farhana Rahman**, is fictional: the hospital and the registration number
+(`BMDC-TEST-00001`) are marked as test data. To try a review end to end: log in as the user, send
+a request from **Ask a Doctor**, then sign in as the doctor and accept it.
 
 These passwords are public, so the command only runs when `DJANGO_DEBUG=true` (local
 development). They never exist on a deployed server: its admin comes from `ADMIN_EMAIL` and
-`ADMIN_PASSWORD` (see below).
+`ADMIN_PASSWORD` (see below), and doctors are created by an administrator in the admin console
+(Clinical → Doctors → Add doctor).
 
 ## Deploying on Render
 
@@ -185,3 +212,8 @@ model, its metadata, the model comparison table, and SHAP centroids.
 - [x] Staff admin console (`/console`) with activity log, system health and site controls
 - [x] Full QA run: 114 test cases traced to 24 requirements, 107 passed
 - [x] Render Blueprint for the full app (site, API, database), secrets set in the dashboard
+- [x] PDF health reports for saved assessments, with report versions
+- [x] Ask a Doctor and the Doctor Panel: request → claim → clinical review → updated report and
+      patient notification; doctor management and review monitoring in the admin console
+- [x] Role choice on sign-in (User / Patient, Doctor, Admin); doctor profile photos; day / night
+      mode in the Doctor Panel
