@@ -39,7 +39,6 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabi
 
 const HEADS = {
   login: { title: 'Welcome back', sub: 'Log in to track your heart health and predictions.' },
-  admin: { title: 'Admin sign in', sub: 'For Cardio Sense staff. Opens the admin console.' },
   register: { title: 'Create your account', sub: 'Start tracking your heart health with AI insights.' },
 };
 
@@ -60,13 +59,11 @@ const HEADS = {
  * (backend/predictor/social_login.py); only providers the server has keys for
  * are shown. `initialError` is a message from a sign-in that came back refused.
  *
- * "Choose your role" picks where signing in leads: User / Patient (this form,
- * as before), Doctor (onRole('doctor'): the parent opens the Doctor Portal) or
- * Admin (the same login, staff wording, then the admin console). The server
- * still decides what each account may do.
+ * "Choose your role" picks where signing in leads: User / Patient (this form;
+ * admins sign in here too) or Doctor (onRole('doctor'): the parent opens the
+ * Doctor Portal). The server still decides what each account may do.
  */
-export default function AuthModal({ mode, gate, onMode, onClose, login, register, onSignedIn, initialError = '', role = 'patient', onRole = () => {} }) {
-  const isAdmin = role === 'admin';
+export default function AuthModal({ mode, gate, onMode, onClose, login, register, onSignedIn, initialError = '', onRole = () => {} }) {
   const uid = useId();
   const dialogRef = useRef(null);
   const [values, setValues] = useState({ name: '', email: '', password: '' });
@@ -92,10 +89,6 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
     signInWith(id);
   };
   const [forgot, setForgot] = useState(false); // login form shows the reset request instead
-  // Staff accounts are made by administrators: no Register for Admin.
-  useEffect(() => {
-    if (isAdmin && mode !== 'login') onMode('login');
-  }, [isAdmin, mode, onMode]);
   const pickRole = (next) => {
     setError('');
     setForgot(false);
@@ -156,9 +149,11 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
     setBusy(how);
     setError('');
     try {
-      if (how === 'login') await login({ email: values.email.trim(), password: values.password });
-      else await register({ name: values.name.trim(), email: values.email.trim(), password: values.password });
-      onSignedIn(how, role);
+      const account =
+        how === 'login'
+          ? await login({ email: values.email.trim(), password: values.password })
+          : await register({ name: values.name.trim(), email: values.email.trim(), password: values.password });
+      onSignedIn(how, account);
     } catch (err) {
       setBusy(null);
       setError(err.message || "Couldn't reach the server. Try again.");
@@ -297,7 +292,7 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
         )}
 
         <button type="submit" className="hm-btn-main" disabled={busy !== null}>
-          {busy === how ? (isLogin ? 'Logging in…' : 'Creating account…') : isLogin ? (isAdmin ? 'Login to Admin Console' : 'Login') : 'Create Account'}
+          {busy === how ? (isLogin ? 'Logging in…' : 'Creating account…') : isLogin ? 'Login' : 'Create Account'}
         </button>
 
         {/* Pinned to the bottom, so both forms end at the same place. */}
@@ -308,7 +303,7 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
               sure the backend is running, then reopen this window.
             </p>
           )}
-          {social.length > 0 && !isAdmin && (
+          {social.length > 0 && (
             <>
               <div role="separator" aria-label="Or" className="hm-or">
                 <span />
@@ -331,16 +326,12 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
               </div>
             </>
           )}
-          {isAdmin ? (
-            <p className="hm-switch">Admin accounts are created by an existing administrator.</p>
-          ) : (
           <p className="hm-switch">
             {isLogin ? 'New to Cardio Sense? ' : 'Already have an account? '}
             <button type="button" className="hm-linkish" onClick={() => switchTo(isLogin ? 'register' : 'login', true)}>
               {isLogin ? 'Create an account' : 'Log in'}
             </button>
           </p>
-          )}
         </div>
       </form>
     );
@@ -365,14 +356,9 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
           </svg>
         </button>
 
-        <RolePicker role={role} onRole={pickRole} />
+        <RolePicker role="patient" onRole={pickRole} />
 
-        {isAdmin ? (
-          <div className="hm-dlg-head is-active">
-            <h3 id={`${uid}-title`}>{HEADS.admin.title}</h3>
-            <p>{HEADS.admin.sub}</p>
-          </div>
-        ) : gate ? (
+        {gate ? (
           <div className="hm-dlg-head hm-dlg-head--gate is-active">
             <span className="hm-lock">
               <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
@@ -390,7 +376,7 @@ export default function AuthModal({ mode, gate, onMode, onClose, login, register
           </div>
         )}
 
-        <div role="tablist" aria-label="Account" className="hm-tabs" data-mode={mode} hidden={isAdmin}>
+        <div role="tablist" aria-label="Account" className="hm-tabs" data-mode={mode}>
           <span className="hm-tabs-pill" aria-hidden="true" />
           <button type="button" role="tab" data-tab="login" aria-selected={mode === 'login'} className="hm-tab" onClick={() => switchTo('login')}>
             Log in

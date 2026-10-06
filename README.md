@@ -37,8 +37,8 @@ The three parts are separate on purpose:
   activity and "when to see a doctor" advice.
 - **Accounts:** email/password or Google sign-in, password reset by email, download my data,
   delete my account. Each user sees only their own data. The sign-in window starts with
-  **Choose your role**: User / Patient, Doctor (opens the Doctor Portal) or Admin (opens the
-  admin console).
+  **Choose your role**: User / Patient or Doctor (opens the Doctor Portal). Admins sign in as
+  User / Patient and land on the admin console.
 - **PDF health report:** a clinical-style PDF of any saved assessment (History → Download report),
   built from the saved values and result (the model is never re-run). Versioned: version 1 is the
   automated report; once a doctor submits a review, version 2 adds the doctor's clinical review.

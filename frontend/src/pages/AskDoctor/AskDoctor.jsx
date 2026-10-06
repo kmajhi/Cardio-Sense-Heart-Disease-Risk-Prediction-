@@ -37,8 +37,8 @@ const dateTimeText = (iso) =>
 const drName = (name = '') => (/^dr\.?\s/i.test(name) ? name : `Dr. ${name}`);
 
 const STEPS = [
-  ['Choose an assessment', 'Pick the estimate you want a doctor to look at. Its test values go with your question.'],
-  ['Ask your question', 'Say what you’d like to understand: the result, a value, your diet or your medicines.'],
+  ['Choose an assessment', 'Pick the estimate you want a doctor to look at. Its test values go with your request.'],
+  ['Ask your question (optional)', 'Say what you’d like to understand: the result, a value, your diet or your medicines. Or just send the report.'],
   ['A doctor reviews it', 'A registered doctor reviews the assessment. Their remarks appear here and in your updated PDF report.'],
 ];
 
@@ -222,7 +222,8 @@ export default function AskDoctor({
 
   const chosen = records.find((r) => r.id === assessment);
   const openForChosen = (requests ?? []).find((r) => r.assessment === assessment && OPEN.has(r.status));
-  const canSend = Boolean(chosen) && question.trim().length >= 10 && consent && !openForChosen && !sending;
+  // The question is optional: a request can be just the report.
+  const canSend = Boolean(chosen) && consent && !openForChosen && !sending;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -353,14 +354,14 @@ export default function AskDoctor({
                 </fieldset>
 
                 <label className="pc-ask-label" htmlFor={ids.question}>
-                  Your question
+                  Your question <span className="pc-ask-optional">(optional)</span>
                 </label>
                 <textarea
                   id={ids.question}
                   className="pc-ask-input pc-ask-textarea"
                   rows={5}
                   maxLength={MAX_QUESTION}
-                  placeholder="e.g. My LDL is high. Is that the main reason for my risk, and what should I change first?"
+                  placeholder="Optional. e.g. My LDL is high. Is that the main reason for my risk, and what should I change first?"
                   value={question}
                   onChange={(e) => {
                     setQuestion(e.target.value);

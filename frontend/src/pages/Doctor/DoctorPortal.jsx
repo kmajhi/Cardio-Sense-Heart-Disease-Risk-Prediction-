@@ -44,10 +44,9 @@ function useDoctor() {
 function Login({ onSignedIn }) {
   const { refresh } = useAuth();
   const navigate = useNavigate();
-  // Patients and admins sign in on the main site's login window.
+  // Patients (and admins) sign in on the main site's login window.
   const chooseRole = (role) => {
     if (role === 'patient') navigate('/', { state: { auth: 'login' } });
-    if (role === 'admin') navigate('/', { state: { from: { pathname: '/console' } } });
   };
   const ids = { who: useId(), pass: useId(), err: useId() };
   const [identifier, setIdentifier] = useState('');

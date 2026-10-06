@@ -106,6 +106,12 @@
   text-transform: uppercase;
 }
 
+.pc-dash .pc-ask-optional {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .pc-ask-input {
   width: 100%;
   min-height: 46px;

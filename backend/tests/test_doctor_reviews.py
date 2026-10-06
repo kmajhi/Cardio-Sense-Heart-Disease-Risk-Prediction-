@@ -239,6 +239,17 @@ def test_request_rules(user, patient_api, doctor_api):
     assert patient_api.delete(reverse("review", args=[rid])).status_code == 409
 
 
+@pytest.mark.django_db
+def test_question_is_optional(user, patient_api, doctor_api):
+    a = assessment(user)
+    res = patient_api.post(reverse("reviews"), {"assessment": a.reference, "topic": "result"}, format="json")
+    assert res.status_code == 201
+    rid = res.json()["id"]
+    assert request_review(patient_api, assessment(user), question="   ").status_code == 201
+    doctor_api.post(reverse("doctor-claim", args=[rid]))
+    assert doctor_api.get(reverse("doctor-review", args=[rid])).json()["question"] == ""
+
+
 # ---------------------------------------------------------------- doctor accounts
 
 @pytest.mark.django_db

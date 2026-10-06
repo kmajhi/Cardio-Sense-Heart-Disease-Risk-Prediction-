@@ -97,7 +97,6 @@ export default function HeroStage() {
           <Icon d={HEART} fill />
         </span>
       </div>
-      <figcaption className="pc-a-stage-caption">Illustrative values</figcaption>
     </figure>
   );
 }
