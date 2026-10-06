@@ -31,7 +31,7 @@ describe('Ask a Doctor', () => {
     const send = screen.getByRole('button', { name: /Request Doctor Review/ });
     expect(send.disabled).toBe(true);
 
-    fireEvent.change(screen.getByLabelText('Your question'), { target: { value: 'Is my LDL the main reason for my risk?' } });
+    fireEvent.change(screen.getByLabelText(/Your question/), { target: { value: 'Is my LDL the main reason for my risk?' } });
     expect(send.disabled).toBe(true); // still needs the consent box
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(send);
@@ -48,6 +48,21 @@ describe('Ask a Doctor', () => {
     fireEvent.click(list.getByRole('button', { name: 'Withdraw' }));
     expect(await list.findByText(/No review requests yet/)).toBeTruthy();
     expect(loadRequests('a@b.c')).toHaveLength(0);
+  });
+
+  it('sends just the report when the optional question is left empty', async () => {
+    render(<AskDoctor records={records} account="a@b.c" />);
+    expect(screen.getByText('(optional)')).toBeTruthy();
+    const send = screen.getByRole('button', { name: /Request Doctor Review/ });
+    expect(send.disabled).toBe(true); // the consent box is still required
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(send.disabled).toBe(false);
+    fireEvent.click(send);
+
+    expect(await screen.findByText(/Request sent/)).toBeTruthy();
+    const [saved] = loadRequests('a@b.c');
+    expect(saved.assessment).toBe('A-0002');
+    expect(saved.question).toBe('');
   });
 });
 
