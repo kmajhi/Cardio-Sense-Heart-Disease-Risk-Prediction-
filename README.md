@@ -104,25 +104,56 @@ model is chosen on cross-validation only, and the winner is calibrated.
 > LDL almost separating the classes on its own. See [`ml/README.md`](ml/README.md#-data-quality-findings-read-before-trusting-these-numbers)
 > for the details.
 
-## Quick start
+## Setup
+
+Needs Git, Python 3.11+ and Node.js. On macOS / Linux, use the commented lines instead.
+
+**Terminal 1: backend** (http://localhost:8000)
 
 ```bash
-# Frontend
-cd frontend && npm install && npm run dev        # http://localhost:5173
-
-# Backend API (admin at http://localhost:8000/admin/) + tests
-cd backend && pip install -r requirements.txt && cp .env.example .env && python manage.py migrate
-python manage.py seed_demo_accounts && python manage.py runserver   # demo logins below
-pytest
-# then set VITE_USE_MOCK_API=false in frontend/.env.local to use it
-
-# Retrain the model (dataset not in the repo; put the .xlsx in ml/data/)
-cd ml && pip install -r requirements.txt
-python -m training.train --data data/Heart_diasease_dataset_from_Northern_Bangladesh.xlsx
-pytest
+git clone https://github.com/kmajhi/Cardio-Sense-Heart-Disease-Risk-Prediction-.git
+cd Cardio-Sense-Heart-Disease-Risk-Prediction-/backend
+python -m venv venv
+venv\Scripts\activate                 # macOS / Linux: source venv/bin/activate
+pip install -r requirements.txt
+copy .env.example .env                # macOS / Linux: cp .env.example .env
+python manage.py migrate
+python manage.py seed_demo_accounts
+python manage.py runserver
 ```
 
-Each folder's README has the details.
+**Terminal 2: frontend** (http://localhost:5173)
+
+```bash
+cd Cardio-Sense-Heart-Disease-Risk-Prediction-/frontend
+npm install
+Set-Content .env.local "VITE_USE_MOCK_API=false"   # macOS / Linux: echo "VITE_USE_MOCK_API=false" > .env.local
+npm run dev
+```
+
+Open http://localhost:5173 and log in with a [demo login](#demo-logins-local-testing).
+
+**Next time**
+
+```bash
+# Terminal 1
+cd backend
+venv\Scripts\activate                 # macOS / Linux: source venv/bin/activate
+python manage.py runserver
+
+# Terminal 2
+cd frontend
+npm run dev
+```
+
+**Tests and retraining**
+
+```bash
+cd backend && pytest              # from the project folder
+cd frontend && npm test            # from the project folder
+cd ml && pip install -r requirements.txt   # from the project folder; dataset goes in ml/data/
+python -m training.train --data data/Heart_diasease_dataset_from_Northern_Bangladesh.xlsx
+```
 
 ## Demo logins (local testing)
 
