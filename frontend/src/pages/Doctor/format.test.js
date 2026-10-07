@@ -15,7 +15,10 @@ describe('Doctor Panel formatting', () => {
   it('requires a decision, remarks, and an action plan only where the decision needs one', () => {
     const blank = { decision: '', remarks: '', action_plan: '', notes: '' };
     expect(missingForSubmit(blank)).toBe('Select a review decision.');
-    expect(missingForSubmit({ ...blank, decision: 'approved' })).toBe('Enter your clinical remarks.');
+    expect(missingForSubmit({ ...blank, decision: 'approved' })).toBe('Write the diagnosis and advice in the prescription.');
+    const unnamed = [{ name: 'Aspirin', strength: '75 mg' }, { name: ' ', strength: '20 mg' }];
+    expect(missingForSubmit({ ...blank, decision: 'approved', remarks: 'Fine.', medications: unnamed })).toBe('Enter the name of medicine 2, or remove that row.');
+    expect(missingForSubmit({ ...blank, decision: 'approved', remarks: 'Fine.', medications: [{ name: '', strength: '' }] })).toBe('');
     expect(missingForSubmit({ ...blank, decision: 'approved', remarks: 'Fine.' })).toBe('');
     expect(missingForSubmit({ ...blank, decision: 'follow_up_required', remarks: 'See me.' })).toMatch(/action plan/);
     expect(missingForSubmit({ ...blank, decision: 'follow_up_required', remarks: 'x', action_plan: 'Recheck in 3 months.' })).toBe('');

@@ -158,6 +158,21 @@ def test_future_review_slots_in_without_other_changes(user):
 
 
 @pytest.mark.django_db
+def test_reviewed_report_prints_the_prescribed_medicines(user):
+    a = make(user)
+    a.guidance = GUIDANCE["high"]
+    a.save()
+    meds = [{"name": "Atorvastatin", "strength": "20 mg", "frequency": "Once daily (0-0-1)", "timing": "After meals",
+             "duration": "3 months", "instructions": "Recheck lipids before the next visit"},
+            {"name": "Aspirin", "strength": "75 mg", "frequency": "", "timing": "", "duration": "", "instructions": ""}]
+    review = {**reports.PENDING_REVIEW, "status": "Reviewed", "remarks": "Seen in clinic.", "medications": meds}
+    reader = PdfReader(io.BytesIO(reports.render(a, review=review)))
+    text = " ".join(" ".join(p.extract_text() for p in reader.pages).split())
+    assert "Prescribed medicines (2)" in text.replace("PRESCRIBED MEDICINES", "Prescribed medicines")
+    assert "Atorvastatin 20 mg" in text and "After meals" in text and "Aspirin 75 mg" in text
+
+
+@pytest.mark.django_db
 def test_end_to_end_from_a_real_prediction(trained, client):
     body = dict(SAMPLES["high"])
     res = client.post(reverse("predict"), body, format="json")

@@ -734,7 +734,10 @@ class Builder:
                 ("Hospital / organization", r.get("organization") or "Not provided"),
             ])
         pdf = self.pdf
-        for lab, value, height in (("Doctor's remarks", r["remarks"], 24), ("Clinical action plan", r["action_plan"], 20)):
+        for lab, value, height in (("Doctor's prescription: diagnosis and advice", r["remarks"], 24),
+                                   ("Clinical action plan", r["action_plan"], 20)):
+            if lab == "Clinical action plan" and r.get("medications"):
+                self.medicines(r["medications"])
             self.need(height + 6)
             self.label(lab)
             y = pdf.get_y() + 0.6
@@ -767,6 +770,54 @@ class Builder:
         pdf.line(15, y + 12, 95, y + 12)
         pdf.line(110, y + 12, 195, y + 12)
         pdf.set_y(y + 15)
+
+    def medicines(self, meds):
+        """The prescribed medicines as a numbered table, rows kept whole across pages."""
+        pdf = self.pdf
+        cols = [("#", 7), ("Medicine", 50), ("Frequency", 30), ("Timing", 28), ("Duration", 23),
+                ("Instructions", self.W - 138)]
+        self.need(18)
+        self.label(f"Prescribed medicines ({len(meds)})")
+        pdf.ln(0.6)
+
+        def header():
+            y = pdf.get_y()
+            pdf.set_fill_color(*SURFACE)
+            pdf.rect(15, y, self.W, 5.6, style="F")
+            self.font(6.6, True, MUTED)
+            x = 15
+            for title, w in cols:
+                pdf.set_xy(x + 1.4, y + 1)
+                pdf.cell(w - 2.8, 3.6, title.upper())
+                x += w
+            pdf.set_y(y + 5.6)
+
+        header()
+        for n, m in enumerate(meds, 1):
+            name = m["name"] + (f" {m['strength']}" if m.get("strength") else "")
+            cells = [str(n), name, m.get("frequency") or "—", m.get("timing") or "—", m.get("duration") or "—",
+                     m.get("instructions") or "—"]
+            self.font(8, False, TEXT)
+            h = max(len(pdf.multi_cell(w - 2.8, 3.9, text, dry_run=True, output="LINES"))
+                    for (_, w), text in zip(cols, cells)) * 3.9 + 2.6
+            if pdf.get_y() + h > pdf.h - 22:
+                pdf.add_page()
+                header()
+            y = pdf.get_y()
+            x = 15
+            for i, ((_, w), text) in enumerate(zip(cols, cells)):
+                self.font(8, i == 1, NAVY if i == 1 else TEXT)
+                pdf.set_xy(x + 1.4, y + 1.3)
+                pdf.multi_cell(w - 2.8, 3.9, text, align="L")
+                x += w
+            pdf.set_draw_color(*RULE)
+            pdf.set_line_width(0.2)
+            pdf.line(15, y + h, 195, y + h)
+            pdf.set_y(y + h)
+        pdf.ln(1.6)
+        self.text("Take medicines only as prescribed. Do not start, stop or change a dose without speaking to "
+                  "your doctor.", 7.2, color=MUTED, h=3.6)
+        pdf.ln(2)
 
     def disclaimer(self):
         self.need(22)

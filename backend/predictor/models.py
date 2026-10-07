@@ -429,7 +429,9 @@ class ClinicalReview(models.Model):
     doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="clinical_reviews")
     status = models.CharField(max_length=10, choices=STATUSES, default=DRAFT, db_index=True)
     decision = models.CharField(max_length=40, choices=DECISIONS, blank=True)
-    remarks = models.TextField(blank=True, max_length=5000)
+    remarks = models.TextField(blank=True, max_length=5000)  # the prescription's diagnosis and advice
+    # The prescribed medicines: [{name, strength, frequency, timing, duration, instructions}], in order.
+    medications = models.JSONField(default=list, blank=True)
     action_plan = models.TextField(blank=True, max_length=5000)
     notes = models.TextField(blank=True, max_length=3000, help_text="Internal: never shown to the patient.")
     revision_of = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL)
