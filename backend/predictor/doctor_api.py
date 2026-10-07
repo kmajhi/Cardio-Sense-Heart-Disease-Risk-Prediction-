@@ -10,7 +10,7 @@
     POST  /api/doctor/requests/<R-id>/claim/     accept: one conditional UPDATE, so only one doctor wins
     GET   /api/doctor/reviews/                   ?scope=active|completed &q &page (my own)
     GET   /api/doctor/reviews/<R-id>/            the clinical workspace (assigned doctor only)
-    PUT   /api/doctor/reviews/<R-id>/draft/      { decision, remarks, action_plan, notes }
+    PUT   /api/doctor/reviews/<R-id>/draft/      { decision, remarks, medications, action_plan, notes }
     POST  /api/doctor/reviews/<R-id>/submit/     the same, final: completes the request, new report version
     GET   /api/doctor/reviews/<R-id>/report/     the latest PDF of a review's assessment
 
@@ -48,6 +48,9 @@ from .reviews import (DECISION_LABEL, bad, doctor_of, dr, ensure_first_report, i
 
 PAGE_SIZE = 15
 TEXT_LIMITS = {"remarks": 5000, "action_plan": 5000, "notes": 3000}
+# One prescribed medicine: each field and its length cap. Only the name is required.
+MEDICATION_LIMITS = {"name": 120, "strength": 60, "frequency": 60, "timing": 60, "duration": 60, "instructions": 200}
+MAX_MEDICATIONS = 12
 RISK_RANK = Case(When(assessment__risk_level="high", then=Value(0)),
                  When(assessment__risk_level="moderate", then=Value(1)), default=Value(2), output_field=IntegerField())
 LOGIN_REFUSED = "Incorrect Doctor ID, email or password."
@@ -370,7 +373,8 @@ def review_payload(rv, *, include_notes=True):
         return None
     body = {"id": f"CR-{rv.pk:04d}", "status": rv.status, "decision": rv.decision,
             "decision_label": DECISION_LABEL.get(rv.decision, ""), "remarks": rv.remarks,
-            "action_plan": rv.action_plan, "updated_at": iso(rv.updated_at), "submitted_at": iso(rv.submitted_at)}
+            "medications": rv.medications or [], "action_plan": rv.action_plan, "updated_at": iso(rv.updated_at),
+            "submitted_at": iso(rv.submitted_at)}
     if include_notes:
         body["notes"] = rv.notes
     return body
@@ -430,7 +434,40 @@ def clean_form(data):
     if decision and decision not in DECISION_LABEL:
         return None, "Choose one of the listed review decisions."
     fields["decision"] = decision
+    medications, error = clean_medications(data.get("medications", []))
+    if error:
+        return None, error
+    fields["medications"] = medications
     return fields, None
+
+
+def clean_medications(items):
+    """→ (medicines, error). Blank rows are dropped; a row with anything in it needs a name."""
+    if items is None:
+        return [], None
+    if not isinstance(items, list):
+        return None, "Send the medicines as a list."
+    medicines = []
+    for n, item in enumerate(items, 1):
+        if not isinstance(item, dict):
+            return None, f"Medicine {n} must be an object."
+        med = {}
+        for key, limit in MEDICATION_LIMITS.items():
+            value = item.get(key, "")
+            if not isinstance(value, str):
+                return None, f"Medicine {n}: {key} must be text."
+            value = " ".join(value.split())
+            if len(value) > limit:
+                return None, f"Medicine {n}: {key} is too long (at most {limit} characters)."
+            med[key] = value
+        if not any(med.values()):
+            continue
+        if not med["name"]:
+            return None, f"Enter the name of medicine {n}, or remove that row."
+        medicines.append(med)
+    if len(medicines) > MAX_MEDICATIONS:
+        return None, f"A prescription can list at most {MAX_MEDICATIONS} medicines."
+    return medicines, None
 
 
 def completeness(fields):
@@ -438,7 +475,7 @@ def completeness(fields):
     if not fields["decision"]:
         return "Select a review decision."
     if not fields["remarks"]:
-        return "Enter your clinical remarks."
+        return "Write the diagnosis and advice in the prescription."
     if fields["decision"] in ClinicalReview.NEEDS_ACTION_PLAN and not fields["action_plan"]:
         return f"Add a clinical action plan for “{DECISION_LABEL[fields['decision']]}”."
     return ""

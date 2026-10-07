@@ -56,10 +56,18 @@ export const NEEDS_ACTION_PLAN = new Set([
   'further_evaluation',
 ]);
 
+/** The number (1-based) of the first medicine row with details but no name, or 0. */
+export function unnamedMedicine(meds = []) {
+  const i = meds.findIndex((m) => !m.name.trim() && ['strength', 'frequency', 'timing', 'duration', 'instructions'].some((k) => (m[k] || '').trim()));
+  return i + 1;
+}
+
 /** The first thing missing before a final submission, or '' (the server checks the same). */
 export function missingForSubmit(form) {
   if (!form.decision) return 'Select a review decision.';
-  if (!form.remarks.trim()) return 'Enter your clinical remarks.';
+  if (!form.remarks.trim()) return 'Write the diagnosis and advice in the prescription.';
+  const unnamed = unnamedMedicine(form.medications);
+  if (unnamed) return `Enter the name of medicine ${unnamed}, or remove that row.`;
   if (NEEDS_ACTION_PLAN.has(form.decision) && !form.action_plan.trim()) {
     const label = DECISIONS.find((d) => d.id === form.decision)?.label;
     return `Add a clinical action plan for “${label}”.`;

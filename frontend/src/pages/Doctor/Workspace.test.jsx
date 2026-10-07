@@ -82,7 +82,7 @@ describe('Clinical review workspace', () => {
     const table = within(screen.getByRole('region', { name: 'Complete Health Information' }));
     expect(table.getByText('Blood pressure')).toBeTruthy();
     // Nothing is prefilled in the doctor's form.
-    expect(screen.getByLabelText(/Clinical Remarks/).value).toBe('');
+    expect(screen.getByLabelText(/Diagnosis & advice/).value).toBe('');
   });
 
   it('checks completeness, confirms, and submits only once', async () => {
@@ -97,7 +97,7 @@ describe('Clinical review workspace', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
 
     fireEvent.click(screen.getByLabelText('Follow-up Required'));
-    fireEvent.change(screen.getByLabelText(/Clinical Remarks/), { target: { value: 'Blood pressure above target.' } });
+    fireEvent.change(screen.getByLabelText(/Diagnosis & advice/), { target: { value: 'Blood pressure above target.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Submit Clinical Review' }));
     expect(screen.getByRole('alert').textContent).toMatch(/action plan/);
 
@@ -111,6 +111,7 @@ describe('Clinical review workspace', () => {
     expect(doctorApi.submit.mock.calls[0][1]).toEqual({
       decision: 'follow_up_required',
       remarks: 'Blood pressure above target.',
+      medications: [],
       action_plan: 'Home BP readings for 2 weeks.',
       notes: '',
     });
@@ -120,18 +121,46 @@ describe('Clinical review workspace', () => {
     expect(await screen.findByRole('heading', { name: 'Clinical Review Submitted' })).toBeTruthy();
   });
 
+  it('writes a prescription with medicines and sends them without row keys', async () => {
+    doctorApi.review.mockResolvedValue(ws());
+    doctorApi.saveDraft.mockResolvedValue({ updated_at: '2026-10-04T10:30:00Z' });
+    show();
+    const rx = within(await screen.findByRole('region', { name: /Doctor’s Prescription/ }));
+    expect(rx.getByText(/No medicines prescribed/)).toBeTruthy();
+
+    fireEvent.click(rx.getByRole('button', { name: /Add medicine/ }));
+    const first = within(rx.getByRole('group', { name: 'Medicine 1' }));
+    fireEvent.change(first.getByLabelText('Strength'), { target: { value: '20 mg' } });
+    fireEvent.click(screen.getByLabelText('Approved'));
+    fireEvent.change(rx.getByLabelText(/Diagnosis & advice/), { target: { value: 'Raised LDL.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Clinical Review' }));
+    expect(screen.getByRole('alert').textContent).toMatch('Enter the name of medicine 1, or remove that row.');
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.change(first.getByLabelText('Medicine'), { target: { value: 'Atorvastatin' } });
+    fireEvent.change(first.getByLabelText('Timing'), { target: { value: 'After meals' } });
+    fireEvent.click(rx.getByRole('button', { name: /Add medicine/ }));
+    fireEvent.click(rx.getByRole('button', { name: 'Remove medicine 2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save Draft' }));
+    expect(doctorApi.saveDraft.mock.calls[0][1].medications).toEqual([
+      { name: 'Atorvastatin', strength: '20 mg', frequency: '', timing: 'After meals', duration: '', instructions: '' },
+    ]);
+  });
+
   it('shows a submitted review read-only', async () => {
     doctorApi.review.mockResolvedValue(
       ws({
         status: 'completed',
         status_label: 'Doctor Review Completed',
-        review: { status: 'submitted', decision: 'approved', decision_label: 'Approved', remarks: 'All reviewed.', action_plan: '', notes: '', submitted_at: '2026-10-04T10:36:00Z' },
+        review: { status: 'submitted', decision: 'approved', decision_label: 'Approved', remarks: 'All reviewed.', medications: [{ name: 'Aspirin', strength: '75 mg', frequency: 'Once daily, morning (1-0-0)', timing: 'After meals', duration: 'Long term', instructions: '' }], action_plan: '', notes: '', submitted_at: '2026-10-04T10:36:00Z' },
       }),
     );
     show();
     expect(await screen.findByText('All reviewed.')).toBeTruthy();
+    expect(screen.getByText('Aspirin')).toBeTruthy();
+    expect(screen.getByText('Long term')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Submit Clinical Review' })).toBeNull();
-    expect(screen.queryByLabelText(/Clinical Remarks/)).toBeNull();
+    expect(screen.queryByLabelText(/Diagnosis & advice/)).toBeNull();
     expect(screen.getByRole('link', { name: /Updated report/ }).getAttribute('href')).toBe('/api/doctor/reviews/R-0001/report/');
   });
 

@@ -1347,6 +1347,279 @@ html[data-dr-theme='dark'] .dr-root .rp-label {
   background: var(--dr-surface-2);
 }
 
+/* Doctor's Prescription: a prescription pad inside the review form. A teal
+   rule down the left, the Rx mark, a letterhead strip, numbered medicine rows
+   and a signature line. */
+.dr-rx {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--dr-teal-line);
+  border-radius: var(--dr-radius);
+  background: var(--dr-surface);
+  box-shadow: var(--dr-shadow);
+}
+.dr-rx::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--dr-teal), var(--dr-navy-2));
+}
+.dr-rx-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px 14px 22px;
+  background: linear-gradient(90deg, var(--dr-teal-soft), transparent 70%);
+  border-bottom: 1px solid var(--dr-line-2);
+}
+.dr-rx-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--dr-teal);
+  color: #fff;
+  font: italic 600 24px/1 Georgia, 'Times New Roman', 'Segoe UI Symbol', serif;
+  box-shadow: 0 4px 12px -4px rgba(38, 116, 114, 0.55);
+}
+.dr-rx-title {
+  margin: 0;
+  color: var(--dr-navy);
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.dr-rx-head p {
+  margin: 2px 0 0;
+  color: var(--dr-ink-3);
+  font-size: 12.5px;
+}
+.dr-rx-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0 20px 0 22px;
+  border-bottom: 1px dashed var(--dr-line-strong);
+}
+.dr-rx-meta > div {
+  min-width: 0;
+  padding: 10px 12px 10px 0;
+}
+.dr-rx-meta > div + div {
+  padding-left: 12px;
+  border-left: 1px solid var(--dr-line-2);
+}
+.dr-rx-meta dt {
+  color: var(--dr-ink-4);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dr-rx-meta dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--dr-ink);
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dr-rx-body {
+  display: grid;
+  gap: 20px;
+  padding: 18px 20px 20px 22px;
+}
+.dr-rx-meds {
+  display: grid;
+  gap: 10px;
+}
+.dr-rx-meds-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dr-rx-meds-head h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--dr-navy);
+  font-size: 14px;
+  font-weight: 600;
+}
+.dr-rx-meds-head .dr-muted {
+  font-size: 12.5px;
+}
+.dr-rx-mini {
+  color: var(--dr-teal);
+  font: italic 600 18px/1 Georgia, 'Times New Roman', 'Segoe UI Symbol', serif;
+}
+.dr-rx-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px dashed var(--dr-line-strong);
+  border-radius: var(--dr-radius-sm);
+  background: var(--dr-surface-2);
+  color: var(--dr-ink-3);
+}
+.dr-rx-empty svg {
+  flex: none;
+  color: var(--dr-teal);
+}
+.dr-rx-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+.dr-rx-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dr-rx-med {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--dr-line);
+  border-radius: var(--dr-radius-sm);
+  background: var(--dr-surface-2);
+  transition: border-color 0.15s;
+}
+.dr-rx-med:focus-within {
+  border-color: var(--dr-teal-line);
+  background: var(--dr-surface);
+}
+.dr-rx-med.is-invalid {
+  border-color: var(--dr-alert-line);
+}
+.dr-rx-num {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 20px;
+  border-radius: 50%;
+  background: var(--dr-teal-soft);
+  color: var(--dr-teal-2);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.dr-rx-med-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.6fr 1.3fr 1.1fr;
+  gap: 10px;
+}
+.dr-rx-in {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.dr-rx-in > span {
+  color: var(--dr-ink-3);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.dr-rx-in .dr-select {
+  width: 100%;
+}
+.dr-rx-in.is-instructions,
+.dr-rx-med-error {
+  grid-column: 1 / -1;
+}
+.dr-rx-in.is-name .dr-input {
+  font-weight: 600;
+}
+.dr-rx-remove {
+  margin-top: 18px;
+  color: var(--dr-ink-3);
+}
+.dr-rx-remove:hover {
+  color: var(--dr-alert);
+}
+.dr-rx-add {
+  justify-self: start;
+}
+.dr-rx-table td:first-child,
+.dr-rx-table th:first-child {
+  width: 32px;
+  color: var(--dr-ink-3);
+}
+.dr-rx-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 20px;
+  padding: 14px 20px 16px 22px;
+  border-top: 1px dashed var(--dr-line-strong);
+  background: var(--dr-surface-2);
+}
+.dr-rx-sign {
+  display: grid;
+  min-width: 200px;
+  padding-top: 6px;
+  border-top: 1px solid var(--dr-ink-3);
+}
+.dr-rx-sign strong {
+  color: var(--dr-navy);
+  font-size: 13.5px;
+}
+.dr-rx-sign span {
+  color: var(--dr-ink-3);
+  font-size: 12px;
+}
+.dr-rx-sign-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 340px;
+  margin: 0;
+  color: var(--dr-ink-3);
+  font-size: 12px;
+}
+.dr-rx-sign-note svg {
+  flex: none;
+  color: var(--dr-teal);
+}
+@media (max-width: 960px) {
+  .dr-rx-med-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dr-rx-in.is-name {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 560px) {
+  .dr-rx-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dr-rx-meta > div:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .dr-rx-med {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .dr-rx-num {
+    display: none;
+  }
+  .dr-rx-med-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .dr-timeline {
   position: relative;
   margin: 0;

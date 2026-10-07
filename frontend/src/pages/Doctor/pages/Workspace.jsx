@@ -3,11 +3,24 @@ import { Link, useParams } from 'react-router-dom';
 import { doctorApi } from '../../../api/doctorApi';
 import { ConfirmDialog, Empty, Icon, LoadError, Skeleton, StatusBadge, Timeline, useLoad, useToast } from '../ui';
 import { AIRecommendations, HealthInformation, KeyFindings, Origin, PatientContext, PatientSummary, RiskSummary } from '../clinical';
-import { DECISIONS, NEEDS_ACTION_PLAN, drName, fmtDateTime, fmtTime, missingForSubmit, patientLine } from '../format';
+import { DECISIONS, NEEDS_ACTION_PLAN, drName, fmtDateTime, fmtTime, missingForSubmit, patientLine, unnamedMedicine } from '../format';
+import { PrescriptionEditor, PrescriptionView } from '../Prescription';
+import { withKeys, withoutKeys } from '../rxData';
 
-const LIMITS = { remarks: 5000, action_plan: 5000, notes: 3000 };
-const EMPTY_FORM = { decision: '', remarks: '', action_plan: '', notes: '' };
-const formOf = (review) => (review ? { decision: review.decision || '', remarks: review.remarks || '', action_plan: review.action_plan || '', notes: review.notes || '' } : EMPTY_FORM);
+const LIMITS = { action_plan: 5000, notes: 3000 };
+const EMPTY_FORM = { decision: '', remarks: '', medications: [], action_plan: '', notes: '' };
+const formOf = (review) =>
+  review
+    ? {
+        decision: review.decision || '',
+        remarks: review.remarks || '',
+        medications: withKeys(review.medications),
+        action_plan: review.action_plan || '',
+        notes: review.notes || '',
+      }
+    : EMPTY_FORM;
+/** The form as the server takes it (row keys are only for React). */
+const bodyOf = (form) => ({ ...form, medications: withoutKeys(form.medications) });
 
 function TextField({ id, label, required, help, value, onChange, placeholder, limit, error, rows = 6 }) {
   const helpId = `${id}-help`;
@@ -48,7 +61,7 @@ function TextField({ id, label, required, help, value, onChange, placeholder, li
 
 function ReviewForm({ ws, onSaved, onSubmitted }) {
   const toast = useToast();
-  const ids = { remarks: useId(), plan: useId(), notes: useId(), decision: useId(), summary: useId() };
+  const ids = { plan: useId(), notes: useId(), decision: useId(), summary: useId() };
   const [form, setForm] = useState(() => formOf(ws.review));
   const [savedAt, setSavedAt] = useState(ws.review?.updated_at ?? null);
   const [dirty, setDirty] = useState(false);
@@ -77,7 +90,7 @@ function ReviewForm({ ws, onSaved, onSubmitted }) {
   const saveDraft = async () => {
     setBusy('draft');
     try {
-      const r = await doctorApi.saveDraft(ws.id, form);
+      const r = await doctorApi.saveDraft(ws.id, bodyOf(form));
       setSavedAt(r.updated_at);
       setDirty(false);
       onSaved();
@@ -103,7 +116,7 @@ function ReviewForm({ ws, onSaved, onSubmitted }) {
     submitting.current = true;
     setBusy('submit');
     try {
-      const result = await doctorApi.submit(ws.id, form);
+      const result = await doctorApi.submit(ws.id, bodyOf(form));
       setDirty(false);
       setConfirm(false);
       onSubmitted(result);
@@ -121,7 +134,8 @@ function ReviewForm({ ws, onSaved, onSubmitted }) {
     if (!problem) return '';
     if (field === 'decision' && !form.decision) return problem;
     if (field === 'remarks' && form.decision && !form.remarks.trim()) return problem;
-    if (field === 'action_plan' && form.decision && form.remarks.trim() && NEEDS_ACTION_PLAN.has(form.decision) && !form.action_plan.trim()) return problem;
+    if (field === 'medications' && form.decision && form.remarks.trim() && unnamedMedicine(form.medications)) return problem;
+    if (field === 'action_plan' && form.decision && form.remarks.trim() && !unnamedMedicine(form.medications) && NEEDS_ACTION_PLAN.has(form.decision) && !form.action_plan.trim()) return problem;
     return '';
   };
 
@@ -146,16 +160,14 @@ function ReviewForm({ ws, onSaved, onSubmitted }) {
           )}
         </div>
 
-        <TextField
-          id={ids.remarks}
-          label="Clinical Remarks"
-          required
-          value={form.remarks}
-          onChange={set('remarks')}
-          limit={LIMITS.remarks}
-          rows={7}
-          placeholder="Enter your clinical observations and professional remarks..."
+        <PrescriptionEditor
+          ws={ws}
+          remarks={form.remarks}
+          medications={form.medications}
+          onRemarks={set('remarks')}
+          onMedications={set('medications')}
           error={err('remarks')}
+          medError={err('medications')}
         />
 
         <fieldset className="dr-field" style={{ border: 0, margin: 0, padding: 0 }} aria-describedby={err('decision') ? `${ids.decision}-err` : undefined}>
@@ -220,7 +232,7 @@ function ReviewForm({ ws, onSaved, onSubmitted }) {
 
       <ConfirmDialog open={confirm} title="Submit Clinical Review?" confirmLabel="Submit Review" busy={busy === 'submit'} onConfirm={submit} onCancel={() => setConfirm(false)}>
         <p>You are about to finalize your review for Assessment {ws.assessment}.</p>
-        <p>Your remarks and decision will be attached to the patient’s assessment and the patient report will be updated. A submitted review can’t be edited.</p>
+        <p>Your prescription and decision will be attached to the patient’s assessment and the patient report will be updated. A submitted review can’t be edited.</p>
       </ConfirmDialog>
     </section>
   );
@@ -246,10 +258,7 @@ function SubmittedReview({ ws }) {
           <p className="dr-eyebrow">Review decision</p>
           <span className="dr-badge is-teal">{r.decision_label}</span>
         </div>
-        <div>
-          <p className="dr-eyebrow">Clinical remarks</p>
-          <p className="dr-readonly">{r.remarks}</p>
-        </div>
+        <PrescriptionView ws={ws} review={r} />
         <div>
           <p className="dr-eyebrow">Clinical action plan</p>
           <p className="dr-readonly">{r.action_plan || 'No action plan recorded.'}</p>

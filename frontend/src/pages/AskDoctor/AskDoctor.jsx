@@ -39,7 +39,7 @@ const drName = (name = '') => (/^dr\.?\s/i.test(name) ? name : `Dr. ${name}`);
 const STEPS = [
   ['Choose an assessment', 'Pick the estimate you want a doctor to look at. Its test values go with your request.'],
   ['Ask your question (optional)', 'Say what you’d like to understand: the result, a value, your diet or your medicines. Or just send the report.'],
-  ['A doctor reviews it', 'A registered doctor reviews the assessment. Their remarks appear here and in your updated PDF report.'],
+  ['A doctor reviews it', 'A registered doctor reviews the assessment. Their prescription and advice appear here and in your updated PDF report.'],
 ];
 
 const OPEN = new Set(['pending', 'under_review']);
@@ -114,8 +114,26 @@ function RequestItem({ r, record, onWithdraw, onDownload, busy }) {
           </p>
           {showSummary && (
             <div className="pc-ask-summary" id={`summary-${r.id}`}>
-              <h3>Doctor’s remarks</h3>
+              <h3>Doctor’s prescription</h3>
               <p>{r.review.remarks}</p>
+              {r.review.medications?.length > 0 && (
+                <>
+                  <h3>Prescribed medicines</h3>
+                  <ol className="pc-ask-meds">
+                    {r.review.medications.map((m, i) => (
+                      <li key={i}>
+                        <b>
+                          {m.name}
+                          {m.strength ? ` ${m.strength}` : ''}
+                        </b>
+                        <span>{[m.frequency, m.timing, m.duration && `for ${m.duration}`].filter(Boolean).join(' · ')}</span>
+                        {m.instructions && <span className="pc-ask-med-note">{m.instructions}</span>}
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="pc-ask-fine">Take medicines only as prescribed. Don’t start, stop or change a dose without talking to your doctor.</p>
+                </>
+              )}
               <h3>Clinical action plan</h3>
               <p>{r.review.action_plan || 'No further action recorded.'}</p>
               <p className="pc-ask-fine">

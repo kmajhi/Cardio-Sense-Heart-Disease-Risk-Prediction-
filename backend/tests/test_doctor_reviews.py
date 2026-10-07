@@ -114,7 +114,11 @@ def test_full_review_workflow(user, patient_api, doctor, doctor_api):
     res = doctor_api.post(reverse("doctor-submit", args=[rid]), draft, format="json")
     assert res.status_code == 400 and res.json()["code"] == "incomplete"
     final = {**draft, "remarks": "LDL and blood pressure are above target.",
-             "action_plan": "Repeat a fasting lipid profile in 3 months."}
+             "action_plan": "Repeat a fasting lipid profile in 3 months.",
+             "medications": [{"name": "Atorvastatin", "strength": "20 mg", "frequency": "Once daily (0-0-1)",
+                              "timing": "After meals", "duration": "3 months", "instructions": ""},
+                             {"name": "", "strength": "", "frequency": "", "timing": "", "duration": "",
+                              "instructions": ""}]}
     res = doctor_api.post(reverse("doctor-submit", args=[rid]), final, format="json")
     assert res.status_code == 200
     assert res.json()["status"] == "completed" and res.json()["review"]["status"] == "submitted"
@@ -133,6 +137,9 @@ def test_full_review_workflow(user, patient_api, doctor, doctor_api):
     mine = patient_api.get(reverse("reviews")).json()[0]
     assert mine["status_label"] == "Doctor Review Completed"
     assert mine["review"]["remarks"].startswith("LDL") and "notes" not in mine["review"]
+    # The blank row was dropped; the medicine reaches the patient as prescribed.
+    assert [m["name"] for m in mine["review"]["medications"]] == ["Atorvastatin"]
+    assert mine["review"]["medications"][0]["frequency"] == "Once daily (0-0-1)"
     assert [r["version"] for r in mine["reports"]] == [1, 2]
     notes = patient_api.get(reverse("notifications")).json()
     assert notes["results"][0]["title"] == "Clinical Review Completed" and notes["unread"] == 2
@@ -385,3 +392,25 @@ def test_doctor_adds_changes_and_removes_their_photo(user, patient_api, doctor, 
     assert doctor_api.patch(url, {"photo": ""}, format="json").json()["photo"] == ""
     # Patients can't set a doctor's photo.
     assert patient_api.patch(url, {"photo": photo}, format="json").status_code == 403
+
+
+@pytest.mark.django_db
+def test_prescription_medicines_are_checked_by_the_server(user, patient_api, doctor_api):
+    rid = request_review(patient_api, assessment(user)).json()["id"]
+    doctor_api.post(reverse("doctor-claim", args=[rid]))
+    url = reverse("doctor-draft", args=[rid])
+    base = {"decision": "reviewed", "remarks": "Reviewed.", "action_plan": "", "notes": ""}
+    unnamed = doctor_api.put(url, {**base, "medications": [{"strength": "5 mg"}]}, format="json")
+    assert unnamed.status_code == 400 and "name of medicine 1" in unnamed.json()["detail"]
+    assert doctor_api.put(url, {**base, "medications": "Aspirin"}, format="json").status_code == 400
+    assert doctor_api.put(url, {**base, "medications": [{"name": "x" * 121}]}, format="json").status_code == 400
+    many = [{"name": f"Medicine {n}"} for n in range(13)]
+    assert doctor_api.put(url, {**base, "medications": many}, format="json").status_code == 400
+    saved = doctor_api.put(url, {**base, "medications": [{"name": "  Amlodipine ", "strength": "5  mg"}]},
+                           format="json")
+    assert saved.status_code == 200
+    assert saved.json()["medications"] == [{"name": "Amlodipine", "strength": "5 mg", "frequency": "", "timing": "",
+                                            "duration": "", "instructions": ""}]
+    # Medicines are optional: a review without any still submits.
+    done = doctor_api.post(reverse("doctor-submit", args=[rid]), {**base, "medications": []}, format="json")
+    assert done.status_code == 200 and done.json()["review"]["medications"] == []
